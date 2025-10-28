@@ -1,3 +1,20 @@
+# Ajoute en haut
+import os
+
+# Remplace DEBUG
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
+# Remplace ALLOWED_HOSTS
+ALLOWED_HOSTS = ['*']  # Temporaire pour Render
+
+# Base de données (Render donne PostgreSQL)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
 """
 Django settings for gestion_taches_project project.
 

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: keyper
+    env: python
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    startCommand: gunicorn gestion_taches_project.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      DEBUG: "False"
+      SECRET_KEY: "ton-secret-key-tres-long-ici"
