@@ -64,6 +64,3 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
-
-# Docker (si tu ajoutes plus tard)
-.dockerignore
