@@ -5,18 +5,27 @@
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white">
-                    <h4>Créer un Nouveau Foyer</h4>
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h4 class="mb-0">🏠 Créer un Nouveau Foyer</h4>
                 </div>
-                <div class="card-body">
-                    <form method="post">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label class="form-label">Nom du foyer *</label>
+                            <label class="form-label">Nom du foyer <span class="text-danger">*</span></label>
                             <input type="text" name="nom" class="form-control" placeholder="Ex: ADOMA" required>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">Créer le foyer</button>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Description du foyer..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">📷 Photo du foyer (optionnel)</label>
+                            <input type="file" name="photo" class="form-control" accept="image/*">
+                            <small class="text-muted">JPG, PNG (max 5MB)</small>
+                        </div>
+                        <button type="submit" class="btn w-100" style="background: #000; color: white; font-weight: bold;">Créer le foyer</button>
                     </form>
                 </div>
             </div>

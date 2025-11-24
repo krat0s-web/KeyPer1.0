@@ -1,0 +1,124 @@
+{% extends "maison_app/base.html" %}
+{% block title %}Mon Profil{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="fw-bold mb-4">Mon profil</h1>
+
+            <!-- MES INFORMATIONS -->
+            <div class="card shadow-sm rounded-4 border-0 mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center p-3">
+                    <h5 class="mb-0 fw-bold">Mes informations</h5>
+                    <button class="btn btn-sm btn-dark rounded-circle" data-bs-toggle="modal" data-bs-target="#editerInfosModal" title="Éditer">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Rôle :</strong> {{ user.get_role_display }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Membre depuis :</strong> {{ user.date_joined|date:"d/m/Y" }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Nom d'utilisateur :</strong> {{ user.nom|default:user.email }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Email :</strong> {{ user.email }}
+                    </div>
+                    <div class="mb-0">
+                        <strong>Foyer actuel :</strong> {{ foyer_actuel.nom|default:"—" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- MES FOYERS -->
+            <div class="card shadow-sm rounded-4 border-0 mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center p-3">
+                    <h5 class="mb-0 fw-bold">Mes foyers ({{ foyers.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if foyers.count > 0 %}
+                    <div class="row">
+                        {% for foyer in foyers %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-1" style="border: 1px solid #dee2e6;">
+                                <div class="card-body">
+                                    <h6 class="card-title fw-bold">{{ foyer.nom }}</h6>
+                                    <p class="card-text text-muted small">
+                                        {% if foyer.utilisateurs.count %}
+                                            {{ foyer.utilisateurs.count }} membre(s)
+                                        {% else %}
+                                            Aucun membre
+                                        {% endif %}
+                                    </p>
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="foyer_id" value="{{ foyer.id }}">
+                                        <button type="submit" name="changer_foyer" class="btn btn-sm btn-outline-dark rounded-pill">
+                                            {% if foyer.id == foyer_actuel.id %}
+                                                ✓ Actif
+                                            {% else %}
+                                                Sélectionner
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Vous n'appartenez à aucun foyer</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- DÉCONNEXION -->
+            <div class="card shadow-sm rounded-4 border-0 bg-light">
+                <div class="card-body text-center py-5">
+                    <h5 class="fw-bold mb-3">Souhaitez-vous vous déconnecter?</h5>
+                    <a href="{% url 'logout' %}" class="btn btn-dark rounded-pill px-5">
+                        Me déconnecter
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ÉDITER INFOS -->
+<div class="modal fade" id="editerInfosModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modifier mes informations</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nom</label>
+                        <input type="text" name="nom" class="form-control" value="{{ user.nom|default:'' }}" placeholder="Votre nom">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" name="modifier_infos" class="btn btn-primary">Modifier</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    .card {
+        border-radius: 16px;
+    }
+</style>
+{% endblock %}

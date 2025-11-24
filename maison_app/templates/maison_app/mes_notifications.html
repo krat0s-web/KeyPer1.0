@@ -1,0 +1,90 @@
+{% extends "maison_app/base.html" %}
+{% load static %}
+
+{% block title %}🔔 Mes Notifications{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <h1 class="h2" style="color: #000; font-weight: bold;">🔔 Mes Notifications</h1>
+        <p class="text-muted">Vous avez <strong>{{ non_lues }}</strong> notification(s) non lue(s)</p>
+    </div>
+
+    <!-- Messages Django -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Notifications -->
+    <div class="row">
+        {% if notifications %}
+            {% for notification in notifications %}
+                <div class="col-12 mb-3">
+                    <div class="card {% if not notification.lue %}border-info{% endif %}" style="border-left: 4px solid #0d6efd;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title" style="color: #000;">
+                                        {% if notification.type == 'tache_assignee' %}
+                                            📋
+                                        {% elif notification.type == 'tache_complete' %}
+                                            ✅
+                                        {% elif notification.type == 'tache_rappel' %}
+                                            ⏰
+                                        {% elif notification.type == 'budget_alerte' %}
+                                            💰
+                                        {% elif notification.type == 'nouveau_membre' %}
+                                            👥
+                                        {% elif notification.type == 'message' %}
+                                            💬
+                                        {% endif %}
+                                        {{ notification.titre }}
+                                    </h5>
+                                    <p class="card-text text-muted">{{ notification.message }}</p>
+                                    <small class="text-muted">{{ notification.date_creation|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <div class="ms-2">
+                                    {% if not notification.lue %}
+                                        <a href="{% url 'marquer_notification_lue' notification.id %}" 
+                                           class="btn btn-sm btn-outline-primary">Marquer lue</a>
+                                    {% endif %}
+                                    <form method="POST" action="{% url 'supprimer_notification' notification.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                onclick="return confirm('Confirmer la suppression ?')">Supprimer</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <h5>📭 Aucune notification pour le moment</h5>
+                    <p class="mb-0">Vos notifications apparaîtront ici</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s;
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+</style>
+{% endblock %}

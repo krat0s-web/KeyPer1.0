@@ -37,7 +37,9 @@ class Utilisateur(AbstractUser):
     email = models.EmailField(unique=True)
     nom = models.CharField(max_length=100, blank=True)  # ← NOM AFFICHÉ
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='membre')
-    id_foyer = models.ForeignKey('Foyer', on_delete=models.SET_NULL, null=True, blank=True)
+    foyers = models.ManyToManyField('Foyer', blank=True, related_name='utilisateurs')  # ← PLUSIEURS FOYERS
+    foyer_actif = models.ForeignKey('Foyer', on_delete=models.SET_NULL, null=True, blank=True, related_name='utilisateurs_actifs')  # ← FOYER ACTUEL
+    photo_profil = models.ImageField(upload_to='profiles/', null=True, blank=True)  # ← NOUVELLE PHOTO DE PROFIL
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -76,6 +78,7 @@ class Invitation(models.Model):
 # === PIÈCE ===
 class Piece(models.Model):
     nom = models.CharField(max_length=100)
+    photo = models.ImageField(upload_to='pieces/', null=True, blank=True)  # ← PHOTO
     id_foyer = models.ForeignKey(Foyer, on_delete=models.CASCADE, related_name='pieces')  # ← AJOUTÉ
 
     class Meta:
@@ -86,6 +89,7 @@ class Piece(models.Model):
 
 class Animal(models.Model):
     nom = models.CharField(max_length=100)
+    photo = models.ImageField(upload_to='animaux/', null=True, blank=True)  # ← PHOTO
     id_foyer = models.ForeignKey(Foyer, on_delete=models.SET_NULL, null=True, related_name='animaux')  # ← AJOUTÉ
     id_piece = models.ForeignKey(Piece, on_delete=models.SET_NULL, null=True)
 
@@ -194,27 +198,69 @@ class Aliment(models.Model):
 # === CHAT MESSAGE ===
 class ChatMessage(models.Model):
     id_user = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True)
-    contenu = models.TextField()
+    id_foyer = models.ForeignKey(Foyer, on_delete=models.CASCADE)
+    contenu = models.TextField()  # Message + emojis (HTML safe)
     date_envoi = models.DateTimeField(auto_now_add=True)
-    id_tache = models.ForeignKey(Tache, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         db_table = 'chat_message'
+        ordering = ['date_envoi']  # Messages chronologiques
 
     def __str__(self):
         return f"{self.id_user.email if self.id_user else 'Anonyme'} - {self.date_envoi}"
 
+
 # === RÉCOMPENSE ===
 class Recompense(models.Model):
-    id_user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
-    points = models.IntegerField()
-    semaine = models.DateField()
+    TYPES = [
+        ('points', 'Points'),
+        ('badge', 'Badge'),
+        ('trophy', 'Trophée'),
+    ]
+    
+    id_user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='recompenses')
+    type = models.CharField(max_length=20, choices=TYPES, default='points')
+    nom = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    points = models.IntegerField(default=10)
+    icone = models.CharField(max_length=50, default='bi-star')  # Bootstrap icon
+    date_obtention = models.DateTimeField(auto_now_add=True)
+    id_tache = models.ForeignKey('Tache', on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = 'recompense'
+        ordering = ['-date_obtention']
 
     def __str__(self):
-        return f"{self.id_user.email} - {self.points} pts"
+        return f"{self.id_user.email} - {self.nom} ({self.points} pts)"
+
+# === TROPHÉE ===
+class Trophee(models.Model):
+    TYPES_TROPHEE = [
+        ('100', '100 tâches complétées'),
+        ('50', '50 tâches complétées'),
+        ('10', '10 tâches complétées'),
+        ('streax', 'Streak: 7 jours consécutifs'),
+        ('rapide', 'Complété en moins de 2h'),
+        ('premier', 'Première tâche'),
+        ('social', '5 invitations acceptées'),
+    ]
+    
+    id_user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='trophees')
+    type = models.CharField(max_length=50, choices=TYPES_TROPHEE)
+    nom = models.CharField(max_length=100)
+    description = models.TextField()
+    icone = models.CharField(max_length=50)  # Bootstrap icon
+    date_obtention = models.DateTimeField(auto_now_add=True)
+    debloque = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'trophee'
+        ordering = ['-date_obtention']
+        unique_together = ('id_user', 'type')
+
+    def __str__(self):
+        return f"{self.id_user.email} - {self.nom}"
 
 # === STATISTIQUE ===
 class Statistique(models.Model):
@@ -228,6 +274,7 @@ class Statistique(models.Model):
 
     def __str__(self):
         return f"{self.id_user.email} - {self.date_stat}"
+
 
 # === TUTO ===
 class Tuto(models.Model):
@@ -327,35 +374,7 @@ class ActionDispositif(models.Model):
     def __str__(self):
         return f"{self.id_dispositif.nom} - {self.action}"
 
-# === DÉPENSE ===
-class Depense(models.Model):
-    description = models.CharField(max_length=100)
-    montant = models.DecimalField(max_digits=10, decimal_places=2)
-    date_depense = models.DateField()
-    id_foyer = models.ForeignKey(Foyer, on_delete=models.SET_NULL, null=True)
-    id_user = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True)
 
-    class Meta:
-        db_table = 'depense'
-
-    def __str__(self):
-        return self.description
-
-# === BUDGET ===
-class Budget(models.Model):
-    montant_total = models.DecimalField(max_digits=10, decimal_places=2)
-    montant_restant = models.DecimalField(max_digits=10, decimal_places=2)
-    periode = models.CharField(max_length=10, choices=[
-        ('mois', 'Mois'),
-        ('annee', 'Année')
-    ])
-    id_foyer = models.ForeignKey(Foyer, on_delete=models.SET_NULL, null=True)
-
-    class Meta:
-        db_table = 'budget'
-
-    def __str__(self):
-        return f"{self.periode} - {self.montant_total}"
 
 # === HISTORIQUE TÂCHE ===
 class HistoriqueTache(models.Model):
@@ -432,3 +451,134 @@ class InteractionIa(models.Model):
 
     def __str__(self):
         return f"{self.id_user.email} - {self.date_interaction}"
+
+# === NOTE ===
+class Note(models.Model):
+    id_user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='notes')
+    titre = models.CharField(max_length=200)
+    contenu = models.TextField()
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'note'
+        ordering = ['-date_modification']
+
+    def __str__(self):
+        return self.titre
+
+# === NOTIFICATION ===
+class Notification(models.Model):
+    TYPES = [
+        ('tache_assignee', 'Tâche Assignée'),
+        ('tache_complete', 'Tâche Complétée'),
+        ('tache_rappel', 'Rappel Tâche'),
+        ('budget_alerte', 'Alerte Budget'),
+        ('nouveau_membre', 'Nouveau Membre'),
+        ('message', 'Message'),
+    ]
+    
+    id_user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=20, choices=TYPES)
+    titre = models.CharField(max_length=200)
+    message = models.TextField()
+    lue = models.BooleanField(default=False)
+    id_tache = models.ForeignKey('Tache', on_delete=models.CASCADE, null=True, blank=True)
+    id_foyer = models.ForeignKey('Foyer', on_delete=models.CASCADE, null=True, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'notification'
+        ordering = ['-date_creation']
+    
+    def __str__(self):
+        return f"{self.titre} - {self.id_user.email}"
+
+# === CATÉGORIE DÉPENSE ===
+class CategorieDepense(models.Model):
+    nom = models.CharField(max_length=100)
+    couleur = models.CharField(max_length=7, default='#0d6efd')  # Couleur hex
+    icone = models.CharField(max_length=50, default='bi-tag')  # Bootstrap icon
+    
+    class Meta:
+        db_table = 'categorie_depense'
+    
+    def __str__(self):
+        return self.nom
+
+# === DÉPENSE ===
+class Depense(models.Model):
+    id_foyer = models.ForeignKey(Foyer, on_delete=models.CASCADE, related_name='depenses')
+    description = models.CharField(max_length=200)
+    montant = models.DecimalField(max_digits=10, decimal_places=2)
+    categorie = models.ForeignKey(CategorieDepense, on_delete=models.SET_NULL, null=True, blank=True)
+    id_user = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, related_name='depenses_creees')
+    date_depense = models.DateField()
+    date_creation = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    
+    class Meta:
+        db_table = 'depense'
+        ordering = ['-date_depense']
+    
+    def __str__(self):
+        return f"{self.description} - {self.montant}€"
+
+# === BUDGET ===
+class Budget(models.Model):
+    PERIODES = [
+        ('mensuel', 'Mensuel'),
+        ('trimestriel', 'Trimestriel'),
+        ('annuel', 'Annuel'),
+    ]
+    
+    id_foyer = models.ForeignKey(Foyer, on_delete=models.CASCADE, related_name='budgets')
+    categorie = models.ForeignKey(CategorieDepense, on_delete=models.CASCADE, null=True, blank=True)
+    montant_limite = models.DecimalField(max_digits=10, decimal_places=2)
+    periode = models.CharField(max_length=20, choices=PERIODES, default='mensuel')
+    date_debut = models.DateField(auto_now_add=True, null=True, blank=True)
+    actif = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'budget'
+    
+    def __str__(self):
+        return f"Budget {self.categorie.nom} - {self.montant_limite}€"
+    
+    def montant_utilise(self):
+        """Calcule le montant utilisé selon la période"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        today = timezone.now().date()
+        
+        if self.periode == 'mensuel':
+            date_min = today.replace(day=1)
+        elif self.periode == 'trimestriel':
+            trimestre = (today.month - 1) // 3
+            date_min = today.replace(month=trimestre * 3 + 1, day=1)
+        else:  # annuel
+            date_min = today.replace(month=1, day=1)
+        
+        depenses = Depense.objects.filter(
+            id_foyer=self.id_foyer,
+            categorie=self.categorie,
+            date_depense__gte=date_min
+        ).aggregate(total=models.Sum('montant'))['total'] or 0
+        
+        return float(depenses)
+    
+    def pourcentage_utilise(self):
+        """Retourne le pourcentage du budget utilisé"""
+        if self.montant_limite == 0:
+            return 0
+        return round((self.montant_utilise() / float(self.montant_limite)) * 100, 2)
+    
+    def alerte(self):
+        """Retourne si le budget est dépassé ou proche"""
+        pourcentage = self.pourcentage_utilise()
+        if pourcentage >= 100:
+            return 'danger'
+        elif pourcentage >= 80:
+            return 'warning'
+        return 'success'

@@ -1,0 +1,143 @@
+{% extends 'maison_app/base.html' %}
+{% load static %}
+
+{% block title %}Mes Récompenses et Trophées{% endblock %}
+
+{% block content %}
+<div class="container-fluid pt-4">
+    <!-- HEADER - POINTS TOTAUX -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark text-white border-warning">
+                <div class="card-body text-center py-4">
+                    <h1 class="display-3 text-warning mb-2">
+                        <i class="bi bi-star-fill"></i> {{ total_points }} points
+                    </h1>
+                    <p class="lead text-muted">Points accumulés en accomplissant des tâches</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TROPHÉES DÉBLOQUÉS -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-3">
+                <i class="bi bi-trophy text-warning"></i> Trophées Débloqués ({{ trophees.count }})
+            </h2>
+            {% if trophees %}
+                <div class="row">
+                    {% for trophee in trophees %}
+                        <div class="col-md-4 col-lg-3 mb-3">
+                            <div class="card bg-dark border-warning h-100 text-center">
+                                <div class="card-body">
+                                    <div style="font-size: 3rem; margin: 1rem 0;">
+                                        {% if trophee.type == 'premier' %}
+                                            🏅
+                                        {% elif trophee.type == '10' %}
+                                            🥈
+                                        {% elif trophee.type == '50' %}
+                                            🥇
+                                        {% elif trophee.type == '100' %}
+                                            👑
+                                        {% elif trophee.type == 'streak' %}
+                                            🔥
+                                        {% elif trophee.type == 'rapide' %}
+                                            ⚡
+                                        {% elif trophee.type == 'social' %}
+                                            🤝
+                                        {% else %}
+                                            ⭐
+                                        {% endif %}
+                                    </div>
+                                    <h5 class="card-title text-warning">{{ trophee.nom }}</h5>
+                                    <p class="card-text text-muted small">{{ trophee.description }}</p>
+                                    <small class="text-secondary">
+                                        <i class="bi bi-calendar"></i> {{ trophee.date_obtention|date:"d/m/Y" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Complétez des tâches pour débloquer vos premiers trophées!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- RÉCOMPENSES RÉCENTES -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-3">
+                <i class="bi bi-gift text-success"></i> Récompenses Récentes
+            </h2>
+            {% if recompenses %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead class="table-warning">
+                            <tr>
+                                <th>Récompense</th>
+                                <th>Points</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recompenses %}
+                                {% for recompense in recompenses|dictsort:"-date_obtention" %}
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-{{ recompense.icone }}"></i>
+                                            {{ recompense.nom }}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">+{{ recompense.points }} pts</span>
+                                        </td>
+                                        <td>
+                                            {% if recompense.type == 'points' %}
+                                                <span class="badge bg-info">Points</span>
+                                            {% elif recompense.type == 'badge' %}
+                                                <span class="badge bg-secondary">Badge</span>
+                                            {% elif recompense.type == 'trophy' %}
+                                                <span class="badge bg-warning text-dark">Trophée</span>
+                                            {% else %}
+                                                <span class="badge bg-muted">Récompense</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ recompense.date_obtention|date:"d/m/Y H:i" }}</small>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        Aucune récompense pour le moment
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Aucune récompense pour le moment. Complétez une tâche pour en gagner!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(255, 193, 7, 0.3);
+    }
+</style>
+{% endblock %}

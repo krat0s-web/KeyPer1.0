@@ -4,11 +4,11 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">➕ Nouvelle Tâche</h4>
+        <div class="card border-0 shadow-lg rounded-4">
+            <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                <h4 class="mb-0">✅ Nouvelle Tâche</h4>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
@@ -50,7 +50,17 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Ajouter la tâche</button>
+                    <div class="mb-3">
+                        <label class="form-label">👤 Assigner à (optionnel)</label>
+                        <select name="assignees" class="form-select" multiple>
+                            <option value="">-- Sélectionner des membres --</option>
+                            {% for membre in membres %}
+                            <option value="{{ membre.id }}">{% if membre.nom %}{{ membre.nom }}{% else %}{{ membre.email }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Maintenez Ctrl/Cmd pour sélectionner plusieurs</small>
+                    </div>
+                    <button type="submit" class="btn w-100" style="background: #000; color: white; font-weight: bold;">Ajouter la tâche</button>
                 </form>
             </div>
         </div>

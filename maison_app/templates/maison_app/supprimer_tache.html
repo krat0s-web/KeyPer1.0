@@ -4,16 +4,16 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-danger text-white">
-                <h4>Supprimer la tâche</h4>
+        <div class="card border-0 shadow-lg rounded-4">
+            <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                <h4 class="mb-0">⚠️ Supprimer la Tâche</h4>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <p>Êtes-vous sûr de vouloir supprimer la tâche <strong>"{{ tache.titre }}"</strong> ?</p>
                 <form method="post">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Oui, supprimer</button>
-                    <a href="{% url 'liste_taches' %}" class="btn btn-secondary">Annuler</a>
+                    <button type="submit" class="btn w-100" style="background: #dc3545; color: white; font-weight: bold; margin-bottom: 10px;">Oui, supprimer</button>
+                    <a href="{% url 'liste_taches' %}" class="btn btn-outline-secondary w-100">Annuler</a>
                 </form>
             </div>
         </div>

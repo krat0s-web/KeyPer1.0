@@ -5,6 +5,18 @@
 <div class="container mt-5">
     <h2 class="mb-4 text-primary fw-bold">Mes Foyers</h2>
 
+    <!-- Bouton Créer / Rejoindre -->
+    {% if user.role == 'admin' %}
+    <a href="{% url 'creer_foyer' %}" class="btn btn-success btn-lg mb-4 shadow-sm">
+        + Créer un foyer
+    </a>
+    {% else %}
+    <a href="{% url 'rejoindre_foyer' %}" class="btn btn-primary btn-lg mb-4 shadow-sm">
+        Rejoindre un foyer
+    </a>
+    {% endif %}
+
+    <!-- LISTE DES FOYERS (TOUJOURS AFFICHÉE) -->
     <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for foyer in foyers %}
         <div class="col">
@@ -14,7 +26,7 @@
                     <img src="{{ foyer.photo.url }}" class="card-img-top" alt="{{ foyer.nom }}" style="height: 200px; object-fit: cover;">
                     {% else %}
                     <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                        <span class="text-muted fs-4">Pas d'image</span>
+                        <span class="text-muted">Pas d'image</span>
                     </div>
                     {% endif %}
                     <div class="card-body text-center">
@@ -30,9 +42,20 @@
             </a>
         </div>
         {% empty %}
+        <!-- NE S'AFFICHE QUE SI VRAIMENT VIDE -->
         <div class="col-12">
-            <div class="text-center py-5">
-                <em class="text-muted fs-4">Aucun foyer</em>
+            <div class="alert alert-info text-center p-5 rounded-4 shadow-sm">
+                <h5>Aucun foyer</h5>
+                <p>
+                    {% if user.role == 'admin' %}
+                    Créez votre premier foyer !
+                    {% else %}
+                    Rejoignez un foyer avec un code d'invitation.
+                    {% endif %}
+                </p>
+                <a href="{% if user.role == 'admin' %}{% url 'creer_foyer' %}{% else %}{% url 'rejoindre_foyer' %}{% endif %}" class="btn btn-primary">
+                    {% if user.role == 'admin' %}Créer un foyer{% else %}Rejoindre un foyer{% endif %}
+                </a>
             </div>
         </div>
         {% endfor %}

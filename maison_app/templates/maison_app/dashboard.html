@@ -1,0 +1,296 @@
+{% extends "maison_app/base.html" %}
+{% load static %}
+{% block title %}Dashboard - {{ foyer.nom }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- En-tête du Dashboard -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-lg rounded-4" style="background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);">
+                <div class="card-body p-5">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="text-white mb-2">📊 Dashboard</h1>
+                            <h2 class="text-white" style="font-size: 1.8rem;">{{ foyer.nom }}</h2>
+                            <p class="text-light opacity-75">{{ foyer.description|default:"Bienvenue sur votre tableau de bord" }}</p>
+                        </div>
+                        <div class="text-end">
+                            <div class="progress" style="width: 150px; height: 30px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ taux_completion }}%; background: linear-gradient(90deg, #ffc107, #ff6b6b);" aria-valuenow="{{ taux_completion }}" aria-valuemin="0" aria-valuemax="100">
+                                    <strong style="color: white;">{{ taux_completion }}% ✓</strong>
+                                </div>
+                            </div>
+                            <small class="text-light mt-2 d-block">Tâches complétées</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques principales -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-lg rounded-4 h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body p-4 text-white text-center">
+                    <h3 style="font-size: 2.5rem;">📋 {{ taches_total }}</h3>
+                    <p class="mb-0 opacity-85">Tâches Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-lg rounded-4 h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="card-body p-4 text-white text-center">
+                    <h3 style="font-size: 2.5rem;">✅ {{ taches_terminees }}</h3>
+                    <p class="mb-0 opacity-85">Complétées</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-lg rounded-4 h-100" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <div class="card-body p-4 text-white text-center">
+                    <h3 style="font-size: 2.5rem;">⏳ {{ taches_en_attente }}</h3>
+                    <p class="mb-0 opacity-85">En attente</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-lg rounded-4 h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body p-4 text-white text-center">
+                    <h3 style="font-size: 2.5rem;">🔴 {{ stats_priorite.Haute }}</h3>
+                    <p class="mb-0 opacity-85">Priorité Haute</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Infos du foyer -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-body text-center p-4">
+                    <h4 style="font-size: 2rem; color: #667eea;">🏠 {{ pieces }}</h4>
+                    <p class="text-muted mb-0">Pièces</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-body text-center p-4">
+                    <h4 style="font-size: 2rem; color: #764ba2;">🐾 {{ animaux }}</h4>
+                    <p class="text-muted mb-0">Animaux</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-body text-center p-4">
+                    <h4 style="font-size: 2rem; color: #f5576c;">👥 {{ membres }}</h4>
+                    <p class="text-muted mb-0">Membres</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section principale: Tâches à venir et Prioritaires -->
+    <div class="row g-3 mb-4">
+        <!-- Tâches à venir -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg rounded-4 h-100">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h5 class="mb-0">📅 Tâches à Venir (7 jours)</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if taches_a_venir %}
+                        <div class="list-group list-group-flush">
+                            {% for tache in taches_a_venir %}
+                            <div class="list-group-item border-bottom py-3 px-0">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ tache.titre }}</h6>
+                                        <small class="text-muted d-block">
+                                            {% if tache.id_piece %}
+                                            📍 {{ tache.id_piece.nom }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <span class="badge" style="background: 
+                                        {% if tache.priorite == 'Haute' %}#dc3545
+                                        {% elif tache.priorite == 'Moyenne' %}#ffc107
+                                        {% else %}#28a745{% endif %};">
+                                        {{ tache.priorite }}
+                                    </span>
+                                </div>
+                                {% if tache.date_limite %}
+                                <small class="text-muted">⏰ {{ tache.date_limite|date:"d/m/Y" }}</small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4">Aucune tâche à venir</p>
+                    {% endif %}
+                    <a href="{% url 'liste_taches' %}" class="btn btn-sm w-100 mt-3" style="background: #000; color: white; font-weight: bold;">
+                        Voir toutes les tâches →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tâches prioritaires -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg rounded-4 h-100">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h5 class="mb-0">🔴 Tâches Prioritaires</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if taches_prioritaires %}
+                        <div class="list-group list-group-flush">
+                            {% for tache in taches_prioritaires %}
+                            <div class="list-group-item border-bottom py-3 px-0">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ tache.titre }}</h6>
+                                        <small class="text-muted d-block">
+                                            {% if tache.id_animal %}
+                                            🐾 {{ tache.id_animal.nom }}
+                                            {% elif tache.id_piece %}
+                                            📍 {{ tache.id_piece.nom }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-danger">HAUTE</span>
+                                </div>
+                                {% if tache.date_limite %}
+                                <small class="text-danger fw-bold">⏰ {{ tache.date_limite|date:"d/m/Y" }}</small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4">Aucune tâche prioritaire</p>
+                    {% endif %}
+                    <a href="{% url 'ajouter_tache' %}" class="btn btn-sm w-100 mt-3" style="background: #000; color: white; font-weight: bold;">
+                        ➕ Ajouter une tâche
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques par priorité et Tâches récentes -->
+    <div class="row g-3">
+        <!-- Répartition par priorité -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h5 class="mb-0">📊 Répartition</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>🔴 Haute Priorité</span>
+                            <strong>{{ stats_priorite.Haute }}</strong>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {% widthratio stats_priorite.Haute taches_en_attente 100 %}%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>🟡 Moyenne Priorité</span>
+                            <strong>{{ stats_priorite.Moyenne }}</strong>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {% widthratio stats_priorite.Moyenne taches_en_attente 100 %}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>🟢 Basse Priorité</span>
+                            <strong>{{ stats_priorite.Basse }}</strong>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {% widthratio stats_priorite.Basse taches_en_attente 100 %}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tâches récentes -->
+        <div class="col-md-8">
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h5 class="mb-0">⏱️ Tâches Récentes</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if taches_recentes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    <th>Titre</th>
+                                    <th>Priorité</th>
+                                    <th>Status</th>
+                                    <th>Date limite</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tache in taches_recentes %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ tache.titre }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background: 
+                                            {% if tache.priorite == 'Haute' %}#dc3545
+                                            {% elif tache.priorite == 'Moyenne' %}#ffc107
+                                            {% else %}#28a745{% endif %};">
+                                            {{ tache.priorite }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if tache.terminee %}
+                                        <span class="badge bg-success">✓ Complétée</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">⏳ En attente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if tache.date_limite %}
+                                        {{ tache.date_limite|date:"d/m/Y" }}
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted py-4">Aucune tâche encore</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress-bar {
+        transition: width 0.6s ease;
+    }
+    .list-group-item {
+        border-color: #e0e0e0 !important;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}

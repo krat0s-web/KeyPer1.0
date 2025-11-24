@@ -1,0 +1,68 @@
+{% extends "maison_app/base.html" %}
+{% load static %}
+{% block title %}Chat - {{ foyer.nom }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white p-4" style="background: #000;">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold">Chat du foyer {{ foyer.nom }}</h4>
+                <a href="{% url 'detail_foyer' foyer.id %}" class="btn btn-outline-light btn-sm">Retour</a>
+            </div>
+        </div>
+        <div class="card-body p-4" style="max-height: 500px; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);" id="chat-box">
+            {% for msg in messages_chat %}
+            <div class="d-flex mb-3 {% if msg.id_user == user %}flex-row-reverse{% endif %}">
+                <div class="me-2">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                         style="width: 40px; height: 40px; font-size: 1.2rem;">
+                        {{ msg.id_user.email|first|upper }}
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="p-3 rounded-3 {% if msg.id_user == user %}bg-primary text-white{% else %}bg-light{% endif %}"
+                         style="max-width: 75%;">
+                        <strong>{{ msg.id_user.nom|default:msg.id_user.email }}</strong>
+                        <p class="mb-0">{{ msg.contenu|safe }}</p>
+                        <small class="text-muted">{{ msg.date_envoi|time:"H:i" }}</small>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-center text-muted">Aucun message. Soyez le premier !</p>
+            {% endfor %}
+        </div>
+
+        <div class="card-footer bg-white border-top p-4">
+            <form method="post">
+                {% csrf_token %}
+                <div class="input-group mb-3">
+                    <input type="text" name="message" class="form-control rounded-start" placeholder="Tapez un message..." required style="border-radius: 20px 0 0 20px; border: 1px solid #dee2e6;">
+                    <button type="submit" class="btn" style="background: #000; color: white; border-radius: 0 20px 20px 0;">Envoyer</button>
+                </div>
+            </form>
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-sm rounded-circle" onclick="addEmoji('😊')" style="width: 40px; height: 40px; background: #f0f0f0;">😊</button>
+                <button type="button" class="btn btn-sm rounded-circle" onclick="addEmoji('😢')" style="width: 40px; height: 40px; background: #f0f0f0;">😢</button>
+                <button type="button" class="btn btn-sm rounded-circle" onclick="addEmoji('❤️')" style="width: 40px; height: 40px; background: #f0f0f0;">❤️</button>
+                <button type="button" class="btn btn-sm rounded-circle" onclick="addEmoji('😂')" style="width: 40px; height: 40px; background: #f0f0f0;">😂</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addEmoji(emoji) {
+    const input = document.querySelector('input[name="message"]');
+    input.value += emoji;
+    input.focus();
+}
+
+// Auto-scroll vers le bas quand de nouveaux messages arrivent
+const chatBox = document.getElementById('chat-box');
+if (chatBox) {
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+</script>
+{% endblock %}

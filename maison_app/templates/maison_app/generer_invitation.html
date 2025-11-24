@@ -4,30 +4,89 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4>Générer un Code pour {{ foyer.nom }}</h4>
+        <div class="col-md-7">
+            <!-- Code d'invitation actuel (s'il existe) -->
+            {% if invitation_actuelle %}
+            <div class="card border-0 shadow-lg rounded-4 mb-4">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h4 class="mb-0">✅ Code d'Invitation Actuel</h4>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
+                    <p class="text-muted mb-3">Voici le code d'invitation actuel pour le foyer <strong>{{ foyer.nom }}</strong> :</p>
+                    
+                    <div class="alert alert-info p-3" style="border-radius: 8px; background: #e7f3ff;">
+                        <div style="font-family: monospace; font-size: 14px; word-break: break-all; background: white; padding: 12px; border-radius: 6px; border: 2px solid #0dcaf0;">
+                            <strong>{{ invitation_actuelle.code }}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block mb-2">
+                                <strong>Rôle :</strong> 
+                                <span class="badge bg-secondary">{{ invitation_actuelle.get_role_display }}</span>
+                            </small>
+                            <small class="text-muted d-block">
+                                <strong>Créé le :</strong> {{ invitation_actuelle.date_creation|date:"d/m/Y H:i" }}
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button type="button" class="btn btn-sm" style="background: #000; color: white; font-weight: bold;" onclick="copyToClipboard('{{ invitation_actuelle.code }}')">
+                                📋 Copier
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Formulaire pour régénérer le code -->
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h4 class="mb-0">🔄 {% if invitation_actuelle %}Régénérer{% else %}Générer{% endif %} un Code</h4>
+                </div>
+                <div class="card-body p-4">
                     <form method="post">
                         {% csrf_token %}
+                        <input type="hidden" name="action" value="regenerer">
+                        
                         <div class="mb-3">
                             <label class="form-label">Rôle pour le nouvel utilisateur</label>
                             <select name="role" class="form-select" required>
                                 {% for role, label in ROLE_CHOICES %}
-                                <option value="{{ role }}" {% if role == 'membre' %}selected{% endif %}>
+                                <option value="{{ role }}" {% if invitation_actuelle and invitation_actuelle.role == role %}selected{% endif %}>
                                     {{ label }}
                                 </option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Générer Code</button>
+                        
+                        <p class="text-muted small mb-3">
+                            {% if invitation_actuelle %}
+                            ⚠️ <strong>Attention :</strong> Le code actuel sera remplacé par un nouveau code.
+                            {% else %}
+                            Générez un code d'invitation pour permettre à un nouvel utilisateur de rejoindre le foyer.
+                            {% endif %}
+                        </p>
+                        
+                        <button type="submit" class="btn w-100" style="background: #000; color: white; font-weight: bold;">
+                            {% if invitation_actuelle %}🔄 Régénérer le Code{% else %}✅ Générer le Code{% endif %}
+                        </button>
                     </form>
-                    <a href="{% url 'liste_foyers' %}" class="btn btn-secondary mt-2 w-100">Annuler</a>
+                    <a href="{% url 'detail_foyer' foyer.id %}" class="btn btn-outline-secondary mt-2 w-100">Retour</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Code copié au presse-papiers !');
+    }).catch(err => {
+        console.error('Erreur lors de la copie :', err);
+    });
+}
+</script>
 {% endblock %}

@@ -1,0 +1,56 @@
+{% extends "maison_app/base.html" %}
+{% load static %}
+
+{% block title %}🗑️ Supprimer Dépense{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-left: 4px solid #dc3545;">
+                <div class="card-header" style="background-color: #dc3545; color: white; border-radius: 16px 16px 0 0;">
+                    <h5 class="mb-0">🗑️ Supprimer Dépense</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <strong>⚠️ Attention!</strong> Cette action est irréversible.
+                    </div>
+
+                    <div class="card mb-4" style="border-left: 4px solid #ffc107; border-radius: 8px;">
+                        <div class="card-body">
+                            <p class="mb-1"><strong>📝 Description:</strong> {{ depense.description }}</p>
+                            <p class="mb-1"><strong>💵 Montant:</strong> {{ depense.montant }}€</p>
+                            <p class="mb-1"><strong>🏷️ Catégorie:</strong> {{ depense.categorie.nom }}</p>
+                            <p class="mb-1"><strong>📅 Date:</strong> {{ depense.date_depense|date:"d/m/Y" }}</p>
+                            {% if depense.notes %}
+                                <p class="mb-0"><strong>📋 Notes:</strong> {{ depense.notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <p class="text-muted mb-4">Êtes-vous sûr de vouloir supprimer cette dépense ?</p>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                🗑️ Confirmer Suppression
+                            </button>
+                            <a href="{% url 'budget_foyer' %}" class="btn btn-outline-secondary btn-lg">
+                                ❌ Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn {
+        border-radius: 8px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

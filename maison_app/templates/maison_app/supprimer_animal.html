@@ -1,0 +1,37 @@
+{% extends "maison_app/base.html" %}
+{% block title %}Supprimer Animal{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h4 class="mb-0">⚠️ Supprimer l'Animal</h4>
+                </div>
+                <div class="card-body p-4">
+                    <p>Êtes-vous sûr de vouloir supprimer l'animal <strong>"{{ animal.nom }}"</strong> ?</p>
+                    
+                    {% if animal.photo %}
+                    <img src="{{ animal.photo.url }}" alt="{{ animal.nom }}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;">
+                    {% endif %}
+                    
+                    <p class="text-muted small">
+                        ⚠️ <strong>Attention :</strong> Toutes les tâches associées à cet animal resteront dans le système.
+                    </p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn w-100" style="background: #dc3545; color: white; font-weight: bold; margin-bottom: 10px;">
+                            Oui, supprimer
+                        </button>
+                        <a href="{% url 'detail_foyer' animal.id_foyer.id %}" class="btn btn-outline-secondary w-100">
+                            Annuler
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

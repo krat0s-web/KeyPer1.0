@@ -5,14 +5,15 @@ from .models import (
     TacheAssignee, TacheRecurrente, ListeCourses, Aliment,
     ChatMessage, Recompense, Statistique, Tuto, Inventaire,
     UtilisationRessource, Evenement, TacheEvenement, Dispositif,
-    ActionDispositif, Depense, Budget, HistoriqueTache,
-    SuggestionTache, PreferenceUtilisateur, InteractionIa, Invitation
+    ActionDispositif, HistoriqueTache,
+    SuggestionTache, PreferenceUtilisateur, InteractionIa, Invitation,
+    Note, Notification, CategorieDepense, Depense, Budget, Trophee
 )
 
 # === UTILISATEUR (personnalisé) ===
 @admin.register(Utilisateur)
 class UtilisateurAdmin(UserAdmin):
-    list_display = ('email', 'username', 'role', 'id_foyer', 'is_staff')
+    list_display = ('email', 'username', 'role', 'foyer_actif', 'is_staff')
     list_filter = ('role', 'is_staff')
     search_fields = ('email', 'username')
 
@@ -42,10 +43,14 @@ admin.site.register(Evenement)
 admin.site.register(TacheEvenement)
 admin.site.register(Dispositif)
 admin.site.register(ActionDispositif)
-admin.site.register(Depense)
-admin.site.register(Budget)
 admin.site.register(HistoriqueTache)
 admin.site.register(SuggestionTache)
 admin.site.register(PreferenceUtilisateur)
 admin.site.register(InteractionIa)
 admin.site.register(Invitation)
+admin.site.register(Note)
+admin.site.register(Notification)
+admin.site.register(CategorieDepense)
+admin.site.register(Depense)
+admin.site.register(Budget)
+admin.site.register(Trophee)

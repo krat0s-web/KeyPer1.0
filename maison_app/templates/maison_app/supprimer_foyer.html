@@ -5,11 +5,11 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-danger text-white text-center">
-                    <h4>Supprimer le foyer</h4>
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+                    <h4 class="mb-0 text-center">⚠️ Supprimer le Foyer</h4>
                 </div>
-                <div class="card-body text-center">
+                <div class="card-body p-4 text-center">
                     <p class="lead">
                         Êtes-vous sûr de vouloir supprimer le foyer <strong>"{{ foyer.nom }}"</strong> ?
                     </p>
@@ -18,9 +18,9 @@
                     </p>
                     <form method="post" class="d-inline">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">Oui, supprimer</button>
+                        <button type="submit" class="btn" style="background: #dc3545; color: white; font-weight: bold;">Oui, supprimer</button>
                     </form>
-                    <a href="{% url 'liste_foyers' %}" class="btn btn-secondary ms-2">Annuler</a>
+                    <a href="{% url 'liste_foyers' %}" class="btn btn-outline-secondary ms-2">Annuler</a>
                 </div>
             </div>
         </div>

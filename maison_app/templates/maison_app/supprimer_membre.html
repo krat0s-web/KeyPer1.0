@@ -3,16 +3,16 @@
 
 {% block content %}
 <div class="container mt-5">
-    <div class="card shadow">
-        <div class="card-header bg-danger text-white">
-            <h4>Supprimer {{ membre.email }}</h4>
+    <div class="card border-0 shadow-lg rounded-4">
+        <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
+            <h4 class="mb-0">⚠️ Supprimer {{ membre.email }}</h4>
         </div>
-        <div class="card-body">
-            <p>Êtes-vous sûr ?</p>
+        <div class="card-body p-4">
+            <p>Êtes-vous sûr de vouloir supprimer ce membre du foyer ?</p>
             <form method="post">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Oui, supprimer</button>
-                <a href="{% url 'detail_foyer' membre.id_foyer.id %}" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn w-100" style="background: #dc3545; color: white; font-weight: bold; margin-bottom: 10px;">Oui, supprimer</button>
+                <a href="{% url 'detail_foyer' membre.id_foyer.id %}" class="btn btn-outline-secondary w-100">Annuler</a>
             </form>
         </div>
     </div>
