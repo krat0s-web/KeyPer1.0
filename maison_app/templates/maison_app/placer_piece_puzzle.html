@@ -1,0 +1,56 @@
+{% extends "maison_app/base.html" %}
+{% block title %}Placer une pièce du puzzle{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-cursor me-2"></i>Placer la pièce #{{ piece_puzzle.numero_piece }}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        {% if piece_puzzle.image %}
+                        <img src="{{ piece_puzzle.image.url }}" alt="Pièce {{ piece_puzzle.numero_piece }}" class="img-fluid mb-3" style="max-height: 200px;">
+                        {% else %}
+                        <div class="bg-info text-white rounded d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 200px; height: 200px; font-size: 4rem;">
+                            {{ piece_puzzle.numero_piece }}
+                        </div>
+                        {% endif %}
+                        <h5>Pièce #{{ piece_puzzle.numero_piece }}</h5>
+                    </div>
+                    
+                    {% if puzzle.image_complete %}
+                    <div class="mb-4">
+                        <h6>Image du puzzle complet :</h6>
+                        <img src="{{ puzzle.image_complete.url }}" alt="Puzzle complet" class="img-fluid border rounded">
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Instructions :</strong> Cliquez sur "Placer la pièce" pour la positionner correctement dans le puzzle.
+                        Une fois 5 pièces placées, vous aurez réussi le puzzle !
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success flex-grow-1">
+                                <i class="bi bi-check-circle me-1"></i>Placer la pièce
+                            </button>
+                            <a href="{% url 'jouer_puzzle' piece.id %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,194 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}{{ tache.titre }}{% endblock %}
+{% block page_title %}{{ tache.titre }}{% endblock %}
+{% block page_heading %}{{ tache.titre }}{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_taches' %}">Tâches</a></li>
+    /
+    <li><a href="#" class="active">{{ tache.titre }}</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<!-- Détails de la tâche -->
+<div class="card-dashboard mb-4">
+    <div style="background: {% if tache.priorite == 'Haute' %}linear-gradient(135deg, var(--danger), #c82333){% elif tache.priorite == 'Moyenne' %}linear-gradient(135deg, var(--warning), #ffc107){% else %}linear-gradient(135deg, var(--primary), var(--light-primary)){% endif %}; color: #FFFFFF; padding: 20px 24px; border-radius: 12px 12px 0 0; margin: -24px -24px 24px -24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-clipboard' style="font-size: 28px; color: #FFFFFF;"></i>
+            <h3 style="margin: 0; color: #FFFFFF !important; font-weight: 600;">{{ tache.titre }}</h3>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            {% if tache.priorite %}
+            <span style="padding: 6px 12px; background: rgba(255,255,255,0.3); color: #FFFFFF; border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <i class='bx bx-star'></i>{{ tache.priorite }}
+            </span>
+            {% endif %}
+            {% if tache.terminee %}
+            <span style="padding: 6px 12px; background: var(--success); color: #FFFFFF; border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <i class='bx bx-check-circle'></i>Terminée
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if tache.description %}
+    <div style="margin-bottom: 24px; padding: 16px; background: var(--light-primary); border-radius: 8px; border-left: 4px solid var(--primary);">
+        <h6 style="margin: 0 0 8px 0; color: var(--dark); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-file-blank' style="color: var(--primary);"></i>Description
+        </h6>
+        <p style="margin: 0; color: var(--dark-grey); line-height: 1.6;">{{ tache.description }}</p>
+    </div>
+    {% endif %}
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div style="padding: 16px; background: var(--light); border: 1px solid var(--grey); border-radius: 8px;">
+            <small style="color: var(--dark-grey); display: block; margin-bottom: 8px; font-weight: 500;">
+                <i class='bx bx-check-square' style="color: var(--primary);"></i>Statut
+            </small>
+            <span style="padding: 6px 12px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 14px; font-weight: 600;">
+                {{ tache.id_statut.libelle|default:"À faire" }}
+            </span>
+        </div>
+        
+        {% if tache.date_limite %}
+        <div style="padding: 16px; background: var(--light); border: 1px solid var(--grey); border-radius: 8px;">
+            <small style="color: var(--dark-grey); display: block; margin-bottom: 8px; font-weight: 500;">
+                <i class='bx bx-calendar' style="color: var(--warning);"></i>Date limite
+            </small>
+            <span style="padding: 6px 12px; background: var(--warning); color: var(--dark); border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <i class='bx bx-time'></i>{{ tache.date_limite|date:"d/m/Y" }}
+            </span>
+        </div>
+        {% endif %}
+        
+        {% if tache.temps_estime %}
+        <div style="padding: 16px; background: var(--light); border: 1px solid var(--grey); border-radius: 8px;">
+            <small style="color: var(--dark-grey); display: block; margin-bottom: 8px; font-weight: 500;">
+                <i class='bx bx-time-five' style="color: var(--primary);"></i>Temps estimé
+            </small>
+            <span style="padding: 6px 12px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <i class='bx bx-clock'></i>{{ tache.temps_estime }} minutes
+            </span>
+        </div>
+        {% endif %}
+        
+        {% if tache.id_piece %}
+        <div style="padding: 16px; background: var(--light); border: 1px solid var(--grey); border-radius: 8px;">
+            <small style="color: var(--dark-grey); display: block; margin-bottom: 8px; font-weight: 500;">
+                <i class='bx bx-home' style="color: var(--primary);"></i>Pièce
+            </small>
+            <span style="padding: 6px 12px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <i class='bx bx-door-open'></i>{{ tache.id_piece.nom }}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if tache.tacheassignee_set.all %}
+    <div style="margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, var(--primary), var(--light-primary)); border-radius: 8px; border-left: 4px solid var(--primary);">
+        <small style="color: #FFFFFF; display: block; margin-bottom: 12px; font-weight: 600; opacity: 0.9;">
+            <i class='bx bx-user-check' style="color: #FFFFFF;"></i>Assigné à
+        </small>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {% for assignation in tache.tacheassignee_set.all %}
+            <span style="padding: 8px 16px; background: rgba(255,255,255,0.2); color: #FFFFFF; border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.3);">
+                <i class='bx bx-user' style="color: #FFFFFF;"></i>{{ assignation.id_user.nom|default:assignation.id_user.email }}
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if tache.complete_par %}
+    <div style="margin-bottom: 24px; padding: 16px; background: var(--light-success); border-radius: 8px; border-left: 4px solid var(--success);">
+        <small style="color: var(--dark-grey); display: block; margin-bottom: 8px; font-weight: 600;">
+            <i class='bx bx-check-circle' style="color: var(--success);"></i>Complétée par
+        </small>
+        <span style="padding: 8px 16px; background: var(--success); color: #FFFFFF; border-radius: 12px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+            <i class='bx bx-user-check'></i>{{ tache.complete_par.nom|default:tache.complete_par.email }}
+        </span>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--grey); display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="{% url 'liste_taches' %}" style="padding: 10px 20px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+            <i class='bx bx-arrow-back'></i>Retour
+        </a>
+        {% if not tache.terminee %}
+            {% if user.role == 'admin' or tache.tacheassignee_set.all %}
+                {% for assignation in tache.tacheassignee_set.all %}
+                    {% if assignation.id_user.id == user.id or user.role == 'admin' %}
+                        <a href="{% url 'terminer_tache' tache.id %}" style="padding: 10px 20px; background: var(--success); color: #FFFFFF; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                            <i class='bx bx-check-circle'></i>Terminer
+                        </a>
+                    {% endif %}
+                {% empty %}
+                    {% if user.role == 'admin' %}
+                        <a href="{% url 'terminer_tache' tache.id %}" style="padding: 10px 20px; background: var(--success); color: #FFFFFF; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                            <i class='bx bx-check-circle'></i>Terminer
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endif %}
+        {% if user.role == 'admin' %}
+        <a href="{% url 'modifier_tache' tache.id %}" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+            <i class='bx bx-edit'></i>Modifier
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Section Commentaires -->
+<div class="card-dashboard">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: #FFFFFF; padding: 20px 24px; border-radius: 12px 12px 0 0; margin: -24px -24px 24px -24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-chat' style="font-size: 24px; color: #FFFFFF;"></i>
+        <h4 style="margin: 0; color: #FFFFFF !important; font-weight: 600;">Commentaires ({{ commentaires.count }})</h4>
+    </div>
+    
+    <form method="post" style="margin-bottom: 24px;">
+        {% csrf_token %}
+        <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                <i class='bx bx-edit-alt'></i>Ajouter un commentaire
+            </label>
+            <textarea name="contenu" rows="4" placeholder="Ajouter un commentaire..." required
+                      style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; font-family: inherit; resize: vertical; min-height: 100px;"></textarea>
+        </div>
+        <button type="submit" name="ajouter_commentaire" style="padding: 10px 20px; background: var(--primary); color: #FFFFFF; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+            <i class='bx bx-send'></i>Ajouter un commentaire
+        </button>
+    </form>
+    
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for commentaire in commentaires %}
+        <div style="padding: 16px; background: var(--light); border: 1px solid var(--grey); border-radius: 8px; border-left: 4px solid var(--primary); transition: all 0.3s ease;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 40px; height: 40px; background: var(--primary); color: #FFFFFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px;">
+                        {{ commentaire.id_user.nom|default:commentaire.id_user.email|first|upper }}
+                    </div>
+                    <div>
+                        <strong style="color: var(--dark); display: block; font-size: 15px;">{{ commentaire.id_user.nom|default:commentaire.id_user.email }}</strong>
+                        <small style="color: var(--dark-grey); font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                            <i class='bx bx-time'></i>{{ commentaire.date_creation|date:"d/m/Y à H:i" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <p style="margin: 0; color: var(--dark-grey); line-height: 1.6; white-space: pre-wrap;">{{ commentaire.contenu }}</p>
+        </div>
+        {% empty %}
+        <div style="padding: 48px; text-align: center; background: var(--light-primary); border-radius: 8px;">
+            <i class='bx bx-chat' style="font-size: 3rem; color: var(--primary); opacity: 0.5; display: block; margin-bottom: 16px;"></i>
+            <p style="margin: 0; color: var(--dark-grey); font-size: 16px;">Aucun commentaire pour le moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

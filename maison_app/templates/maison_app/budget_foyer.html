@@ -1,141 +1,334 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
 {% load static %}
+{% load permission_tags %}
 
-{% block title %}💰 Budget & Dépenses{% endblock %}
+{% block title %}Budget & Dépenses{% endblock %}
+{% block page_title %}Budget & Dépenses{% endblock %}
+{% block page_heading %}Budget{% endblock %}
 
-{% block content %}
-<div class="container py-4">
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Budget</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
     <!-- Header -->
-    <div class="mb-4 d-flex justify-content-between align-items-center">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
         <div>
-            <h1 class="h2" style="color: #000; font-weight: bold;">💰 Budget & Dépenses</h1>
-            <p class="text-muted">Foyer: <strong>{{ foyer.nom }}</strong></p>
+            <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <i class='bx bx-wallet' style="font-size: 28px; color: var(--primary);"></i>Budget & Dépenses
+            </h3>
+            <p style="color: var(--dark-grey); margin: 0;">Foyer: <strong style="color: var(--dark);">{{ foyer.nom }}</strong></p>
         </div>
-        <div>
-            <a href="{% url 'ajouter_depense' %}" class="btn btn-primary me-2">➕ Ajouter Dépense</a>
-            <a href="{% url 'ajouter_budget' %}" class="btn btn-outline-primary">➕ Créer Budget</a>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button onclick="openCalculator()" style="padding: 10px 20px; background: var(--success); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class='bx bx-calculator'></i>Calculatrice
+            </button>
+            <a href="{% url 'historique_depenses' %}" style="padding: 10px 20px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class='bx bx-history'></i>Historique
+            </a>
+            {% if user|can:"can_create_depense" %}
+            <a href="{% url 'ajouter_depense' %}" style="padding: 10px 20px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class='bx bx-plus'></i>Ajouter Dépense
+            </a>
+            {% endif %}
+            {% if user|can:"can_create_budget" %}
+            <a href="{% url 'ajouter_budget' %}" style="padding: 10px 20px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class='bx bx-plus-circle'></i>Créer Budget
+            </a>
+            {% endif %}
+            {% if user|can:"can_request_budget" and not user|can:"can_create_budget" %}
+            <a href="{% url 'creer_demande' %}" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class='bx bx-message-square-add'></i>Faire une demande
+            </a>
+            {% endif %}
+            <div style="position: relative;">
+                <button onclick="toggleExportMenu()" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                    <i class='bx bx-download'></i>Exporter
+                </button>
+                <div id="exportMenu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--light); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 200px; overflow: hidden;">
+                    <a href="{% url 'export_budget_pdf' %}" style="display: block; padding: 12px 16px; color: var(--dark); text-decoration: none; transition: all 0.3s ease; border-bottom: 1px solid var(--grey);" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                        <i class='bx bx-file' style="margin-right: 8px;"></i>Export PDF
+                    </a>
+                    <a href="{% url 'export_budget_excel' %}" style="display: block; padding: 12px 16px; color: var(--dark); text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                        <i class='bx bx-spreadsheet' style="margin-right: 8px;"></i>Export Excel
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Messages Django -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <div style="background: var(--light-primary); color: var(--primary); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         {% endfor %}
     {% endif %}
 
-    <!-- Statistiques globales -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card" style="border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="mb-1">💸 Total Dépenses</p>
-                            <h3 class="mb-0">{{ total_depenses }}€</h3>
+    <!-- Alerte globale si budget dépassé -->
+    {% if budget_depasse %}
+    <div style="background: linear-gradient(135deg, var(--danger), #c82333); color: #ffffff; padding: 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3); animation: pulse 2s infinite;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <i class='bx bx-error-circle' style="font-size: 3.5rem; color: #ffffff;"></i>
+            <div style="flex-grow: 1;">
+                <h4 style="margin: 0 0 12px 0; color: #ffffff; font-size: 1.5rem; font-weight: 700;">
+                    🚨 ALERTE CRITIQUE : Budget Global Dépassé !
+                </h4>
+                <p style="margin: 0 0 8px 0; color: #ffffff; font-size: 1.1rem;">
+                    <strong>Vos dépenses totales ({{ total_depenses|floatformat:2 }}€) dépassent votre budget total ({{ total_budget|floatformat:2 }}€)</strong>
+                </p>
+                <p style="margin: 0 0 12px 0; color: #ffffff; font-weight: 700; font-size: 1.3rem; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; display: inline-block;">
+                    Dépassement : {{ montant_depasse_global|floatformat:2 }}€
+                </p>
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.3); margin: 12px 0;">
+                <p style="margin: 0; color: #ffffff; font-size: 14px; opacity: 0.95;">
+                    💡 <strong>Recommandation :</strong> Réduisez vos dépenses ou augmentez vos budgets pour éviter les problèmes financiers.
+                </p>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3); }
+            50% { box-shadow: 0 4px 20px rgba(220, 53, 69, 0.6); }
+        }
+    </style>
+    {% endif %}
+
+    <!-- Alertes Budget -->
+    {% if alertes_budget %}
+    <div style="margin-bottom: 24px;">
+        <h4 style="color: var(--dark); font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-bell' style="color: var(--primary);"></i>Alertes Budget
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for alerte in alertes_budget %}
+            <div style="background: {% if alerte.type == 'danger' %}linear-gradient(135deg, var(--danger), #c82333){% else %}linear-gradient(135deg, var(--warning), #ffc107){% endif %}; color: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <i class='bx {% if alerte.type == 'danger' %}bx-error-circle{% else %}bx-error{% endif %}' style="font-size: 2rem; color: #ffffff;"></i>
+                    <div style="flex-grow: 1;">
+                        <strong style="font-size: 1.1rem; display: block; margin-bottom: 8px;">⚠️ {{ alerte.categorie }}</strong>
+                        <p style="margin: 0 0 8px 0; color: #ffffff; font-size: 1rem;">{{ alerte.message }}</p>
+                        {% if alerte.type == 'danger' %}
+                        <div style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; display: inline-block;">
+                            <small style="color: #ffffff; font-weight: 600;">Dépassement de {{ alerte.montant_depasse|floatformat:2 }}€</small>
                         </div>
-                        <div style="font-size: 2.5rem;">💰</div>
+                        {% elif alerte.type == 'warning' %}
+                        <div style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; display: inline-block;">
+                            <small style="color: #ffffff; font-weight: 600;">Reste disponible : {{ alerte.reste|floatformat:2 }}€</small>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        <div class="col-md-6">
-            <div class="card" style="border-radius: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="mb-1">📊 Budget Total</p>
-                            <h3 class="mb-0">{{ total_budget }}€</h3>
-                        </div>
-                        <div style="font-size: 2.5rem;">📋</div>
-                    </div>
+    </div>
+    {% endif %}
+
+    <!-- Statistiques globales -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card-dashboard" style="background: linear-gradient(135deg, var(--card-purple), var(--primary)); color: var(--light); border: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="margin: 0 0 8px 0; opacity: 0.9;">Total Dépenses</p>
+                    <h3 style="margin: 0; color: var(--light); font-size: 28px;">{{ total_depenses|floatformat:2 }}€</h3>
                 </div>
+                <i class='bx bx-wallet' style="font-size: 3rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+        <div class="card-dashboard" style="background: linear-gradient(135deg, var(--card-orange), var(--danger)); color: var(--light); border: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="margin: 0 0 8px 0; opacity: 0.9;">Budget Total</p>
+                    <h3 style="margin: 0; color: var(--light); font-size: 28px;">{{ total_budget|floatformat:2 }}€</h3>
+                </div>
+                <i class='bx bx-credit-card' style="font-size: 3rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+        <div class="card-dashboard" style="background: {% if budget_depasse %}linear-gradient(135deg, var(--danger), #c82333){% else %}linear-gradient(135deg, var(--primary), var(--light-primary)){% endif %}; color: var(--light); border: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="margin: 0 0 8px 0; opacity: 0.9; color: #ffffff;">{% if budget_depasse %}Dépassement{% else %}Reste Disponible{% endif %}</p>
+                    <h3 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">
+                        {% if budget_depasse %}
+                            -{{ montant_depasse_global|floatformat:2 }}€
+                        {% else %}
+                            {{ reste_disponible|floatformat:2 }}€
+                        {% endif %}
+                    </h3>
+                    {% if budget_depasse %}
+                    <small style="opacity: 0.9; color: #ffffff;">Budget dépassé</small>
+                    {% else %}
+                    <small style="opacity: 0.9; color: #ffffff;">Montant restant</small>
+                    {% endif %}
+                </div>
+                <i class='bx {% if budget_depasse %}bx-error-circle{% else %}bx-credit-card-front{% endif %}' style="font-size: 3rem; opacity: 0.8; color: #ffffff;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Résumé des dépenses par période -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card-dashboard" style="background: linear-gradient(135deg, #667eea, #764ba2); color: #ffffff; border: none;">
+            <div style="text-align: center;">
+                <i class='bx bx-calendar-week' style="font-size: 2.5rem; margin-bottom: 8px; opacity: 0.9;"></i>
+                <p style="margin: 0 0 4px 0; opacity: 0.9; font-size: 14px;">Cette Semaine</p>
+                <h4 style="margin: 0; color: #ffffff; font-weight: 600;" id="depenses-semaine">0€</h4>
+            </div>
+        </div>
+        <div class="card-dashboard" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: #ffffff; border: none;">
+            <div style="text-align: center;">
+                <i class='bx bx-calendar' style="font-size: 2.5rem; margin-bottom: 8px; opacity: 0.9;"></i>
+                <p style="margin: 0 0 4px 0; opacity: 0.9; font-size: 14px;">Ce Mois</p>
+                <h4 style="margin: 0; color: #ffffff; font-weight: 600;" id="depenses-mois">0€</h4>
+            </div>
+        </div>
+        <div class="card-dashboard" style="background: linear-gradient(135deg, #4facfe, #00f2fe); color: #ffffff; border: none;">
+            <div style="text-align: center;">
+                <i class='bx bx-calendar-check' style="font-size: 2.5rem; margin-bottom: 8px; opacity: 0.9;"></i>
+                <p style="margin: 0 0 4px 0; opacity: 0.9; font-size: 14px;">Ce Trimestre</p>
+                <h4 style="margin: 0; color: #ffffff; font-weight: 600;" id="depenses-trimestre">0€</h4>
+            </div>
+        </div>
+        <div class="card-dashboard" style="background: linear-gradient(135deg, #43e97b, #38f9d7); color: #ffffff; border: none;">
+            <div style="text-align: center;">
+                <i class='bx bx-calendar-event' style="font-size: 2.5rem; margin-bottom: 8px; opacity: 0.9;"></i>
+                <p style="margin: 0 0 4px 0; opacity: 0.9; font-size: 14px;">Cette Année</p>
+                <h4 style="margin: 0; color: #ffffff; font-weight: 600;" id="depenses-annee">0€</h4>
             </div>
         </div>
     </div>
 
     <!-- Budgets par catégorie -->
-    <div class="mb-4">
-        <h3 style="color: #000; font-weight: bold;">📌 Budgets par Catégorie</h3>
+    <div style="margin-bottom: 24px;">
+        <h4 style="color: var(--dark); font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-bookmark' style="color: var(--primary);"></i>Graphiques
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="card-dashboard">
+                <h5 style="margin: 0 0 16px 0; color: var(--dark);">Répartition par Catégorie (30j)</h5>
+                <canvas id="chart1" height="200"></canvas>
+            </div>
+            <div class="card-dashboard">
+                <h5 style="margin: 0 0 16px 0; color: var(--dark);">Budget vs Dépenses</h5>
+                <canvas id="chart2" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budgets par catégorie -->
         {% if budgets_data %}
-            <div class="row">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
                 {% for item in budgets_data %}
-                    <div class="col-md-6 mb-3">
-                        <div class="card" style="border-radius: 12px; overflow: hidden;">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h5 class="mb-0">
-                                        <i class="bi {{ item.budget.categorie.icone }}"></i>
-                                        {{ item.budget.categorie.nom }}
-                                    </h5>
-                                    <span class="badge bg-{% if item.alerte == 'danger' %}danger{% elif item.alerte == 'warning' %}warning{% else %}success{% endif %}">
-                                        {% if item.alerte == 'danger' %}
-                                            ⚠️ Dépassé
-                                        {% elif item.alerte == 'warning' %}
-                                            ⚠️ Proche limite
-                                        {% else %}
-                                            ✅ OK
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <p class="mb-2 text-muted">
-                                    <strong>{{ item.montant_utilise }}€</strong> / {{ item.budget.montant_limite }}€ 
-                                    (<strong>{{ item.pourcentage }}%</strong>)
-                                </p>
-                                <div class="progress">
-                                    <div class="progress-bar bg-{% if item.alerte == 'danger' %}danger{% elif item.alerte == 'warning' %}warning{% else %}success{% endif %}" 
-                                         role="progressbar" 
-                                         style="width: {{ item.pourcentage }}%">
-                                    </div>
-                                </div>
-                                <small class="text-muted">{{ item.budget.get_periode_display }}</small>
+                    <div class="card-dashboard" style="border-left: 4px solid {% if item.alerte == 'danger' %}var(--danger){% elif item.alerte == 'warning' %}var(--warning){% else %}var(--success){% endif %}; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h5 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                                <i class='bx {{ item.budget.categorie.icone|default:"bx-category" }}' style="color: var(--primary);"></i>
+                                {{ item.budget.categorie.nom }}
+                            </h5>
+                            <span style="padding: 4px 12px; background: {% if item.alerte == 'danger' %}var(--danger){% elif item.alerte == 'warning' %}var(--warning){% else %}var(--success){% endif %}; color: {% if item.alerte == 'danger' or item.alerte == 'warning' %}var(--light){% else %}var(--light){% endif %}; border-radius: 12px; font-size: 11px;">
+                                {% if item.alerte == 'danger' %}
+                                    ⚠️ Dépassé
+                                {% elif item.alerte == 'warning' %}
+                                    ⚠️ Proche limite
+                                {% else %}
+                                    ✅ OK
+                                {% endif %}
+                            </span>
+                        </div>
+                        <p style="margin: 0 0 12px 0; color: var(--dark-grey);">
+                            <strong style="color: var(--dark);">{{ item.montant_utilise|floatformat:2 }}€</strong> / {{ item.budget.montant_limite|floatformat:2 }}€ 
+                            (<strong style="color: var(--dark);">{{ item.pourcentage|floatformat:1 }}%</strong>)
+                        </p>
+                        <div style="width: 100%; height: 25px; background: var(--grey); border-radius: 12px; overflow: hidden; margin-bottom: 12px;">
+                            <div style="height: 100%; background: {% if item.alerte == 'danger' %}var(--danger){% elif item.alerte == 'warning' %}var(--warning){% else %}var(--success){% endif %}; width: {% if item.pourcentage > 100 %}100{% else %}{{ item.pourcentage }}{% endif %}%; display: flex; align-items: center; justify-content: center; color: var(--light); font-size: 12px; font-weight: 600;">
+                                {{ item.pourcentage|floatformat:1 }}%
                             </div>
                         </div>
+                        {% if item.pourcentage > 100 %}
+                        <div style="background: var(--light-danger); padding: 12px; border-radius: 8px; margin-top: 8px; border-left: 3px solid var(--danger);">
+                            <small style="color: var(--danger); font-weight: 600; display: block; margin-bottom: 4px;">
+                                ⚠️ Dépassement de {{ item.depassement|floatformat:2 }}€
+                            </small>
+                            <small style="color: var(--dark); display: block;">
+                                Budget dépassé ! Réduisez vos dépenses ou augmentez votre budget.
+                            </small>
+                        </div>
+                        {% elif item.alerte == 'warning' %}
+                        <div style="background: var(--light-warning); padding: 12px; border-radius: 8px; margin-top: 8px; border-left: 3px solid var(--warning);">
+                            <small style="color: var(--warning); font-weight: 600; display: block; margin-bottom: 4px;">
+                                ⚠️ Attention : Budget à {{ item.pourcentage|floatformat:1 }}%
+                            </small>
+                            <small style="color: #ffffff; font-weight: 500; display: block; font-size: 14px;">
+                                Reste disponible : {{ item.reste|floatformat:2 }}€
+                            </small>
+                        </div>
+                        {% else %}
+                        <div style="background: var(--light-success); padding: 12px; border-radius: 8px; margin-top: 8px; border-left: 3px solid var(--success);">
+                            <small style="color: var(--success); font-weight: 600; display: block; margin-bottom: 4px;">
+                                ✅ Budget sous contrôle
+                            </small>
+                            <small style="color: #ffffff; font-weight: 500; display: block; font-size: 14px;">
+                                Reste disponible : {{ item.reste|floatformat:2 }}€
+                            </small>
+                        </div>
+                        {% endif %}
+                        <small style="color: var(--dark-grey); display: block; margin-top: 4px;">{{ item.budget.get_periode_display }}</small>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="alert alert-info">
-                📭 Aucun budget créé. <a href="{% url 'ajouter_budget' %}">Créez votre premier budget</a>
+            <div style="background: var(--light-primary); color: var(--primary); padding: 32px; border-radius: 12px; text-align: center;">
+                <i class='bx bx-inbox' style="font-size: 3rem; margin-bottom: 12px; display: block; opacity: 0.5;"></i>
+                <p style="margin: 0 0 8px 0; color: var(--dark);">Aucun budget créé.</p>
+                <a href="{% url 'ajouter_budget' %}" style="color: var(--primary); text-decoration: underline;">Créez votre premier budget</a>
             </div>
         {% endif %}
     </div>
 
     <!-- Dépenses récentes -->
     <div>
-        <h3 style="color: #000; font-weight: bold;">📜 Dépenses Récentes</h3>
+        <h4 style="color: var(--dark); font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-list-ul' style="color: var(--primary);"></i>Dépenses Récentes
+        </h4>
         {% if depenses_recentes %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead style="background-color: #000; color: white;">
-                        <tr>
-                            <th>📅 Date</th>
-                            <th>📝 Description</th>
-                            <th>🏷️ Catégorie</th>
-                            <th>💵 Montant</th>
-                            <th>👤 Responsable</th>
-                            <th>⚙️ Actions</th>
+            <div class="card-dashboard" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--dark); color: var(--light);">
+                            <th style="padding: 12px; text-align: left; color: var(--light);">Date</th>
+                            <th style="padding: 12px; text-align: left; color: var(--light);">Description</th>
+                            <th style="padding: 12px; text-align: left; color: var(--light);">Catégorie</th>
+                            <th style="padding: 12px; text-align: left; color: var(--light);">Montant</th>
+                            <th style="padding: 12px; text-align: left; color: var(--light);">Responsable</th>
+                            <th style="padding: 12px; text-align: left; color: var(--light);">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for depense in depenses_recentes %}
-                            <tr>
-                                <td>{{ depense.date_depense|date:"d/m/Y" }}</td>
-                                <td>{{ depense.description }}</td>
-                                <td>
-                                    <span class="badge" style="background-color: {{ depense.categorie.couleur }};">
+                            <tr style="border-bottom: 1px solid var(--grey);" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                                <td style="padding: 12px; color: var(--dark);">{{ depense.date_depense|date:"d/m/Y" }}</td>
+                                <td style="padding: 12px; color: var(--dark);">{{ depense.description }}</td>
+                                <td style="padding: 12px;">
+                                    <span class="category-badge" data-color="{{ depense.categorie.couleur }}" style="padding: 6px 12px; background: {{ depense.categorie.couleur }}; color: #FFFFFF; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
                                         {{ depense.categorie.nom }}
                                     </span>
                                 </td>
-                                <td><strong>{{ depense.montant }}€</strong></td>
-                                <td>{{ depense.id_user.nom }}</td>
-                                <td>
+                                <td style="padding: 12px; color: var(--dark); font-weight: 600;">{{ depense.montant|floatformat:2 }}€</td>
+                                <td style="padding: 12px; color: var(--dark);">{{ depense.id_user.nom|default:depense.id_user.email }}</td>
+                                <td style="padding: 12px;">
                                     <a href="{% url 'supprimer_depense' depense.id %}" 
-                                       class="btn btn-sm btn-outline-danger"
-                                       onclick="return confirm('Confirmer la suppression ?')">🗑️</a>
+                                       style="padding: 6px 12px; background: var(--danger); color: var(--light); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;"
+                                       onclick="return confirm('Confirmer la suppression ?')">
+                                        <i class='bx bx-trash'></i>
+                                    </a>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -143,26 +336,251 @@
                 </table>
             </div>
         {% else %}
-            <div class="alert alert-info">
-                📭 Aucune dépense enregistrée. <a href="{% url 'ajouter_depense' %}">Ajouter une dépense</a>
+            <div style="background: var(--light-primary); color: var(--primary); padding: 32px; border-radius: 12px; text-align: center;">
+                <i class='bx bx-inbox' style="font-size: 3rem; margin-bottom: 12px; display: block; opacity: 0.5;"></i>
+                <p style="margin: 0 0 8px 0; color: var(--dark);">Aucune dépense enregistrée.</p>
+                <a href="{% url 'ajouter_depense' %}" style="color: var(--primary); text-decoration: underline;">Ajouter une dépense</a>
             </div>
         {% endif %}
     </div>
 </div>
 
-<style>
-    .card {
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.3s;
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Remplir les données des dépenses par période
+document.addEventListener('DOMContentLoaded', function() {
+    // Données passées depuis Django
+    const depenses_semaine = {{ depenses_semaine|safe }};
+    const depenses_mois = {{ depenses_mois|safe }};
+    const depenses_trimestre = {{ depenses_trimestre|safe }};
+    const depenses_annee = {{ depenses_annee|safe }};
+    
+    // Mettre à jour les éléments HTML
+    document.getElementById('depenses-semaine').textContent = depenses_semaine.toFixed(2) + '€';
+    document.getElementById('depenses-mois').textContent = depenses_mois.toFixed(2) + '€';
+    document.getElementById('depenses-trimestre').textContent = depenses_trimestre.toFixed(2) + '€';
+    document.getElementById('depenses-annee').textContent = depenses_annee.toFixed(2) + '€';
+    
+    // Graphique 1: Répartition par catégorie (30 derniers jours)
+    const depenses_par_categorie = {{ depenses_par_categorie|safe }};
+    if (depenses_par_categorie && Object.keys(depenses_par_categorie).length > 0) {
+        const ctx1 = document.getElementById('chart1').getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(depenses_par_categorie),
+                datasets: [{
+                    data: Object.values(depenses_par_categorie),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed.toFixed(2) + '€';
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
     
-    .card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    // Graphique 2: Budget vs Dépenses par catégorie
+    const comparaison = {{ comparaison_budget_depenses|safe }};
+    if (comparaison && Object.keys(comparaison).length > 0) {
+        const labels = Object.keys(comparaison);
+        const budgets = labels.map(k => comparaison[k].budget || 0);
+        const depenses = labels.map(k => comparaison[k].depenses || 0);
+        
+        const ctx2 = document.getElementById('chart2').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Budget',
+                        data: budgets,
+                        backgroundColor: '#36A2EB'
+                    },
+                    {
+                        label: 'Dépenses',
+                        data: depenses,
+                        backgroundColor: '#FF6384'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '€';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2) + '€';
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
-    
-    .table tbody tr:hover {
-        background-color: #f5f5f5;
+});
+
+// Calculatrice et menus
+</script>
+
+<!-- Calculatrice Modal -->
+<div id="calculatorModal" style="display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+    <div style="background: var(--light); margin: 5% auto; padding: 0; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div style="padding: 24px; border-bottom: 1px solid var(--grey); display: flex; justify-content: space-between; align-items: center;">
+            <h5 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-calculator' style="color: var(--success);"></i>Calculatrice
+            </h5>
+            <button onclick="closeCalculator()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--dark);">&times;</button>
+        </div>
+        <div style="padding: 24px;">
+            <div style="background: var(--grey); padding: 20px; border-radius: 8px; margin-bottom: 16px; text-align: right;">
+                <div id="calculator-display" style="font-size: 2rem; color: var(--dark); font-weight: 600; min-height: 40px;">0</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                <button onclick="calculatorInput('C')" style="padding: 16px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">C</button>
+                <button onclick="calculatorInput('CE')" style="padding: 16px; background: var(--warning); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">CE</button>
+                <button onclick="calculatorInput('←')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">←</button>
+                <button onclick="calculatorInput('/')" style="padding: 16px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">/</button>
+                
+                <button onclick="calculatorInput('7')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">7</button>
+                <button onclick="calculatorInput('8')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">8</button>
+                <button onclick="calculatorInput('9')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">9</button>
+                <button onclick="calculatorInput('*')" style="padding: 16px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">×</button>
+                
+                <button onclick="calculatorInput('4')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">4</button>
+                <button onclick="calculatorInput('5')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">5</button>
+                <button onclick="calculatorInput('6')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">6</button>
+                <button onclick="calculatorInput('-')" style="padding: 16px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">-</button>
+                
+                <button onclick="calculatorInput('1')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">1</button>
+                <button onclick="calculatorInput('2')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">2</button>
+                <button onclick="calculatorInput('3')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">3</button>
+                <button onclick="calculatorInput('+')" style="padding: 16px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">+</button>
+                
+                <button onclick="calculatorInput('0')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600; grid-column: span 2;">0</button>
+                <button onclick="calculatorInput('.')" style="padding: 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">.</button>
+                <button onclick="calculatorInput('=')" style="padding: 16px; background: var(--success); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; font-weight: 600;">=</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let calculatorValue = '0';
+let calculatorOperator = null;
+let calculatorWaitingForOperand = false;
+
+function openCalculator() {
+    document.getElementById('calculatorModal').style.display = 'block';
+    calculatorValue = '0';
+    calculatorOperator = null;
+    calculatorWaitingForOperand = false;
+    updateCalculatorDisplay();
+}
+
+function closeCalculator() {
+    document.getElementById('calculatorModal').style.display = 'none';
+}
+
+function updateCalculatorDisplay() {
+    document.getElementById('calculator-display').textContent = calculatorValue;
+}
+
+function calculatorInput(input) {
+    if (input === 'C') {
+        calculatorValue = '0';
+        calculatorOperator = null;
+        calculatorWaitingForOperand = false;
+    } else if (input === 'CE') {
+        calculatorValue = '0';
+    } else if (input === '←') {
+        if (calculatorValue.length > 1) {
+            calculatorValue = calculatorValue.slice(0, -1);
+        } else {
+            calculatorValue = '0';
+        }
+    } else if (input === '=') {
+        if (calculatorOperator && !calculatorWaitingForOperand) {
+            try {
+                calculatorValue = String(eval(calculatorValue.replace('×', '*'))).slice(0, 15);
+                calculatorOperator = null;
+                calculatorWaitingForOperand = true;
+            } catch (e) {
+                calculatorValue = 'Erreur';
+            }
+        }
+    } else if (['+', '-', '*', '/'].includes(input)) {
+        if (calculatorOperator && !calculatorWaitingForOperand) {
+            try {
+                calculatorValue = String(eval(calculatorValue.replace('×', '*'))).slice(0, 15);
+            } catch (e) {
+                calculatorValue = 'Erreur';
+            }
+        }
+        calculatorOperator = input === '*' ? '×' : input;
+        calculatorValue += calculatorOperator;
+        calculatorWaitingForOperand = false;
+    } else {
+        if (calculatorWaitingForOperand) {
+            calculatorValue = input;
+            calculatorWaitingForOperand = false;
+        } else {
+            calculatorValue = calculatorValue === '0' ? input : calculatorValue + input;
+        }
     }
-</style>
+    updateCalculatorDisplay();
+}
+
+// Fermer la calculatrice en cliquant en dehors
+window.onclick = function(event) {
+    const modal = document.getElementById('calculatorModal');
+    if (event.target == modal) {
+        closeCalculator();
+    }
+}
+
+function toggleExportMenu() {
+    const menu = document.getElementById('exportMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Fermer le menu d'export en cliquant en dehors
+document.addEventListener('click', function(event) {
+    const exportMenu = document.getElementById('exportMenu');
+    const exportButton = event.target.closest('button[onclick="toggleExportMenu()"]');
+    if (!exportButton && !exportMenu.contains(event.target)) {
+        exportMenu.style.display = 'none';
+    }
+});
+</script>
 {% endblock %}

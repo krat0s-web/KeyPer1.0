@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="fr">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - KeyPer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #b2dfdb 0%, #80cbc4 100%);
+            min-height: 100vh;
+            padding: 0;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Header */
+        .header {
+            background: #00695c;
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            transition: opacity 0.3s;
+        }
+        
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+        
+        .header-icons {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: background 0.3s;
+        }
+        
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Container principal */
+        .container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 40px;
+        }
+        
+        /* Titre FAQ */
+        .faq-title {
+            text-align: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: #00695c;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .faq-subtitle {
+            text-align: center;
+            font-size: 18px;
+            color: #004d40;
+            margin-bottom: 60px;
+        }
+        
+        .faq-subtitle a {
+            color: #00695c;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .faq-subtitle a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Questions FAQ */
+        .faq-item {
+            background: white;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #b2dfdb;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .faq-item:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            border-color: #80cbc4;
+        }
+        
+        .faq-item.active {
+            border-color: #f8bbd0;
+            box-shadow: 0 4px 20px rgba(248, 187, 208, 0.3);
+        }
+        
+        .faq-question {
+            padding: 25px 30px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 600;
+            color: #00695c;
+            transition: color 0.3s;
+            user-select: none;
+        }
+        
+        .faq-item.active .faq-question {
+            color: #c2185b;
+        }
+        
+        .faq-question:hover {
+            color: #00897b;
+        }
+        
+        .faq-icon {
+            font-size: 24px;
+            transition: transform 0.3s ease;
+            color: #f8bbd0;
+        }
+        
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+            color: #c2185b;
+        }
+        
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+            background: #f8f9fa;
+        }
+        
+        .faq-item.active .faq-answer {
+            max-height: 500px;
+            padding: 0 30px 25px 30px;
+        }
+        
+        .faq-answer-content {
+            padding-top: 20px;
+            color: #004d40;
+            line-height: 1.8;
+            font-size: 16px;
+        }
+        
+        .faq-answer-content ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .faq-answer-content li {
+            margin-bottom: 8px;
+        }
+        
+        /* Points d'interrogation animés */
+        .question-mark {
+            position: fixed;
+            font-size: 60px;
+            color: rgba(248, 187, 208, 0.3);
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+            z-index: 1;
+        }
+        
+        .question-mark:nth-child(1) {
+            top: 15%;
+            left: 5%;
+            animation-delay: 0s;
+            font-size: 80px;
+        }
+        
+        .question-mark:nth-child(2) {
+            top: 25%;
+            right: 8%;
+            animation-delay: 1s;
+            font-size: 50px;
+        }
+        
+        .question-mark:nth-child(3) {
+            bottom: 20%;
+            left: 10%;
+            animation-delay: 2s;
+            font-size: 70px;
+        }
+        
+        .question-mark:nth-child(4) {
+            bottom: 15%;
+            right: 12%;
+            animation-delay: 1.5s;
+            font-size: 45px;
+        }
+        
+        .question-mark:nth-child(5) {
+            top: 50%;
+            left: 3%;
+            animation-delay: 0.5s;
+            font-size: 55px;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-20px) rotate(10deg);
+                opacity: 0.5;
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        
+        /* Éléments décoratifs */
+        .decorative-element {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.15;
+        }
+        
+        .book-icon {
+            font-size: 40px;
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        .book-1 {
+            top: 10%;
+            right: 5%;
+            animation-delay: 0s;
+        }
+        
+        .book-2 {
+            bottom: 10%;
+            right: 8%;
+            animation-delay: 2s;
+        }
+        
+        .book-3 {
+            top: 60%;
+            left: 2%;
+            animation-delay: 1s;
+        }
+        
+        /* Bouton retour */
+        .back-button {
+            display: inline-block;
+            margin: 20px 40px;
+            padding: 12px 30px;
+            background: #00695c;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-button:hover {
+            background: #00897b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .faq-title {
+                font-size: 36px;
+            }
+            
+            .container {
+                padding: 0 20px;
+                margin: 40px auto;
+            }
+            
+            .faq-question {
+                padding: 20px;
+                font-size: 18px;
+            }
+            
+            .question-mark {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Points d'interrogation animés -->
+    <div class="question-mark">?</div>
+    <div class="question-mark">?</div>
+    <div class="question-mark">?</div>
+    <div class="question-mark">?</div>
+    <div class="question-mark">?</div>
+    
+    <!-- Éléments décoratifs -->
+    <div class="decorative-element book-icon book-1">📚</div>
+    <div class="decorative-element book-icon book-2">📖</div>
+    <div class="decorative-element book-icon book-3">📗</div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">KeyPer</div>
+        <ul class="nav-links">
+            <li><a href="{% url 'accueil' %}">Accueil</a></li>
+            <li><a href="{% url 'faq' %}">FAQ</a></li>
+            <li><a href="{% url 'login' %}">Connexion</a></li>
+        </ul>
+        <div class="header-icons">
+            <button class="icon-btn" aria-label="Profil">👤</button>
+            <button class="icon-btn" aria-label="Info">ℹ️</button>
+        </div>
+    </header>
+    
+    <!-- Bouton retour -->
+    <a href="{% url 'accueil' %}" class="back-button">← Retour à l'accueil</a>
+    
+    <!-- Container principal -->
+    <div class="container">
+        <h1 class="faq-title">FAQ's</h1>
+        <p class="faq-subtitle">
+            Vous trouverez ici les réponses aux questions les plus fréquemment posées.<br>
+            Si vous ne trouvez pas la réponse à votre question, n'hésitez pas à nous contacter à 
+            <a href="mailto:support@keyper.fr">support@keyper.fr</a>
+        </p>
+        
+        <!-- Questions FAQ -->
+        <div class="faq-list">
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Qu'est-ce que KeyPer ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        KeyPer est une application web innovante conçue pour organiser et simplifier la gestion de votre foyer. 
+                        Elle vous permet de gérer les tâches ménagères, suivre les dépenses, organiser les courses, 
+                        communiquer avec les membres de votre foyer, et bien plus encore. KeyPer transforme la gestion 
+                        domestique en une expérience collaborative et agréable.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Comment créer un foyer ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Pour créer un foyer sur KeyPer, suivez ces étapes simples :
+                        <ul>
+                            <li>Connectez-vous à votre compte (ou créez-en un si nécessaire)</li>
+                            <li>Allez dans la section "Foyers" depuis le menu principal</li>
+                            <li>Cliquez sur "Créer un foyer"</li>
+                            <li>Remplissez les informations requises (nom du foyer, adresse, etc.)</li>
+                            <li>Validez la création</li>
+                        </ul>
+                        Une fois votre foyer créé, vous devenez automatiquement l'administrateur et pouvez inviter d'autres membres.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Comment inviter des membres à rejoindre mon foyer ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Pour inviter des membres :
+                        <ul>
+                            <li>Accédez aux paramètres de votre foyer</li>
+                            <li>Cliquez sur "Inviter un membre"</li>
+                            <li>Générez un lien d'invitation unique</li>
+                            <li>Partagez ce lien avec la personne que vous souhaitez inviter</li>
+                        </ul>
+                        La personne invitée pourra rejoindre votre foyer en utilisant ce lien et en créant un compte KeyPer.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Comment fonctionne la gestion des tâches ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Le système de gestion des tâches de KeyPer vous permet de :
+                        <ul>
+                            <li><strong>Créer des tâches</strong> : Ajoutez des tâches ménagères avec une description, une date d'échéance et une priorité</li>
+                            <li><strong>Assigner des tâches</strong> : Répartissez les tâches entre les membres du foyer</li>
+                            <li><strong>Suivre la progression</strong> : Marquez les tâches comme terminées et suivez les statistiques</li>
+                            <li><strong>Notifications</strong> : Recevez des rappels pour les tâches importantes</li>
+                            <li><strong>Historique</strong> : Consultez l'historique des tâches complétées</li>
+                        </ul>
+                        Les tâches peuvent être organisées par pièce, priorité ou membre assigné.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Comment gérer le budget et les dépenses ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        KeyPer offre des outils complets pour la gestion financière :
+                        <ul>
+                            <li><strong>Budgets</strong> : Créez des budgets par catégorie (courses, factures, loisirs, etc.)</li>
+                            <li><strong>Dépenses</strong> : Enregistrez vos dépenses et associez-les à une catégorie</li>
+                            <li><strong>Suivi</strong> : Visualisez vos dépenses en temps réel et comparez-les à vos budgets</li>
+                            <li><strong>Rapports</strong> : Générez des rapports détaillés et exportez-les en PDF ou Excel</li>
+                            <li><strong>Historique</strong> : Consultez l'historique complet de toutes vos transactions</li>
+                        </ul>
+                        Seuls les administrateurs et trésoriers peuvent gérer les budgets, mais tous les membres peuvent voir les dépenses.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Quels sont les rôles disponibles dans un foyer ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        KeyPer propose plusieurs rôles avec des permissions différentes :
+                        <ul>
+                            <li><strong>Administrateur</strong> : Accès complet (gestion des membres, budgets, paramètres du foyer)</li>
+                            <li><strong>Membre</strong> : Peut gérer ses tâches, voir les dépenses et utiliser les fonctionnalités de base</li>
+                            <li><strong>Junior</strong> : Accès limité, idéal pour les enfants ou membres avec permissions restreintes</li>
+                            <li><strong>Observateur</strong> : Peut consulter les informations du foyer sans pouvoir les modifier</li>
+                        </ul>
+                        L'administrateur peut modifier les rôles des membres à tout moment depuis les paramètres du foyer.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Comment fonctionne le chat du foyer ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Le chat permet une communication fluide entre tous les membres du foyer :
+                        <ul>
+                            <li>Envoyez des messages en temps réel à tous les membres</li>
+                            <li>Éditez ou supprimez vos propres messages</li>
+                            <li>Recevez des notifications pour les nouveaux messages</li>
+                            <li>Consultez l'historique complet des conversations</li>
+                        </ul>
+                        Le chat est accessible depuis le menu principal et est disponible uniquement pour les membres actifs du foyer.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Qu'est-ce que le système de récompenses et trophées ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        KeyPer récompense votre engagement avec un système de gamification :
+                        <ul>
+                            <li><strong>Récompenses</strong> : Gagnez des récompenses en complétant des tâches</li>
+                            <li><strong>Trophées</strong> : Débloquez des trophées pour des accomplissements spécifiques (tâches complétées, budgets respectés, etc.)</li>
+                            <li><strong>Classements</strong> : Consultez les statistiques et classements des membres du foyer</li>
+                        </ul>
+                        Ce système encourage la participation active de tous les membres et rend la gestion du foyer plus amusante !
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Comment utiliser la fonctionnalité cuisine ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        La fonctionnalité cuisine de KeyPer vous aide à organiser votre alimentation :
+                        <ul>
+                            <li><strong>Stock</strong> : Gérez l'inventaire de vos placards et réfrigérateur</li>
+                            <li><strong>Listes de courses</strong> : Créez et partagez des listes de courses avec votre foyer</li>
+                            <li><strong>Menus de la semaine</strong> : Planifiez vos repas à l'avance</li>
+                            <li><strong>Recettes</strong> : Générez des recettes basées sur ce que vous avez en stock</li>
+                        </ul>
+                        Toutes ces fonctionnalités sont intégrées et synchronisées avec votre foyer pour une gestion optimale de la cuisine.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Puis-je utiliser KeyPer sur mobile ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Oui ! KeyPer est une application web responsive qui fonctionne parfaitement sur tous les appareils :
+                        <ul>
+                            <li><strong>Ordinateur</strong> : Accès complet à toutes les fonctionnalités</li>
+                            <li><strong>Tablette</strong> : Interface optimisée pour les écrans moyens</li>
+                            <li><strong>Smartphone</strong> : Version mobile adaptée pour une utilisation facile</li>
+                        </ul>
+                        Vous pouvez accéder à KeyPer depuis n'importe quel navigateur web moderne, que vous soyez sur Android, iOS, Windows, Mac ou Linux.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Mes données sont-elles sécurisées ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        La sécurité de vos données est notre priorité absolue :
+                        <ul>
+                            <li>Toutes les données sont chiffrées lors de la transmission</li>
+                            <li>Les mots de passe sont stockés de manière sécurisée (hachage)</li>
+                            <li>Chaque foyer dispose de ses propres données isolées</li>
+                            <li>Seuls les membres autorisés peuvent accéder aux informations du foyer</li>
+                            <li>Conformité avec les réglementations sur la protection des données</li>
+                        </ul>
+                        Nous ne partageons jamais vos données avec des tiers et mettons en place des mesures de sécurité régulières.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Comment supprimer mon compte ou quitter un foyer ?</span>
+                    <span class="faq-icon">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Pour quitter un foyer :
+                        <ul>
+                            <li>Allez dans les paramètres du foyer</li>
+                            <li>Cliquez sur "Quitter le foyer"</li>
+                            <li>Confirmez votre choix</li>
+                        </ul>
+                        Pour supprimer votre compte :
+                        <ul>
+                            <li>Accédez à votre profil</li>
+                            <li>Allez dans les paramètres du compte</li>
+                            <li>Cliquez sur "Supprimer mon compte"</li>
+                            <li>Confirmez la suppression (attention : cette action est irréversible)</li>
+                        </ul>
+                        <strong>Note :</strong> Si vous êtes administrateur d'un foyer, vous devrez d'abord transférer l'administration ou supprimer le foyer.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Animation des questions FAQ
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqItems = document.querySelectorAll('.faq-item');
+            
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                
+                question.addEventListener('click', function() {
+                    const isActive = item.classList.contains('active');
+                    
+                    // Fermer toutes les autres questions
+                    faqItems.forEach(otherItem => {
+                        if (otherItem !== item) {
+                            otherItem.classList.remove('active');
+                        }
+                    });
+                    
+                    // Toggle la question actuelle
+                    item.classList.toggle('active', !isActive);
+                });
+            });
+            
+            // Animation d'apparition au scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+            
+            faqItems.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                item.style.transition = `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`;
+                observer.observe(item);
+            });
+        });
+    </script>
+</body>
+</html>
+

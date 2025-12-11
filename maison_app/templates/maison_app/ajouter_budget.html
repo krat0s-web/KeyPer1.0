@@ -1,94 +1,264 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
 {% load static %}
+{% block page_title %}Créer Budget{% endblock %}
+{% block page_heading %}Créer Budget{% endblock %}
 
-{% block title %}➕ Créer Budget{% endblock %}
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'budget_foyer' %}">Budget</a></li>
+    /
+    <li><a href="#" class="active">Créer Budget</a></li>
+</ul>
+{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <!-- Header -->
-    <div class="mb-4">
-        <h1 class="h2" style="color: #000; font-weight: bold;">➕ Créer Budget</h1>
-        <p class="text-muted">Foyer: <strong>{{ foyer.nom }}</strong></p>
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 700px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: #ffffff; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-wallet' style="font-size: 28px; color: #ffffff;"></i>Créer Budget
+        </h3>
+        <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Foyer: <strong>{{ foyer.nom }}</strong></p>
     </div>
-
-    <!-- Messages Django -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
-                <div class="card-header" style="background-color: #000; color: white; border-radius: 16px 16px 0 0;">
-                    <h5 class="mb-0">📊 Nouveau Budget</h5>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="categorie" class="form-label">🏷️ Catégorie</label>
-                            <select class="form-select" id="categorie" name="categorie" required>
-                                <option value="">-- Sélectionner une catégorie --</option>
-                                {% for cat in categories %}
-                                    <option value="{{ cat.id }}">{{ cat.nom }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="montant_limite" class="form-label">💰 Montant Limite</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="montant_limite" name="montant_limite" 
-                                       placeholder="0.00" step="0.01" required>
-                                <span class="input-group-text">€</span>
+    
+    <div style="padding: 24px;">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div style="display: grid; gap: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 12px; color: var(--dark); font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                        <i class='bx bx-tag'></i>🏷️ Catégorie Principale
+                    </label>
+                    
+                    <!-- Grille de catégories visuelles -->
+                    <div id="categories_grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                        {% for cat in categories_principales %}
+                        <button type="button" class="categorie-card" 
+                                data-categorie-id="{{ cat.id }}"
+                                data-categorie-nom="{{ cat.nom }}"
+                                onclick="selectCategorie({{ cat.id }}, '{{ cat.nom }}', '{{ cat.icone }}', '{{ cat.couleur }}')"
+                                style="padding: 16px; border: 2px solid var(--grey); border-radius: 12px; background: var(--light); cursor: pointer; transition: all 0.3s ease; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 100px;">
+                            <div style="font-size: 32px; color: {{ cat.couleur }};">
+                                {% if cat.icone|slice:":2" == "bx" %}
+                                    <i class='{{ cat.icone }}'></i>
+                                {% else %}
+                                    <i class='bi {{ cat.icone }}'></i>
+                                {% endif %}
                             </div>
+                            <div style="font-weight: 600; color: var(--dark); font-size: 13px; line-height: 1.3;">{{ cat.nom }}</div>
+                        </button>
+                        {% endfor %}
+                        <button type="button" class="categorie-card" 
+                                data-categorie-id="autre"
+                                data-categorie-nom="Autres"
+                                onclick="selectCategorie('autre', 'Autres', 'bx-category', 'var(--dark-grey)')"
+                                style="padding: 16px; border: 2px solid var(--grey); border-radius: 12px; background: var(--light); cursor: pointer; transition: all 0.3s ease; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 100px;">
+                            <div style="font-size: 32px; color: var(--dark-grey);">
+                                <i class='bx bx-category'></i>
+                            </div>
+                            <div style="font-weight: 600; color: var(--dark); font-size: 13px; line-height: 1.3;">Autres</div>
+                        </button>
+                    </div>
+                    
+                    <!-- Select caché pour la soumission du formulaire -->
+                    <select class="form-select" id="categorie_principale" name="categorie_principale" required onchange="loadSousCategories()" style="display: none;">
+                        <option value="">-- Sélectionner une catégorie --</option>
+                        {% for cat in categories_principales %}
+                            <option value="{{ cat.id }}" data-icon="{{ cat.icone }}">{{ cat.nom }}</option>
+                        {% endfor %}
+                        <option value="autre">Autres</option>
+                    </select>
+                    
+                    <!-- Affichage de la catégorie sélectionnée -->
+                    <div id="selected_categorie_display" style="display: none; padding: 12px; background: var(--light-primary); border-radius: 8px; border-left: 4px solid var(--primary); margin-top: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="selected_categorie_icon" style="font-size: 20px;"></span>
+                            <span id="selected_categorie_nom" style="font-weight: 600; color: var(--dark);"></span>
+                            <button type="button" onclick="clearCategorieSelection()" style="margin-left: auto; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px;">
+                                <i class='bx bx-x'></i>
+                            </button>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="mb-3">
-                            <label for="periode" class="form-label">📅 Période</label>
-                            <select class="form-select" id="periode" name="periode" required>
-                                <option value="">-- Sélectionner une période --</option>
-                                <option value="mensuel">Mensuel</option>
-                                <option value="trimestriel">Trimestriel</option>
-                                <option value="annuel">Annuel</option>
-                            </select>
-                        </div>
+                <div id="sous_categorie_container" style="display: none;">
+                    <label for="sous_categorie" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-folder'></i>📂 Sous-Catégorie
+                    </label>
+                    <select class="form-select" id="sous_categorie" name="sous_categorie"
+                            style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">-- Sélectionner une sous-catégorie (optionnel) --</option>
+                    </select>
+                </div>
 
-                        <div class="alert alert-info">
-                            <strong>💡 Conseil:</strong> Définissez des limites réalistes basées sur vos dépenses moyennes pour chaque catégorie.
-                        </div>
+                <input type="hidden" id="categorie" name="categorie" required>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">✅ Créer Budget</button>
-                            <a href="{% url 'budget_foyer' %}" class="btn btn-outline-secondary">❌ Annuler</a>
-                        </div>
-                    </form>
+                <div>
+                    <label for="montant_limite" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-money'></i>💰 Montant Limite
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="montant_limite" name="montant_limite" 
+                               placeholder="0.00" step="0.01" min="0" required
+                               style="flex: 1; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <span style="padding: 12px; background: var(--grey); color: var(--dark); border-radius: 8px; display: flex; align-items: center;">€</span>
+                    </div>
+                    <small style="color: var(--dark-grey); font-size: 12px;">Minimum : 0 € (pas de valeurs négatives)</small>
+                    <div id="montant_error" style="display: none; color: var(--danger); font-size: 12px; margin-top: 4px;">
+                        Le montant ne peut pas être négatif.
+                    </div>
+                </div>
+
+                <div>
+                    <label for="periode" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-calendar'></i>📅 Période
+                    </label>
+                    <select id="periode" name="periode" required
+                            style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">-- Sélectionner une période --</option>
+                        <option value="mensuel">Mensuel</option>
+                        <option value="trimestriel">Trimestriel</option>
+                        <option value="annuel">Annuel</option>
+                    </select>
+                </div>
+
+                <div class="card-dashboard" style="background: var(--light-primary); padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary);">
+                    <i class='bx bx-info-circle' style="color: var(--primary); margin-right: 8px;"></i>
+                    <strong style="color: var(--dark);">💡 Conseil:</strong> Définissez des limites réalistes basées sur vos dépenses moyennes pour chaque catégorie.
+                </div>
+
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="submit" style="flex: 1; min-width: 200px; padding: 12px 24px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                        <i class='bx bx-check-circle'></i>✅ Créer Budget
+                    </button>
+                    <a href="{% url 'budget_foyer' %}" style="flex: 1; min-width: 150px; padding: 12px 24px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                        <i class='bx bx-x-circle'></i>❌ Annuler
+                    </a>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
-<style>
-    .form-control, .form-select {
-        border-radius: 8px;
-        border: 1px solid #ddd;
+<script>
+    const categoriesData = {
+        {% for cat in categories_principales %}
+        {{ cat.id }}: [
+            {% for sous_cat in cat.sous_categories.all %}
+            {id: {{ sous_cat.id }}, nom: "{{ sous_cat.nom }}"}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    function loadSousCategories() {
+        const categoriePrincipaleId = document.getElementById('categorie_principale').value;
+        const sousCategorieContainer = document.getElementById('sous_categorie_container');
+        const sousCategorieSelect = document.getElementById('sous_categorie');
+        const categorieFinale = document.getElementById('categorie');
+
+        sousCategorieSelect.innerHTML = '<option value="">-- Sélectionner une sous-catégorie (optionnel) --</option>';
+
+        if (categoriePrincipaleId === 'autre') {
+            sousCategorieContainer.style.display = 'none';
+            categorieFinale.value = '';
+            return;
+        }
+
+        if (categoriePrincipaleId && categoriesData[categoriePrincipaleId] && categoriesData[categoriePrincipaleId].length > 0) {
+            sousCategorieContainer.style.display = 'block';
+            categoriesData[categoriePrincipaleId].forEach(function(sousCat) {
+                const option = document.createElement('option');
+                option.value = sousCat.id;
+                option.textContent = sousCat.nom;
+                sousCategorieSelect.appendChild(option);
+            });
+            categorieFinale.value = categoriePrincipaleId;
+        } else {
+            sousCategorieContainer.style.display = 'none';
+            categorieFinale.value = categoriePrincipaleId;
+        }
     }
-    
-    .form-control:focus, .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+
+    document.getElementById('sous_categorie').addEventListener('change', function() {
+        const sousCategorieId = this.value;
+        const categorieFinale = document.getElementById('categorie');
+        if (sousCategorieId) {
+            categorieFinale.value = sousCategorieId;
+        } else {
+            categorieFinale.value = document.getElementById('categorie_principale').value;
+        }
+    });
+
+    function selectCategorie(categorieId, categorieNom, categorieIcon, categorieCouleur) {
+        // Mettre à jour le select caché
+        const select = document.getElementById('categorie_principale');
+        select.value = categorieId;
+        
+        // Mettre à jour l'affichage
+        const display = document.getElementById('selected_categorie_display');
+        const iconSpan = document.getElementById('selected_categorie_icon');
+        const nomSpan = document.getElementById('selected_categorie_nom');
+        
+        // Déterminer l'icône
+        let iconClass = categorieIcon;
+        if (!iconClass.startsWith('bx') && !iconClass.startsWith('bi')) {
+            iconClass = 'bx-category';
+        }
+        
+        iconSpan.innerHTML = `<i class='${iconClass.startsWith("bx") ? iconClass : "bi " + iconClass}' style="color: ${categorieCouleur};"></i>`;
+        nomSpan.textContent = categorieNom;
+        display.style.display = 'block';
+        
+        // Mettre à jour les cartes visuelles
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            if (card.getAttribute('data-categorie-id') == categorieId) {
+                card.style.border = '3px solid var(--primary)';
+                card.style.background = 'var(--light-primary)';
+                card.style.transform = 'scale(1.05)';
+            } else {
+                card.style.border = '2px solid var(--grey)';
+                card.style.background = 'var(--light)';
+                card.style.transform = 'scale(1)';
+            }
+        });
+        
+        // Charger les sous-catégories
+        loadSousCategories();
     }
-    
-    .btn {
-        border-radius: 8px;
-        font-weight: 600;
+
+    function clearCategorieSelection() {
+        document.getElementById('categorie_principale').value = '';
+        document.getElementById('selected_categorie_display').style.display = 'none';
+        document.getElementById('sous_categorie_container').style.display = 'none';
+        document.getElementById('categorie').value = '';
+        
+        // Réinitialiser les cartes
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            card.style.border = '2px solid var(--grey)';
+            card.style.background = 'var(--light)';
+            card.style.transform = 'scale(1)';
+        });
     }
-</style>
+
+    // Ajouter les styles hover pour les cartes
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                if (this.style.border !== '3px solid var(--primary)') {
+                    this.style.border = '2px solid var(--primary)';
+                    this.style.transform = 'scale(1.02)';
+                }
+            });
+            card.addEventListener('mouseleave', function() {
+                if (this.style.border !== '3px solid var(--primary)') {
+                    this.style.border = '2px solid var(--grey)';
+                    this.style.transform = 'scale(1)';
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

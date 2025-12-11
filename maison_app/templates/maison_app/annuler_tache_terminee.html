@@ -1,0 +1,53 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block page_title %}Remettre la Tâche en Active{% endblock %}
+{% block page_heading %}Remettre en Active{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_taches' %}">Tâches</a></li>
+    /
+    <li><a href="#" class="active">Remettre en Active</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 600px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: var(--light); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-undo' style="font-size: 28px;"></i>Remettre la Tâche en Active
+        </h3>
+    </div>
+    
+    <div style="padding: 24px;">
+        <div class="card-dashboard" style="background: var(--light-warning); color: var(--dark); padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--warning);">
+            <i class='bx bx-error-circle' style="font-size: 20px; margin-right: 8px;"></i>
+            <strong>Attention :</strong> Vous êtes sur le point de remettre cette tâche dans les tâches actives.
+        </div>
+        
+        <div class="card-dashboard" style="padding: 20px; margin-bottom: 24px; border-left: 4px solid var(--primary);">
+            <h5 style="margin: 0 0 12px 0; color: var(--dark);">{{ tache.titre }}</h5>
+            <p style="color: var(--dark-grey); margin: 0 0 12px 0;">{{ tache.description|default:"Aucune description" }}</p>
+            {% if tache.complete_par %}
+            <p style="margin: 0; color: var(--dark-grey); font-size: 14px;">
+                <strong style="color: var(--dark);">Terminée par :</strong> {{ tache.complete_par.nom|default:tache.complete_par.email }}
+            </p>
+            {% endif %}
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button type="submit" style="flex: 1; min-width: 150px; padding: 12px 24px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                    <i class='bx bx-check-circle'></i>Confirmer
+                </button>
+                <a href="{% url 'liste_taches' %}" style="flex: 1; min-width: 150px; padding: 12px 24px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                    <i class='bx bx-x-circle'></i>Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

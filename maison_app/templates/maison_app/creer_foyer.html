@@ -1,35 +1,56 @@
-{% extends "maison_app/base.html" %}
-{% block title %}Créer un Foyer{% endblock %}
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block page_title %}Créer un Foyer{% endblock %}
+{% block page_heading %}Créer un Foyer{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-lg rounded-4">
-                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
-                    <h4 class="mb-0">🏠 Créer un Nouveau Foyer</h4>
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'mon_profil' %}">Profil</a></li>
+    /
+    <li><a href="#" class="active">Créer un Foyer</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 600px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: var(--light); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-home' style="font-size: 28px;"></i>Créer un Nouveau Foyer
+        </h3>
+    </div>
+    
+    <div style="padding: 24px;">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div style="display: grid; gap: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Nom du foyer <span style="color: var(--danger);">*</span></label>
+                    <input type="text" name="nom" placeholder="Ex: ADOMA" required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
                 </div>
-                <div class="card-body p-4">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label">Nom du foyer <span class="text-danger">*</span></label>
-                            <input type="text" name="nom" class="form-control" placeholder="Ex: ADOMA" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="3" placeholder="Description du foyer..."></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">📷 Photo du foyer (optionnel)</label>
-                            <input type="file" name="photo" class="form-control" accept="image/*">
-                            <small class="text-muted">JPG, PNG (max 5MB)</small>
-                        </div>
-                        <button type="submit" class="btn w-100" style="background: #000; color: white; font-weight: bold;">Créer le foyer</button>
-                    </form>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Description</label>
+                    <textarea name="description" rows="3" placeholder="Description du foyer..."
+                              style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;"></textarea>
                 </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-camera'></i>📷 Photo du foyer (optionnel)
+                    </label>
+                    <input type="file" name="photo" accept="image/*"
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <small style="color: var(--dark-grey); font-size: 12px;">JPG, PNG (max 5MB)</small>
+                </div>
+                
+                <button type="submit" style="width: 100%; padding: 14px 24px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;">
+                    <i class='bx bx-check-circle'></i>Créer le foyer
+                </button>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 {% endblock %}

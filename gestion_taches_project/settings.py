@@ -11,11 +11,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'maison_app',
+    'maison_app.apps.MaisonAppConfig',  # Utilise la configuration personnalisée pour charger les signaux
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -37,6 +38,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'maison_app.context_processors.notifications_count',
             ],
         },
     },
@@ -75,4 +77,36 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'maison_app.Utilisateur'
 LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/taches/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+
+# === CONFIGURATION EMAIL ===
+# En développement, les emails sont écrits dans la console
+# Pour la production, configurez avec vos paramètres SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Pour développement
+# Pour production avec SMTP, décommentez et configurez :
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'  # ou votre serveur SMTP
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'votre-email@gmail.com'
+# EMAIL_HOST_PASSWORD = 'votre-mot-de-passe-app'  # Utilisez un mot de passe d'application
+DEFAULT_FROM_EMAIL = 'KeyPer <noreply@keyper.com>'
+SERVER_EMAIL = 'KeyPer <noreply@keyper.com>'
+
+# === CONFIGURATION OPENWEATHERMAP ===
+OPENWEATHERMAP_API_KEY = "0cc4a7fe756e2a2831352c60f062aad0"
+OPENWEATHERMAP_URL = "http://api.openweathermap.org/data/2.5/weather"
+
+# === CONFIGURATION CACHE ===
+# Cache simple en mémoire (pour développement)
+# Pour la production, utilisez Redis ou Memcached
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes par défaut
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}

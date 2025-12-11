@@ -1,68 +1,735 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
 {% load static %}
 {% block title %}Chat - {{ foyer.nom }}{% endblock %}
+{% block page_title %}Chat - {{ foyer.nom }}{% endblock %}
+{% block page_heading %}Chat{% endblock %}
 
-{% block content %}
-<div class="container mt-5">
-    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-        <div class="card-header text-white p-4" style="background: #000;">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0 fw-bold">Chat du foyer {{ foyer.nom }}</h4>
-                <a href="{% url 'detail_foyer' foyer.id %}" class="btn btn-outline-light btn-sm">Retour</a>
-            </div>
-        </div>
-        <div class="card-body p-4" style="max-height: 500px; overflow-y: auto; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);" id="chat-box">
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_foyers' %}">Foyers</a></li>
+    /
+    <li><a href="#" class="active">Chat</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="padding: 0; overflow: hidden;">
+    <!-- Header du chat -->
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; color: var(--light) !important; display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-message-square-dots' style="font-size: 28px; color: var(--light) !important;"></i>Chat du foyer {{ foyer.nom }}
+        </h3>
+        <a href="{% url 'dashboard' %}" style="padding: 8px 16px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+            <i class='bx bx-arrow-back'></i>Retour
+        </a>
+    </div>
+    
+    <!-- Zone des messages -->
+    <div style="max-height: 500px; overflow-y: auto; background: linear-gradient(135deg, var(--grey) 0%, var(--light-primary) 100%); padding: 24px;" id="chat-box">
+        <div id="messages-container">
             {% for msg in messages_chat %}
-            <div class="d-flex mb-3 {% if msg.id_user == user %}flex-row-reverse{% endif %}">
-                <div class="me-2">
-                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                         style="width: 40px; height: 40px; font-size: 1.2rem;">
-                        {{ msg.id_user.email|first|upper }}
+            <div style="display: flex; margin-bottom: 16px; {% if msg.id_user == user %}flex-direction: row-reverse;{% endif %}" data-message-id="{{ msg.id }}">
+                <div style="margin: 0 12px;">
+                    {% if msg.id_user and msg.id_user.photo_profil %}
+                    <img src="{{ msg.id_user.photo_profil.url }}" alt="{{ msg.id_user.nom|default:msg.id_user.email }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+                    {% else %}
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: var(--light); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 600;">
+                        {% if msg.id_user %}{{ msg.id_user.email|first|upper }}{% else %}?{% endif %}
                     </div>
+                    {% endif %}
                 </div>
-                <div class="flex-grow-1">
-                    <div class="p-3 rounded-3 {% if msg.id_user == user %}bg-primary text-white{% else %}bg-light{% endif %}"
-                         style="max-width: 75%;">
-                        <strong>{{ msg.id_user.nom|default:msg.id_user.email }}</strong>
-                        <p class="mb-0">{{ msg.contenu|safe }}</p>
-                        <small class="text-muted">{{ msg.date_envoi|time:"H:i" }}</small>
+                <div style="flex-grow: 1; position: relative; max-width: 75%;">
+                    <div style="padding: 12px 16px; border-radius: 16px; {% if msg.id_user == user %}background: var(--primary); color: var(--light);{% else %}background: var(--light); color: var(--dark);{% endif %}">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <strong style="{% if msg.id_user == user %}color: var(--light);{% else %}color: var(--dark);{% endif %}">
+                                {% if msg.id_user %}{{ msg.id_user.nom|default:msg.id_user.email }}{% else %}Utilisateur supprimé{% endif %}
+                            </strong>
+                            {% if msg.id_user == user and not msg.est_supprime %}
+                            <div style="position: relative;">
+                                <button onclick="toggleMessageMenu({{ msg.id }})" style="background: none; border: none; color: {% if msg.id_user == user %}var(--light){% else %}var(--dark){% endif %}; cursor: pointer; padding: 4px; font-size: 18px;">
+                                    <i class='bx bx-dots-vertical-rounded'></i>
+                                </button>
+                                <div id="menu-{{ msg.id }}" style="display: none; position: absolute; right: 0; top: 100%; background: var(--light); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 150px; margin-top: 4px;">
+                                    <a href="#" onclick="editMessage({{ msg.id }}); return false;" style="display: block; padding: 10px 16px; color: var(--dark); text-decoration: none; border-radius: 8px 8px 0 0; transition: all 0.3s ease;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                                        <i class='bx bx-edit' style="margin-right: 8px;"></i>Modifier
+                                    </a>
+                                    <a href="#" onclick="deleteMessage({{ msg.id }}); return false;" style="display: block; padding: 10px 16px; color: var(--danger); text-decoration: none; border-radius: 0 0 8px 8px; transition: all 0.3s ease;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                                        <i class='bx bx-trash' style="margin-right: 8px;"></i>Supprimer
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% if msg.est_supprime %}
+                            <p style="margin: 0; font-style: italic; {% if msg.id_user == user %}color: rgba(255,255,255,0.7);{% else %}color: var(--dark-grey);{% endif %}">
+                                <i class='bx bx-x-circle'></i>Message supprimé
+                            </p>
+                        {% else %}
+                            {% if msg.fichier %}
+                                {% if msg.type_fichier == 'image' %}
+                                    <div style="margin-bottom: 8px;">
+                                        <img src="{{ msg.fichier.url }}" alt="Image" style="max-width: 300px; max-height: 300px; border-radius: 8px; cursor: pointer;" onclick="openImageModal('{{ msg.fichier.url }}')">
+                                    </div>
+                                {% elif msg.type_fichier == 'pdf' %}
+                                    <div style="margin-bottom: 8px;">
+                                        <a href="{{ msg.fichier.url }}" target="_blank" style="padding: 6px 12px; background: {% if msg.id_user == user %}rgba(255,255,255,0.2){% else %}var(--light-primary){% endif %}; color: {% if msg.id_user == user %}var(--light){% else %}var(--primary){% endif %}; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;">
+                                            <i class='bx bx-file-blank'></i>{% if msg.fichier.name|length > 30 %}{{ msg.fichier.name|slice:":30" }}...{% else %}{{ msg.fichier.name }}{% endif %}
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <div style="margin-bottom: 8px;">
+                                        <a href="{{ msg.fichier.url }}" target="_blank" style="padding: 6px 12px; background: {% if msg.id_user == user %}rgba(255,255,255,0.2){% else %}var(--grey){% endif %}; color: {% if msg.id_user == user %}var(--light){% else %}var(--dark){% endif %}; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;">
+                                            <i class='bx bx-download'></i>Télécharger le fichier
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            {% if msg.contenu %}
+                                <p class="message-content" style="margin: 0; {% if msg.id_user == user %}color: #ffffff !important;{% else %}color: #504E76 !important;{% endif %} white-space: pre-wrap; word-wrap: break-word;">{{ msg.contenu|safe }}</p>
+                            {% endif %}
+                            {% if msg.est_modifie %}
+                                <small style="{% if msg.id_user == user %}color: rgba(255,255,255,0.7);{% else %}color: var(--dark-grey);{% endif %}; margin-top: 4px; display: block;">
+                                    <i class='bx bx-edit'></i>Modifié
+                                </small>
+                            {% endif %}
+                        {% endif %}
+                        <div style="margin-top: 8px;">
+                            <small style="{% if msg.id_user == user %}color: rgba(255,255,255,0.9) !important;{% else %}color: var(--dark-grey);{% endif %}">
+                                {{ msg.date_envoi|date:"d/m/Y" }} à {{ msg.date_envoi|time:"H:i" }}
+                                {% if msg.date_modification %}
+                                    • Modifié le {{ msg.date_modification|date:"d/m/Y" }} à {{ msg.date_modification|time:"H:i" }}
+                                {% endif %}
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
             {% empty %}
-            <p class="text-center text-muted">Aucun message. Soyez le premier !</p>
+            <p style="text-align: center; color: var(--dark-grey); padding: 48px;">Aucun message. Soyez le premier !</p>
             {% endfor %}
         </div>
+    </div>
 
-        <div class="card-footer bg-white border-top p-4">
-            <form method="post">
-                {% csrf_token %}
-                <div class="input-group mb-3">
-                    <input type="text" name="message" class="form-control rounded-start" placeholder="Tapez un message..." required style="border-radius: 20px 0 0 20px; border: 1px solid #dee2e6;">
-                    <button type="submit" class="btn" style="background: #000; color: white; border-radius: 0 20px 20px 0;">Envoyer</button>
+    <!-- Zone de saisie -->
+    {% if user.role != 'observateur' %}
+    <div style="background: var(--light); border-top: 1px solid var(--grey); padding: 20px 24px;">
+        <form id="chat-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div style="margin-bottom: 12px;">
+                <input type="file" id="file-input" accept="image/*,.pdf" style="display: none;">
+                <div id="file-preview" style="display: none; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--grey); border-radius: 8px;">
+                        <span id="file-name" style="flex-grow: 1; color: var(--dark);"></span>
+                        <button type="button" onclick="removeFile()" style="padding: 6px 12px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <i class='bx bx-x'></i>
+                        </button>
+                    </div>
                 </div>
-            </form>
-            <div class="d-flex gap-2 justify-content-center">
-                <button type="button" class="btn btn-sm rounded-circle" onclick="addEmoji('😊')" style="width: 40px; height: 40px; background: #f0f0f0;">😊</button>
-                <button type="button" class="btn btn-sm rounded-circle" onclick="addEmoji('😢')" style="width: 40px; height: 40px; background: #f0f0f0;">😢</button>
-                <button type="button" class="btn btn-sm rounded-circle" onclick="addEmoji('❤️')" style="width: 40px; height: 40px; background: #f0f0f0;">❤️</button>
-                <button type="button" class="btn btn-sm rounded-circle" onclick="addEmoji('😂')" style="width: 40px; height: 40px; background: #f0f0f0;">😂</button>
             </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <button type="button" onclick="document.getElementById('file-input').click()" style="padding: 12px 16px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;" title="Ajouter un fichier" onmouseover="this.style.background='var(--primary)'; this.style.color='var(--light)'" onmouseout="this.style.background='var(--grey)'; this.style.color='var(--dark)'">
+                    <i class='bx bx-paperclip'></i>
+                </button>
+                <input type="text" name="message" id="message-input" placeholder="Tapez un message..." 
+                       style="flex: 1; padding: 12px 16px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                <button type="submit" id="send-btn" style="padding: 12px 24px; background: var(--primary); color: var(--light) !important; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 600;" onmouseover="this.style.opacity='0.9'; this.style.background='var(--light-primary)'" onmouseout="this.style.opacity='1'; this.style.background='var(--primary)'">
+                    <i class='bx bx-send'></i> Envoyer
+                </button>
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                <button type="button" onclick="addEmoji('😊')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--grey); border: none; cursor: pointer; font-size: 18px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">😊</button>
+                <button type="button" onclick="addEmoji('😢')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--grey); border: none; cursor: pointer; font-size: 18px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">😢</button>
+                <button type="button" onclick="addEmoji('❤️')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--grey); border: none; cursor: pointer; font-size: 18px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">❤️</button>
+                <button type="button" onclick="addEmoji('😂')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--grey); border: none; cursor: pointer; font-size: 18px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">😂</button>
+                <button type="button" onclick="addEmoji('👍')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--grey); border: none; cursor: pointer; font-size: 18px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">👍</button>
+                <button type="button" onclick="addEmoji('🎉')" style="width: 40px; height: 40px; border-radius: 50%; background: var(--grey); border: none; cursor: pointer; font-size: 18px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🎉</button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div style="background: var(--light-warning); border-top: 1px solid var(--grey); padding: 20px 24px; text-align: center;">
+        <i class='bx bx-info-circle' style="font-size: 20px; margin-right: 8px;"></i> Mode observateur : Accès en lecture seule. Vous ne pouvez pas envoyer de messages.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal pour afficher les images en grand -->
+<div id="imageModal" style="display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);">
+    <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 20px;">
+        <button onclick="document.getElementById('imageModal').style.display='none'" style="position: absolute; top: 20px; right: 20px; background: var(--danger); color: var(--light); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center;">&times;</button>
+        <img id="modal-image" src="" alt="Image" style="max-width: 90%; max-height: 90%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+    </div>
+</div>
+
+<!-- Modal pour modifier un message -->
+<div id="editModal" style="display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+    <div style="background: var(--light); margin: 5% auto; padding: 0; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div style="padding: 24px; border-bottom: 1px solid var(--grey); display: flex; justify-content: space-between; align-items: center;">
+            <h5 style="margin: 0; color: var(--dark);">Modifier le message</h5>
+            <button onclick="document.getElementById('editModal').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--dark);">&times;</button>
+        </div>
+        <div style="padding: 24px;">
+            <textarea id="edit-message-input" rows="3" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;"></textarea>
+        </div>
+        <div style="padding: 24px; border-top: 1px solid var(--grey); display: flex; gap: 12px; justify-content: flex-end;">
+            <button onclick="document.getElementById('editModal').style.display='none'" style="padding: 10px 20px; background: var(--grey); color: var(--dark); border: none; border-radius: 8px; cursor: pointer;">Annuler</button>
+            <button onclick="confirmEdit()" style="padding: 10px 20px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer;">Enregistrer</button>
         </div>
     </div>
 </div>
 
 <script>
+const foyerId = {{ foyer.id }};
+let lastMessageId = {% if messages_chat %}{% for msg in messages_chat %}{% if forloop.last %}{{ msg.id }}{% endif %}{% empty %}0{% endfor %}{% else %}0{% endif %};
+let refreshInterval = null;
+let isScrolledToBottom = true;
+let selectedFile = null;
+let editingMessageId = null;
+
+function toggleMessageMenu(messageId) {
+    const menu = document.getElementById('menu-' + messageId);
+    // Fermer tous les autres menus
+    document.querySelectorAll('[id^="menu-"]').forEach(m => {
+        if (m.id !== 'menu-' + messageId) m.style.display = 'none';
+    });
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Fermer les menus quand on clique ailleurs
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('[onclick*="toggleMessageMenu"]') && !e.target.closest('[id^="menu-"]')) {
+        document.querySelectorAll('[id^="menu-"]').forEach(m => m.style.display = 'none');
+    }
+});
+
 function addEmoji(emoji) {
-    const input = document.querySelector('input[name="message"]');
+    const input = document.getElementById('message-input');
     input.value += emoji;
     input.focus();
 }
 
-// Auto-scroll vers le bas quand de nouveaux messages arrivent
-const chatBox = document.getElementById('chat-box');
-if (chatBox) {
-    chatBox.scrollTop = chatBox.scrollHeight;
+function scrollToBottom() {
+    const chatBox = document.getElementById('chat-box');
+    if (chatBox) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 }
+
+function openImageModal(imageUrl) {
+    document.getElementById('modal-image').src = imageUrl;
+    document.getElementById('imageModal').style.display = 'block';
+}
+
+function removeFile() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('file-preview').style.display = 'none';
+}
+
+document.getElementById('file-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Fichier trop volumineux (max 10 MB)');
+            removeFile();
+            return;
+        }
+        
+        selectedFile = file;
+        document.getElementById('file-name').textContent = file.name;
+        document.getElementById('file-preview').style.display = 'block';
+        
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('file-preview');
+                preview.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--grey); border-radius: 8px;">
+                        <img src="${e.target.result}" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 4px;">
+                        <span style="flex-grow: 1; color: var(--dark);">${file.name}</span>
+                        <button type="button" onclick="removeFile()" style="padding: 6px 12px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer;">
+                            <i class='bx bx-x'></i>
+                        </button>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+});
+
+function addMessageToChat(message, isOwn) {
+    const messagesContainer = document.getElementById('messages-container');
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `display: flex; margin-bottom: 16px; ${isOwn ? 'flex-direction: row-reverse;' : ''}`;
+    messageDiv.setAttribute('data-message-id', message.id);
+    
+    const userInitial = message.user.email ? message.user.email.charAt(0).toUpperCase() : '?';
+    const userName = message.user.nom || message.user.email || 'Utilisateur supprimé';
+    
+    let messageContent = '';
+    if (message.est_supprime) {
+        messageContent = `<p style="margin: 0; font-style: italic; color: ${isOwn ? 'rgba(255,255,255,0.7)' : 'var(--dark-grey)'};"><i class='bx bx-x-circle'></i>Message supprimé</p>`;
+    } else {
+        if (message.fichier) {
+            if (message.type_fichier === 'image') {
+                messageContent += `<div style="margin-bottom: 8px;"><img src="${message.fichier}" alt="Image" style="max-width: 300px; max-height: 300px; border-radius: 8px; cursor: pointer;" onclick="openImageModal('${message.fichier}')"></div>`;
+            } else if (message.type_fichier === 'pdf') {
+                messageContent += `<div style="margin-bottom: 8px;"><a href="${message.fichier}" target="_blank" style="padding: 6px 12px; background: ${isOwn ? 'rgba(255,255,255,0.2)' : 'var(--light-primary)'}; color: ${isOwn ? 'var(--light)' : 'var(--primary)'}; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;"><i class='bx bx-file-blank'></i>${message.nom_fichier || 'Fichier PDF'}</a></div>`;
+            }
+        }
+        messageContent += `<p class="message-content" style="margin: 0; color: ${isOwn ? '#ffffff' : '#504E76'} !important; white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(message.contenu)}</p>`;
+        if (message.est_modifie) {
+            messageContent += `<small style="color: ${isOwn ? 'rgba(255,255,255,0.7)' : 'var(--dark-grey)'}; margin-top: 4px; display: block;"><i class='bx bx-edit'></i>Modifié</small>`;
+        }
+    }
+    
+    let actionsMenu = '';
+    if (isOwn && !message.est_supprime) {
+        actionsMenu = `
+            <div style="position: relative;">
+                <button onclick="toggleMessageMenu(${message.id})" style="background: none; border: none; color: var(--light); cursor: pointer; padding: 4px; font-size: 18px;">
+                    <i class='bx bx-dots-vertical-rounded'></i>
+                </button>
+                <div id="menu-${message.id}" style="display: none; position: absolute; right: 0; top: 100%; background: var(--light); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 150px; margin-top: 4px;">
+                    <a href="#" onclick="editMessage(${message.id}); return false;" style="display: block; padding: 10px 16px; color: var(--dark); text-decoration: none; border-radius: 8px 8px 0 0;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                        <i class='bx bx-edit' style="margin-right: 8px;"></i>Modifier
+                    </a>
+                    <a href="#" onclick="deleteMessage(${message.id}); return false;" style="display: block; padding: 10px 16px; color: var(--danger); text-decoration: none; border-radius: 0 0 8px 8px;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                        <i class='bx bx-trash' style="margin-right: 8px;"></i>Supprimer
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Formatage de la date avec jour et heure
+    let dateInfo = '';
+    if (message.date_envoi) {
+        const dateEnvoi = new Date(message.date_envoi);
+        dateInfo = dateEnvoi.toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' à ' + dateEnvoi.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+    }
+    if (message.date_modification) {
+        const dateModif = new Date(message.date_modification);
+        dateInfo += ` • Modifié le ${dateModif.toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: 'numeric'})} à ${dateModif.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+    }
+    
+    const userPhoto = message.user && message.user.photo_profil ? message.user.photo_profil : '';
+    const avatarHtml = userPhoto 
+        ? `<img src="${userPhoto}" alt="${userName}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">`
+        : `<div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: var(--light); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 600;">${userInitial}</div>`;
+    
+    messageDiv.innerHTML = `
+        <div style="margin: 0 12px;">
+            ${avatarHtml}
+        </div>
+        <div style="flex-grow: 1; position: relative; max-width: 75%;">
+            <div style="padding: 12px 16px; border-radius: 16px; ${isOwn ? 'background: var(--primary); color: var(--light);' : 'background: var(--light); color: var(--dark);'}">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                    <strong style="color: ${isOwn ? 'var(--light)' : 'var(--dark)'};">${userName}</strong>
+                    ${actionsMenu}
+                </div>
+                ${messageContent}
+                <div style="margin-top: 8px;">
+                    <small style="color: ${isOwn ? 'rgba(255,255,255,0.9) !important' : 'var(--dark-grey)'};">
+                        ${dateInfo}
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    lastMessageId = message.id;
+    
+    if (isScrolledToBottom) {
+        setTimeout(scrollToBottom, 100);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function checkForNewMessages() {
+    // Vérifier si le bouton existe et n'est pas désactivé
+    const sendBtn = document.getElementById('send-btn');
+    if (sendBtn && sendBtn.disabled) {
+        return;
+    }
+    
+    // Vérifier si la page est toujours visible pour éviter les requêtes inutiles
+    if (document.hidden) {
+        return;
+    }
+    
+    fetch(`/api/foyer/${foyerId}/chat/messages/?last_id=${lastMessageId}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.messages && data.messages.length > 0) {
+                data.messages.forEach(message => {
+                    const existingMessage = document.querySelector(`[data-message-id="${message.id}"]`);
+                    if (!existingMessage) {
+                        addMessageToChat(message, message.is_own);
+                        // Mettre à jour lastMessageId avec le dernier message reçu
+                        if (message.id > lastMessageId) {
+                            lastMessageId = message.id;
+                        }
+                    } else {
+                        if (message.est_modifie || message.est_supprime) {
+                            updateMessageInChat(message);
+                        }
+                    }
+                });
+                updateNotificationBadge();
+            } else if (!data.success && data.error) {
+                console.error('Erreur API:', data.error);
+            }
+        })
+        .catch(err => {
+            if (err.message && !err.message.includes('Failed to fetch')) {
+                console.error('Erreur lors de la récupération des messages:', err);
+            }
+        });
+}
+
+function updateMessageInChat(message) {
+    const messageDiv = document.querySelector(`[data-message-id="${message.id}"]`);
+    if (!messageDiv) return;
+    
+    const contentDiv = messageDiv.querySelector('div[style*="border-radius: 16px"]');
+    if (contentDiv) {
+        const userName = message.user.nom || message.user.email || 'Utilisateur supprimé';
+        let messageContent = '';
+        
+        if (message.est_supprime) {
+            messageContent = '<p style="margin: 0; font-style: italic; color: var(--dark-grey);"><i class=\'bx bx-x-circle\'></i>Message supprimé</p>';
+        } else {
+            if (message.fichier) {
+                if (message.type_fichier === 'image') {
+                    messageContent += `<div style="margin-bottom: 8px;"><img src="${message.fichier}" alt="Image" style="max-width: 300px; max-height: 300px; border-radius: 8px; cursor: pointer;" onclick="openImageModal('${message.fichier}')"></div>`;
+                } else if (message.type_fichier === 'pdf') {
+                    messageContent += `<div style="margin-bottom: 8px;"><a href="${message.fichier}" target="_blank" style="padding: 6px 12px; background: var(--light-primary); color: var(--primary); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;"><i class='bx bx-file-blank'></i>${message.nom_fichier || 'Fichier PDF'}</a></div>`;
+                }
+            }
+            messageContent += `<p class="message-content" style="margin: 0; color: var(--dark);">${escapeHtml(message.contenu)}</p>`;
+            if (message.est_modifie) {
+                messageContent += '<small style="color: var(--dark-grey); margin-top: 4px; display: block;"><i class=\'bx bx-edit\'></i>Modifié</small>';
+            }
+        }
+        
+        // Formatage de la date avec jour et heure
+        let dateInfo = '';
+        if (message.date_envoi) {
+            const dateEnvoi = new Date(message.date_envoi);
+            dateInfo = dateEnvoi.toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' à ' + dateEnvoi.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+        }
+        if (message.date_modification) {
+            const dateModif = new Date(message.date_modification);
+            dateInfo += ` • Modifié le ${dateModif.toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit', year: 'numeric'})} à ${dateModif.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+        }
+        
+        contentDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <strong style="color: var(--dark);">${userName}</strong>
+            </div>
+            ${messageContent}
+            <div style="margin-top: 8px;">
+                <small style="color: var(--dark-grey);">${dateInfo}</small>
+            </div>
+        `;
+    }
+}
+
+function deleteMessage(messageId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce message ?')) {
+        return;
+    }
+    
+    fetch(`/api/foyer/${foyerId}/chat/message/${messageId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageDiv) {
+                const contentDiv = messageDiv.querySelector('div[style*="border-radius: 16px"]');
+                if (contentDiv) {
+                    const userName = contentDiv.querySelector('strong').textContent;
+                    const dateInfo = contentDiv.querySelector('small').textContent;
+                    contentDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <strong style="color: var(--dark);">${userName}</strong>
+                        </div>
+                        <p style="margin: 0; font-style: italic; color: var(--dark-grey);"><i class='bx bx-x-circle'></i>Message supprimé</p>
+                        <div style="margin-top: 8px;">
+                            <small style="color: var(--dark-grey);">${dateInfo}</small>
+                        </div>
+                    `;
+                }
+            }
+        } else {
+            alert('Erreur: ' + (data.error || 'Erreur inconnue'));
+        }
+    })
+    .catch(err => {
+        console.error('Erreur:', err);
+        alert('Erreur lors de la suppression du message');
+    });
+}
+
+function editMessage(messageId) {
+    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageDiv) return;
+    
+    const messageText = messageDiv.querySelector('p[style*="margin: 0"]');
+    if (!messageText || messageText.textContent.trim() === 'Message supprimé') {
+        alert('Impossible de modifier un message supprimé');
+        return;
+    }
+    
+    editingMessageId = messageId;
+    document.getElementById('edit-message-input').value = messageText.textContent.trim();
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function confirmEdit() {
+    if (!editingMessageId) return;
+    
+    const nouveauContenu = document.getElementById('edit-message-input').value.trim();
+    if (!nouveauContenu) {
+        alert('Le message ne peut pas être vide');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('contenu', nouveauContenu);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch(`/api/foyer/${foyerId}/chat/message/${editingMessageId}/edit/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const messageDiv = document.querySelector(`[data-message-id="${editingMessageId}"]`);
+            if (messageDiv) {
+                const contentDiv = messageDiv.querySelector('div[style*="border-radius: 16px"]');
+                if (contentDiv) {
+                    const userName = contentDiv.querySelector('strong').textContent;
+                    const dateInfo = contentDiv.querySelector('small').textContent;
+                    const isOwn = messageDiv.style.flexDirection === 'row-reverse';
+                    contentDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <strong style="color: ${isOwn ? 'var(--light)' : 'var(--dark)'};">${userName}</strong>
+                            <div style="position: relative;">
+                                <button onclick="toggleMessageMenu(${editingMessageId})" style="background: none; border: none; color: ${isOwn ? 'var(--light)' : 'var(--dark)'}; cursor: pointer; padding: 4px; font-size: 18px;">
+                                    <i class='bx bx-dots-vertical-rounded'></i>
+                                </button>
+                                <div id="menu-${editingMessageId}" style="display: none; position: absolute; right: 0; top: 100%; background: var(--light); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; min-width: 150px; margin-top: 4px;">
+                                    <a href="#" onclick="editMessage(${editingMessageId}); return false;" style="display: block; padding: 10px 16px; color: var(--dark); text-decoration: none; border-radius: 8px 8px 0 0;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                                        <i class='bx bx-edit' style="margin-right: 8px;"></i>Modifier
+                                    </a>
+                                    <a href="#" onclick="deleteMessage(${editingMessageId}); return false;" style="display: block; padding: 10px 16px; color: var(--danger); text-decoration: none; border-radius: 0 0 8px 8px;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                                        <i class='bx bx-trash' style="margin-right: 8px;"></i>Supprimer
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="message-content" style="margin: 0; color: ${isOwn ? 'var(--light)' : 'var(--dark)'};">${escapeHtml(nouveauContenu)}</p>
+                        <small style="color: ${isOwn ? 'rgba(255,255,255,0.7)' : 'var(--dark-grey)'}; margin-top: 4px; display: block;"><i class='bx bx-edit'></i>Modifié</small>
+                        <div style="margin-top: 8px;">
+                            <small style="color: ${isOwn ? 'rgba(255,255,255,0.7)' : 'var(--dark-grey)'};">${dateInfo} • Modifié à ${data.message.date_modification}</small>
+                        </div>
+                    `;
+                }
+            }
+            document.getElementById('editModal').style.display = 'none';
+            editingMessageId = null;
+        } else {
+            alert('Erreur: ' + (data.error || 'Erreur inconnue'));
+        }
+    })
+    .catch(err => {
+        console.error('Erreur:', err);
+        alert('Erreur lors de la modification du message');
+    });
+}
+
+function sendMessage(messageText, file) {
+    const formData = new FormData();
+    if (messageText) {
+        formData.append('message', messageText);
+    }
+    if (file) {
+        formData.append('fichier', file);
+    }
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch(`/api/foyer/${foyerId}/chat/send/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const messageData = {
+                id: data.message.id,
+                contenu: data.message.contenu,
+                date_envoi: data.message.date_envoi,
+                user: {
+                    ...data.message.user,
+                    photo_profil: data.message.user.photo_profil || null
+                },
+                est_supprime: false,
+                est_modifie: false
+            };
+            
+            if (data.message.fichier) {
+                messageData.fichier = data.message.fichier;
+                messageData.nom_fichier = data.message.nom_fichier;
+                messageData.type_fichier = data.message.type_fichier;
+            }
+            
+            addMessageToChat(messageData, true);
+            // Mettre à jour lastMessageId
+            if (data.message.id > lastMessageId) {
+                lastMessageId = data.message.id;
+            }
+            document.getElementById('message-input').value = '';
+            removeFile();
+            document.getElementById('send-btn').disabled = false;
+            document.getElementById('send-btn').innerHTML = '<i class=\'bx bx-send\'></i> Envoyer';
+            updateNotificationBadge();
+            setTimeout(checkForNewMessages, 500);
+        } else {
+            alert('Erreur lors de l\'envoi du message: ' + (data.error || 'Erreur inconnue'));
+            document.getElementById('send-btn').disabled = false;
+            document.getElementById('send-btn').innerHTML = '<i class=\'bx bx-send\'></i> Envoyer';
+        }
+    })
+    .catch(err => {
+        console.error('Erreur:', err);
+        alert('Erreur lors de l\'envoi du message');
+        document.getElementById('send-btn').disabled = false;
+        document.getElementById('send-btn').innerHTML = '<i class=\'bx bx-send\'></i> Envoyer';
+    });
+}
+
+function updateNotificationBadge() {
+    fetch('/api/notifications-count/')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.querySelector('#notif-count');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count > 99 ? '99+' : data.count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        })
+        .catch(err => console.log('Erreur lors de la mise à jour du badge:', err));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    
+    const lastMessage = document.querySelector('[data-message-id]');
+    if (lastMessage) {
+        lastMessageId = parseInt(lastMessage.getAttribute('data-message-id'));
+    }
+    
+    scrollToBottom();
+    
+    const chatBox = document.getElementById('chat-box');
+    chatBox.addEventListener('scroll', function() {
+        const threshold = 100;
+        isScrolledToBottom = (chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight) < threshold;
+    });
+    
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const messageText = messageInput.value.trim();
+        
+        if (!messageText && !selectedFile) {
+            return;
+        }
+        
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class=\'bx bx-loader-alt bx-spin\'></i> Envoi...';
+        
+        sendMessage(messageText, selectedFile);
+    });
+    
+    // Actualisation automatique des messages - intervalle augmenté pour éviter les rechargements visibles
+    refreshInterval = setInterval(checkForNewMessages, 5000); // 5 secondes au lieu de 2
+    updateNotificationBadge();
+    setInterval(updateNotificationBadge, 10000); // 10 secondes pour les notifications
+});
+
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
 </script>
+
+<style>
+/* Style pour le texte des messages en mode nuit - forcer le blanc */
+body.dark .message-content {
+    color: #ffffff !important;
+}
+body.dark .message-content p {
+    color: #ffffff !important;
+}
+/* Style pour tous les messages en mode nuit - forcer le texte blanc */
+body.dark div[style*="border-radius: 16px"] .message-content {
+    color: #ffffff !important;
+}
+body.dark div[style*="border-radius: 16px"] p.message-content {
+    color: #ffffff !important;
+}
+/* Style pour les messages entrants en mode nuit */
+body.dark div[style*="background: var(--light)"] .message-content {
+    color: #ffffff !important;
+}
+body.dark div[style*="background: var(--light)"] p.message-content {
+    color: #ffffff !important;
+}
+/* Style pour les messages sortants en mode nuit */
+body.dark div[style*="background: var(--primary)"] .message-content {
+    color: #ffffff !important;
+}
+body.dark div[style*="background: var(--primary)"] p.message-content {
+    color: #ffffff !important;
+}
+/* Forcer le texte blanc pour tous les paragraphes de messages en mode nuit - spécificité maximale */
+body.dark #messages-container p.message-content,
+body.dark #messages-container .message-content,
+body.dark #messages-container p[class*="message-content"] {
+    color: #ffffff !important;
+}
+/* Forcer le texte blanc même avec style inline */
+body.dark #messages-container p[style*="color"] {
+    color: #ffffff !important;
+}
+</style>
 {% endblock %}

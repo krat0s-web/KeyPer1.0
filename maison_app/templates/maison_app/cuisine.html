@@ -1,0 +1,130 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Cuisine - {{ piece.nom }}{% endblock %}
+{% block page_title %}Cuisine - {{ piece.nom }}{% endblock %}
+{% block page_heading %}Cuisine{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_foyers' %}">Foyers</a></li>
+    /
+    <li><a href="{% url 'detail_foyer' foyer.id %}">{{ foyer.nom }}</a></li>
+    /
+    <li><a href="#" class="active">Cuisine</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <!-- En-tête -->
+    <div class="card-dashboard mb-4">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+                <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <i class='bx bx-food-menu' style="font-size: 28px; color: var(--danger);"></i>{{ piece.nom }}
+                </h3>
+                <p style="color: var(--dark-grey); margin: 0; font-size: 14px;">
+                    <i class='bx bx-info-circle' style="color: var(--primary);"></i> Tous les modules de cuisine sont disponibles pour cette pièce
+                </p>
+            </div>
+            <a href="{% url 'detail_foyer' foyer.id %}" style="padding: 8px 16px; background: var(--grey); color: var(--dark); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-arrow-back'></i>Retour au foyer
+            </a>
+        </div>
+        {% if piece.description %}
+        <p style="color: var(--dark-grey); margin: 0;">{{ piece.description }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Cartes de fonctionnalités -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 24px;">
+        <!-- Gérer le stock -->
+        <div class="card-dashboard" style="text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+            <div style="font-size: 4rem; margin-bottom: 16px; color: #0dcaf0;">
+                <i class='bx bx-package'></i>
+            </div>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Gérer le Stock</h4>
+            <p style="color: var(--dark-grey); margin-bottom: 20px;">Suivez vos produits et ingrédients disponibles</p>
+            <a href="{% url 'gerer_stock' piece.id %}" style="display: inline-block; padding: 12px 24px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class='bx bx-right-arrow-alt'></i>Accéder
+            </a>
+        </div>
+
+        <!-- Listes de courses -->
+        <div class="card-dashboard" style="text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+            <div style="font-size: 4rem; margin-bottom: 16px; color: var(--success);">
+                <i class='bx bx-cart'></i>
+            </div>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Listes de Courses</h4>
+            <p style="color: var(--dark-grey); margin-bottom: 20px;">Créez et gérez vos listes de courses</p>
+            <a href="{% url 'liste_courses_cuisine' piece.id %}" style="display: inline-block; padding: 12px 24px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                <i class='bx bx-cart-add'></i>Gérer les listes
+            </a>
+            {% if listes_courses %}
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--grey);">
+                <small style="color: var(--dark-grey);">Listes récentes :</small>
+                <ul style="list-style: none; padding: 0; margin-top: 8px;">
+                    {% for liste in listes_courses %}
+                    <li style="margin-bottom: 8px;">
+                        <a href="{% url 'detail_liste_courses' piece.id liste.id %}" style="text-decoration: none; color: var(--dark); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class='bx bx-list-ul'></i>{{ liste.nom }}
+                            <span style="padding: 2px 8px; background: {% if liste.statut == 'Acheté' %}var(--success){% else %}var(--warning){% endif %}; color: var(--dark); border-radius: 12px; font-size: 11px;">{{ liste.statut }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Menus de la semaine -->
+        <div class="card-dashboard" style="text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+            <div style="font-size: 4rem; margin-bottom: 16px; color: var(--warning);">
+                <i class='bx bx-calendar-week'></i>
+            </div>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Menus de la Semaine</h4>
+            <p style="color: var(--dark-grey); margin-bottom: 20px;">Organisez vos repas de la semaine</p>
+            <a href="{% url 'menus_semaine' piece.id %}" style="display: inline-block; padding: 12px 24px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                <i class='bx bx-calendar-event'></i>Organiser les menus
+            </a>
+            {% if menu_semaine_actuel %}
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--grey);">
+                <small style="color: var(--dark-grey);">Menu actuel :</small>
+                <p style="margin: 8px 0 0 0;">
+                    <a href="{% url 'detail_menu_semaine' piece.id menu_semaine_actuel.id %}" style="text-decoration: none; color: var(--primary);">
+                        Semaine du {{ menu_semaine_actuel.semaine_debut|date:"d/m/Y" }}
+                    </a>
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Deuxième ligne avec Recettes -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 24px;">
+        <div class="card-dashboard" style="text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+            <div style="font-size: 4rem; margin-bottom: 16px; color: var(--danger);">
+                <i class='bx bx-book'></i>
+            </div>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Recettes de Cuisine</h4>
+            <p style="color: var(--dark-grey); margin-bottom: 20px;">Générez des recettes avec vos ingrédients</p>
+            <a href="{% url 'generer_recettes' piece.id %}" style="display: inline-block; padding: 12px 24px; background: var(--danger); color: var(--light); border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class='bx bx-magic-wand'></i>Générer des recettes
+            </a>
+        </div>
+        <div class="card-dashboard" style="text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+            <div style="font-size: 4rem; margin-bottom: 16px; color: #6f42c1;">
+                <i class='bx bx-history'></i>
+            </div>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Historique des Recettes</h4>
+            <p style="color: var(--dark-grey); margin-bottom: 20px;">Consultez vos recettes générées précédemment</p>
+            <a href="{% url 'historique_recettes' piece.id %}" style="display: inline-block; padding: 12px 24px; background: #6f42c1; color: white; border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class='bx bx-list-ul'></i>Voir l'historique
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

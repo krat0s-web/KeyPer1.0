@@ -1,0 +1,163 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Statistiques - {{ foyer.nom }}{% endblock %}
+{% block page_title %}Statistiques - {{ foyer.nom }}{% endblock %}
+{% block page_heading %}Statistiques du Foyer{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_foyers' %}">Foyers</a></li>
+    /
+    <li><a href="{% url 'detail_foyer' foyer.id %}">{{ foyer.nom }}</a></li>
+    /
+    <li><a href="#" class="active">Statistiques</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-bar-chart-alt-2' style="font-size: 28px; color: var(--primary);"></i>Statistiques - {{ foyer.nom }}
+        </h3>
+        <a href="{% url 'detail_foyer' foyer.id %}" style="padding: 8px 16px; background: var(--grey); color: var(--dark); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+            <i class='bx bx-arrow-back'></i>Retour
+        </a>
+    </div>
+
+    <!-- Statistiques générales -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 32px;">
+        <div class="card-dashboard" style="border-left: 4px solid var(--primary); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Tâches Total</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">{{ taches_total }}</div>
+        </div>
+        <div class="card-dashboard" style="border-left: 4px solid var(--success); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Tâches Terminées</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--success);">{{ taches_terminees }}</div>
+        </div>
+        <div class="card-dashboard" style="border-left: 4px solid var(--warning); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Taux de Complétion</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--warning);">{{ taux_completion }}%</div>
+        </div>
+        <div class="card-dashboard" style="border-left: 4px solid var(--danger); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Membres</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--danger);">{{ membres_total }}</div>
+        </div>
+    </div>
+
+    <!-- Statistiques par priorité -->
+    <div class="card-dashboard" style="margin-bottom: 32px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-list-check' style="color: var(--primary);"></i>Tâches par Priorité
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div style="text-align: center; padding: 20px; background: var(--light-danger); border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--danger);">{{ taches_haute }}</div>
+                <div style="color: var(--dark); font-weight: 600;">Haute</div>
+            </div>
+            <div style="text-align: center; padding: 20px; background: var(--light-warning); border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ taches_moyenne }}</div>
+                <div style="color: var(--dark); font-weight: 600;">Moyenne</div>
+            </div>
+            <div style="text-align: center; padding: 20px; background: var(--light-success); border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ taches_basse }}</div>
+                <div style="color: var(--dark); font-weight: 600;">Basse</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Évolution des tâches complétées -->
+    {% if taches_par_mois %}
+    <div class="card-dashboard" style="margin-bottom: 32px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-line-chart' style="color: var(--primary);"></i>Évolution (6 derniers mois)
+        </h4>
+        <div style="display: flex; align-items: end; gap: 12px; height: 200px; padding: 20px; background: var(--grey); border-radius: 8px;">
+            {% for mois in taches_par_mois %}
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="width: 100%; background: var(--primary); border-radius: 8px 8px 0 0; min-height: 20px; height: {% widthratio mois.count 10 180 %}px; max-height: 180px; transition: all 0.3s ease;" title="{{ mois.nom_mois }}: {{ mois.count }} tâches"></div>
+                <small style="color: var(--dark-grey); font-size: 11px; writing-mode: vertical-rl; text-orientation: mixed;">{{ mois.mois }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Top membres -->
+    {% if top_membres %}
+    <div class="card-dashboard" style="margin-bottom: 32px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-trophy' style="color: var(--warning);"></i>Top 5 Membres les Plus Actifs
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for membre in top_membres %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--grey); border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: var(--primary); color: var(--light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                        {{ forloop.counter }}
+                    </div>
+                    <div>
+                        <strong style="color: var(--dark);">{{ membre.complete_par__nom|default:membre.complete_par__email }}</strong>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 20px; font-weight: 600;">
+                        {{ membre.count }} tâche{{ membre.count|pluralize }}
+                    </div>
+                    <a href="{% url 'statistiques_membre_detail' membre.complete_par__id %}" style="padding: 8px 12px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 4px; font-size: 12px;">
+                        <i class='bx bx-show'></i>Voir
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Statistiques par membre -->
+    <div class="card-dashboard">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-user' style="color: var(--primary);"></i>Statistiques par Membre
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+            {% for membre in foyer.utilisateurs.all %}
+            <a href="{% url 'statistiques_membre_detail' membre.id %}" style="text-decoration: none; color: inherit;">
+                <div class="card-dashboard" style="text-align: center; transition: all 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                    <div style="font-size: 3rem; margin-bottom: 12px;">
+                        {% if membre.photo_profil %}
+                        <img src="{{ membre.photo_profil.url }}" alt="{{ membre.nom|default:membre.email }}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
+                        {% else %}
+                        <i class='bx bx-user-circle' style="color: var(--primary);"></i>
+                        {% endif %}
+                    </div>
+                    <h5 style="color: var(--dark); margin: 0 0 8px 0; font-weight: 600;">{{ membre.nom|default:membre.email }}</h5>
+                    <small style="color: var(--dark-grey);">Voir les statistiques</small>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Statistiques budget (si accès) -->
+    {% if total_budget > 0 or total_depenses > 0 %}
+    <div class="card-dashboard">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-wallet' style="color: var(--primary);"></i>Statistiques Financières
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div style="text-align: center; padding: 20px; background: var(--light-primary); border-radius: 8px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">{{ total_budget|floatformat:2 }}€</div>
+                <div style="color: var(--dark); font-weight: 600;">Budget Total</div>
+            </div>
+            <div style="text-align: center; padding: 20px; background: var(--light-danger); border-radius: 8px;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">{{ total_depenses|floatformat:2 }}€</div>
+                <div style="color: var(--dark); font-weight: 600;">Dépenses Total</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

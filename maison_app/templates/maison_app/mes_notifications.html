@@ -1,90 +1,174 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
 {% load static %}
+{% load tache_tags %}
 
-{% block title %}🔔 Mes Notifications{% endblock %}
+{% block title %}Mes Notifications{% endblock %}
+{% block page_title %}Mes Notifications{% endblock %}
+{% block page_heading %}Notifications{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <!-- Header -->
-    <div class="mb-4">
-        <h1 class="h2" style="color: #000; font-weight: bold;">🔔 Mes Notifications</h1>
-        <p class="text-muted">Vous avez <strong>{{ non_lues }}</strong> notification(s) non lue(s)</p>
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Notifications</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <div style="margin-bottom: 24px;">
+        <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <i class='bx bx-bell' style="font-size: 28px; color: var(--primary);"></i>Mes Notifications
+        </h3>
+        <p style="color: var(--dark-grey); margin: 0;">Vous avez <strong style="color: var(--danger);">{{ non_lues }}</strong> notification(s) non lue(s)</p>
     </div>
 
     <!-- Messages Django -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <div style="background: var(--light-primary); color: var(--primary); padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         {% endfor %}
     {% endif %}
 
     <!-- Notifications -->
-    <div class="row">
-        {% if notifications %}
+    {% if notifications %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
             {% for notification in notifications %}
-                <div class="col-12 mb-3">
-                    <div class="card {% if not notification.lue %}border-info{% endif %}" style="border-left: 4px solid #0d6efd;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <h5 class="card-title" style="color: #000;">
-                                        {% if notification.type == 'tache_assignee' %}
-                                            📋
-                                        {% elif notification.type == 'tache_complete' %}
-                                            ✅
-                                        {% elif notification.type == 'tache_rappel' %}
-                                            ⏰
-                                        {% elif notification.type == 'budget_alerte' %}
-                                            💰
-                                        {% elif notification.type == 'nouveau_membre' %}
-                                            👥
-                                        {% elif notification.type == 'message' %}
-                                            💬
-                                        {% endif %}
-                                        {{ notification.titre }}
-                                    </h5>
-                                    <p class="card-text text-muted">{{ notification.message }}</p>
-                                    <small class="text-muted">{{ notification.date_creation|date:"d/m/Y H:i" }}</small>
-                                </div>
-                                <div class="ms-2">
-                                    {% if not notification.lue %}
-                                        <a href="{% url 'marquer_notification_lue' notification.id %}" 
-                                           class="btn btn-sm btn-outline-primary">Marquer lue</a>
-                                    {% endif %}
-                                    <form method="POST" action="{% url 'supprimer_notification' notification.id %}" style="display: inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                                onclick="return confirm('Confirmer la suppression ?')">Supprimer</button>
-                                    </form>
-                                </div>
+                <div class="card-dashboard" style="{% if not notification.lue %}border-left: 4px solid var(--primary);{% else %}border-left: 4px solid var(--grey);{% endif %} transition: all 0.3s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px;">
+                        <div style="flex-grow: 1;">
+                            <h5 style="margin: 0 0 8px 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                                {% if notification.type == 'tache_assignee' %}
+                                    <i class='bx bx-clipboard' style="color: var(--primary);"></i>
+                                {% elif notification.type == 'tache_complete' %}
+                                    <i class='bx bx-check-circle' style="color: var(--success);"></i>
+                                {% elif notification.type == 'tache_rappel' %}
+                                    <i class='bx bx-time-five' style="color: var(--warning);"></i>
+                                {% elif notification.type == 'budget_alerte' %}
+                                    <i class='bx bx-wallet' style="color: var(--danger);"></i>
+                                {% elif notification.type == 'nouveau_membre' %}
+                                    <i class='bx bx-user-plus' style="color: var(--primary);"></i>
+                                {% elif notification.type == 'message' %}
+                                    <i class='bx bx-message' style="color: var(--success);"></i>
+                                {% elif notification.type == 'commentaire_tache' %}
+                                    <i class='bx bx-chat' style="color: var(--primary);"></i>
+                                {% elif notification.type == 'demande_modification' %}
+                                    <i class='bx bx-calendar-check' style="color: var(--warning);"></i>
+                                {% endif %}
+                                {{ notification.titre }}
+                            </h5>
+                            <p style="color: var(--dark-grey); margin: 0 0 8px 0;">{{ notification.message }}</p>
+                            <small style="color: var(--dark-grey);">{{ notification.date_creation|date:"d/m/Y H:i" }}</small>
+                            {% if notification.id_tache %}
+                            <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                {% if notification.id_tache.date_limite %}
+                                <span style="padding: 4px 8px; background: var(--warning); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-calendar'></i>Date limite : {{ notification.id_tache.date_limite|date:"d/m/Y" }}
+                                </span>
+                                {% endif %}
+                                {% if notification.id_tache|has_demande_en_attente:user %}
+                                <span style="padding: 4px 8px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-time-five'></i>Demande modif en attente
+                                </span>
+                                {% endif %}
                             </div>
+                            {% endif %}
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                            {% if notification.type == 'message' and notification.id_foyer %}
+                                <a href="{% url 'chat_foyer' notification.id_foyer.id %}" 
+                                   style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"
+                                   onclick="markNotificationAsRead({{ notification.id }})">
+                                    <i class='bx bx-message-square-dots'></i>Voir le chat
+                                </a>
+                            {% endif %}
+                            {% if notification.type == 'commentaire_tache' and notification.id_tache %}
+                                <a href="{% url 'detail_tache' notification.id_tache.id %}" 
+                                   style="padding: 6px 12px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"
+                                   onclick="markNotificationAsRead({{ notification.id }})">
+                                    <i class='bx bx-show'></i>Voir la tâche
+                                </a>
+                            {% endif %}
+                            {% if notification.type == 'tache_assignee' and notification.id_tache %}
+                                {% if notification.id_tache|has_demande_en_attente:user %}
+                                <span style="padding: 6px 12px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-time-five'></i>Demande en attente
+                                </span>
+                                {% else %}
+                                <a href="{% url 'demander_modification_date' notification.id_tache.id %}" 
+                                   style="padding: 6px 12px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-calendar-x'></i>Demander modification date
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                            {% if notification.type == 'tache_complete' and notification.id_tache %}
+                                <a href="{% url 'detail_tache' notification.id_tache.id %}" 
+                                   style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"
+                                   onclick="markNotificationAsRead({{ notification.id }})">
+                                    <i class='bx bx-show'></i>Voir la tâche
+                                </a>
+                            {% endif %}
+                            {% if not notification.lue %}
+                                <a href="{% url 'marquer_notification_lue' notification.id %}" 
+                                   style="padding: 6px 12px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    Marquer lue
+                                </a>
+                            {% endif %}
+                            <form method="POST" action="{% url 'supprimer_notification' notification.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" style="padding: 6px 12px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"
+                                        onclick="return confirm('Confirmer la suppression ?')">
+                                    <i class='bx bx-trash'></i>Supprimer
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
             {% endfor %}
-        {% else %}
-            <div class="col-12">
-                <div class="alert alert-info text-center">
-                    <h5>📭 Aucune notification pour le moment</h5>
-                    <p class="mb-0">Vos notifications apparaîtront ici</p>
-                </div>
-            </div>
-        {% endif %}
-    </div>
+        </div>
+    {% else %}
+        <div style="background: var(--light-primary); color: var(--primary); padding: 48px; border-radius: 12px; text-align: center;">
+            <i class='bx bx-inbox' style="font-size: 4rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+            <h5 style="margin: 0 0 8px 0; color: var(--dark);">Aucune notification pour le moment</h5>
+            <p style="margin: 0; color: var(--dark-grey);">Vos notifications apparaîtront ici</p>
+        </div>
+    {% endif %}
 </div>
 
-<style>
-    .card {
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.3s;
-    }
+<script>
+// Fonction pour marquer une notification comme lue en arrière-plan
+function markNotificationAsRead(notificationId) {
+    fetch(`/notification/${notificationId}/lue/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).catch(err => {
+        console.log('Erreur lors du marquage de la notification:', err);
+    });
     
-    .card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-</style>
+    setTimeout(() => {
+        if (typeof updateNotificationBadge === 'function') {
+            updateNotificationBadge();
+        } else {
+            fetch('/api/notifications-count/')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.querySelector('#notif-count');
+                    if (badge) {
+                        if (data.count > 0) {
+                            badge.textContent = data.count > 99 ? '99+' : data.count;
+                            badge.style.display = 'flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(err => console.log('Erreur:', err));
+        }
+    }, 500);
+}
+</script>
 {% endblock %}

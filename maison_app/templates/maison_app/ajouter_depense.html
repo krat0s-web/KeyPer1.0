@@ -1,102 +1,367 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
 {% load static %}
+{% block page_title %}Ajouter Dépense{% endblock %}
+{% block page_heading %}Ajouter Dépense{% endblock %}
 
-{% block title %}➕ Ajouter Dépense{% endblock %}
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'budget_foyer' %}">Budget</a></li>
+    /
+    <li><a href="#" class="active">Ajouter Dépense</a></li>
+</ul>
+{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <!-- Header -->
-    <div class="mb-4">
-        <h1 class="h2" style="color: #000; font-weight: bold;">➕ Ajouter Dépense</h1>
-        <p class="text-muted">Foyer: <strong>{{ foyer.nom }}</strong></p>
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 700px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: #ffffff; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-money' style="font-size: 28px; color: #ffffff;"></i>Ajouter Dépense
+        </h3>
+        <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Foyer: <strong>{{ foyer.nom }}</strong></p>
     </div>
-
-    <!-- Messages Django -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    
+    <div style="padding: 24px;">
+        <!-- Alertes avant ajout -->
+        {% if alertes_avant_ajout %}
+        <div style="margin-bottom: 24px;">
+            {% for alerte in alertes_avant_ajout %}
+            <div class="card-dashboard" style="background: {% if alerte.type == 'danger' %}var(--light-danger){% else %}var(--light-warning){% endif %}; color: {% if alerte.type == 'danger' %}var(--danger){% else %}var(--dark){% endif %}; padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid {% if alerte.type == 'danger' %}var(--danger){% else %}var(--warning){% endif %};">
+                <h5 style="margin: 0 0 8px 0; color: {% if alerte.type == 'danger' %}var(--danger){% else %}var(--dark){% endif %};">
+                    {% if alerte.type == 'danger' %}
+                        🚨 Alerte Critique
+                    {% else %}
+                        ⚠️ Attention
+                    {% endif %}
+                </h5>
+                <p style="margin: 0 0 8px 0; color: var(--dark);">{{ alerte.message }}</p>
+                {% if alerte.type == 'danger' %}
+                <hr style="border: none; border-top: 1px solid var(--grey); margin: 8px 0;">
+                <p style="margin: 0 0 4px 0; color: var(--dark); font-weight: 500;"><strong>Détails :</strong></p>
+                <ul style="margin: 0; padding-left: 20px; color: var(--dark);">
+                    <li>Montant actuel utilisé : {{ alerte.montant_actuel|floatformat:2 }}€</li>
+                    <li>Limite du budget : {{ alerte.montant_limite|floatformat:2 }}€</li>
+                    <li>Montant après ajout : {{ alerte.montant_apres|floatformat:2 }}€</li>
+                    <li style="color: var(--danger); font-weight: 600;"><strong>Dépassement : {{ alerte.depassement|floatformat:2 }}€</strong></li>
+                </ul>
+                {% endif %}
             </div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card" style="border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
-                <div class="card-header" style="background-color: #000; color: white; border-radius: 16px 16px 0 0;">
-                    <h5 class="mb-0">💰 Nouvelle Dépense</h5>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="description" class="form-label">📝 Description</label>
-                            <input type="text" class="form-control" id="description" name="description" 
-                                   placeholder="Ex: Courses au marché" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="montant" class="form-label">💵 Montant</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="montant" name="montant" 
-                                       placeholder="0.00" step="0.01" required>
-                                <span class="input-group-text">€</span>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="categorie" class="form-label">🏷️ Catégorie</label>
-                            <select class="form-select" id="categorie" name="categorie" required>
-                                <option value="">-- Sélectionner une catégorie --</option>
-                                {% for cat in categories %}
-                                    <option value="{{ cat.id }}">{{ cat.nom }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="date_depense" class="form-label">📅 Date</label>
-                            <input type="date" class="form-control" id="date_depense" name="date_depense" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="notes" class="form-label">📋 Notes (optionnel)</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3" 
-                                      placeholder="Ajouter des notes..."></textarea>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">✅ Ajouter Dépense</button>
-                            <a href="{% url 'budget_foyer' %}" class="btn btn-outline-secondary">❌ Annuler</a>
-                        </div>
-                    </form>
-                </div>
+            {% endfor %}
+            <div class="card-dashboard" style="background: var(--light-primary); padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary);">
+                <i class='bx bx-info-circle' style="color: var(--primary); margin-right: 8px;"></i>
+                <strong style="color: var(--dark);">💡 Conseil :</strong> Vous pouvez quand même ajouter cette dépense, mais le budget sera dépassé. 
+                Pensez à réviser votre budget si nécessaire.
             </div>
         </div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% if depense_preview %}
+            <!-- Prévisualisation de la dépense -->
+            <input type="hidden" name="description" value="{{ depense_preview.description }}">
+            <input type="hidden" name="montant" value="{{ depense_preview.montant }}">
+            <input type="hidden" name="categorie_principale" value="{{ depense_preview.categorie_id }}">
+            <input type="hidden" name="date_depense" value="{{ depense_preview.date_depense }}">
+            <input type="hidden" name="notes" value="{{ depense_preview.notes }}">
+            {% endif %}
+            
+            <div style="display: grid; gap: 20px;">
+                <div>
+                    <label for="description" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-text'></i>📝 Description
+                    </label>
+                    <input type="text" id="description" name="description" 
+                           placeholder="Ex: Courses au marché" value="{% if depense_preview %}{{ depense_preview.description }}{% endif %}" required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                </div>
+
+                <div>
+                    <label for="montant" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-money'></i>💵 Montant
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="montant" name="montant" 
+                               placeholder="0.00" step="0.01" min="0" value="{% if depense_preview %}{{ depense_preview.montant }}{% endif %}" required
+                               style="flex: 1; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <span style="padding: 12px; background: var(--grey); color: var(--dark); border-radius: 8px; display: flex; align-items: center;">€</span>
+                    </div>
+                    <small style="color: var(--dark-grey); font-size: 12px;">Minimum : 0 € (pas de valeurs négatives)</small>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 12px; color: var(--dark); font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                        <i class='bx bx-tag'></i>🏷️ Catégorie Principale
+                    </label>
+                    
+                    {% if not depense_preview %}
+                    <!-- Grille de catégories visuelles -->
+                    <div id="categories_grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                        {% for cat in categories_principales %}
+                        <button type="button" class="categorie-card" 
+                                data-categorie-id="{{ cat.id }}"
+                                data-categorie-nom="{{ cat.nom }}"
+                                onclick="selectCategorie({{ cat.id }}, '{{ cat.nom }}', '{{ cat.icone }}', '{{ cat.couleur }}')"
+                                style="padding: 16px; border: 2px solid var(--grey); border-radius: 12px; background: var(--light); cursor: pointer; transition: all 0.3s ease; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 100px;">
+                            <div style="font-size: 32px; color: {{ cat.couleur }};">
+                                {% if cat.icone|slice:":2" == "bx" %}
+                                    <i class='{{ cat.icone }}'></i>
+                                {% else %}
+                                    <i class='bi {{ cat.icone }}'></i>
+                                {% endif %}
+                            </div>
+                            <div style="font-weight: 600; color: var(--dark); font-size: 13px; line-height: 1.3;">{{ cat.nom }}</div>
+                        </button>
+                        {% endfor %}
+                        <button type="button" class="categorie-card" 
+                                data-categorie-id="autre"
+                                data-categorie-nom="Autres"
+                                onclick="selectCategorie('autre', 'Autres', 'bx-category', 'var(--dark-grey)')"
+                                style="padding: 16px; border: 2px solid var(--grey); border-radius: 12px; background: var(--light); cursor: pointer; transition: all 0.3s ease; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 100px;">
+                            <div style="font-size: 32px; color: var(--dark-grey);">
+                                <i class='bx bx-category'></i>
+                            </div>
+                            <div style="font-weight: 600; color: var(--dark); font-size: 13px; line-height: 1.3;">Autres</div>
+                        </button>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Select caché pour la soumission du formulaire -->
+                    <select id="categorie_principale" name="categorie_principale" required onchange="loadSousCategories()" {% if depense_preview %}disabled{% endif %} style="{% if not depense_preview %}display: none;{% endif %}">
+                        <option value="">-- Sélectionner une catégorie --</option>
+                        {% for cat in categories_principales %}
+                            <option value="{{ cat.id }}" data-icon="{{ cat.icone }}" {% if depense_preview and depense_preview.categorie_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nom }}</option>
+                        {% endfor %}
+                        <option value="autre" {% if depense_preview and depense_preview.categorie_id == "autre" %}selected{% endif %}>Autres</option>
+                    </select>
+                    {% if depense_preview %}
+                    <input type="hidden" name="categorie_principale" value="{{ depense_preview.categorie_id }}">
+                    {% endif %}
+                    
+                    <!-- Affichage de la catégorie sélectionnée -->
+                    <div id="selected_categorie_display" style="{% if not depense_preview %}display: none;{% endif %} padding: 12px; background: var(--light-primary); border-radius: 8px; border-left: 4px solid var(--primary); margin-top: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="selected_categorie_icon" style="font-size: 20px;">
+                                {% if depense_preview %}
+                                    {% for cat in categories_principales %}
+                                        {% if depense_preview.categorie_id == cat.id|stringformat:"s" %}
+                                            {% if cat.icone|slice:":2" == "bx" %}
+                                                <i class='{{ cat.icone }}'></i>
+                                            {% else %}
+                                                <i class='bi {{ cat.icone }}'></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
+                            <span id="selected_categorie_nom" style="font-weight: 600; color: var(--dark);">
+                                {% if depense_preview %}
+                                    {% for cat in categories_principales %}
+                                        {% if depense_preview.categorie_id == cat.id|stringformat:"s" %}{{ cat.nom }}{% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
+                            {% if not depense_preview %}
+                            <button type="button" onclick="clearCategorieSelection()" style="margin-left: auto; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px;">
+                                <i class='bx bx-x'></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sous_categorie_container" style="display: none;">
+                    <label for="sous_categorie" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-folder'></i>📂 Sous-Catégorie
+                    </label>
+                    <select id="sous_categorie" name="sous_categorie"
+                            style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">-- Sélectionner une sous-catégorie (optionnel) --</option>
+                    </select>
+                </div>
+
+                <input type="hidden" id="categorie" name="categorie" required>
+
+                <div>
+                    <label for="date_depense" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-calendar'></i>📅 Date
+                    </label>
+                    <input type="date" id="date_depense" name="date_depense" min="" max="" value="{% if depense_preview %}{{ depense_preview.date_depense }}{% endif %}" {% if depense_preview %}readonly{% endif %} required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <small style="color: var(--dark-grey); font-size: 12px;">Date entre 1 mois avant aujourd'hui et 2 ans maximum</small>
+                </div>
+
+                <div>
+                    <label for="notes" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-note'></i>📋 Notes (optionnel)
+                    </label>
+                    <textarea id="notes" name="notes" rows="3" 
+                              placeholder="Ajouter des notes..." {% if depense_preview %}readonly{% endif %}
+                              style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;">{% if depense_preview %}{{ depense_preview.notes }}{% endif %}</textarea>
+                </div>
+
+                {% if alertes_avant_ajout %}
+                <div class="card-dashboard" style="background: var(--light-warning); padding: 16px; border-radius: 8px; border-left: 4px solid var(--warning);">
+                    <i class='bx bx-error-circle' style="color: var(--warning); margin-right: 8px;"></i>
+                    <strong style="color: var(--dark);">⚠️ Attention :</strong> Cette dépense pourrait affecter vos budgets. 
+                    Vérifiez les alertes ci-dessus avant de continuer.
+                </div>
+                {% endif %}
+                
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="submit" {% if alertes_avant_ajout %}name="confirmer_depassement" value="1"{% endif %}
+                            style="flex: 1; min-width: 200px; padding: 12px 24px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                        <i class='bx bx-check-circle'></i>
+                        {% if alertes_avant_ajout %}
+                            ⚠️ Confirmer l'ajout malgré les alertes
+                        {% else %}
+                            ✅ Ajouter Dépense
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'budget_foyer' %}" style="flex: 1; min-width: 150px; padding: 12px 24px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                        <i class='bx bx-x-circle'></i>❌ Annuler
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-    // Définir la date d'aujourd'hui par défaut
-    document.getElementById('date_depense').valueAsDate = new Date();
-</script>
+    const categoriesData = {
+        {% for cat in categories_principales %}
+        {{ cat.id }}: [
+            {% for sous_cat in cat.sous_categories.all %}
+            {id: {{ sous_cat.id }}, nom: "{{ sous_cat.nom }}"}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
 
-<style>
-    .form-control, .form-select {
-        border-radius: 8px;
-        border: 1px solid #ddd;
+    function loadSousCategories() {
+        const categoriePrincipaleId = document.getElementById('categorie_principale').value;
+        const sousCategorieContainer = document.getElementById('sous_categorie_container');
+        const sousCategorieSelect = document.getElementById('sous_categorie');
+        const categorieFinale = document.getElementById('categorie');
+
+        sousCategorieSelect.innerHTML = '<option value="">-- Sélectionner une sous-catégorie (optionnel) --</option>';
+
+        if (categoriePrincipaleId === 'autre') {
+            sousCategorieContainer.style.display = 'none';
+            categorieFinale.value = '';
+            return;
+        }
+
+        if (categoriePrincipaleId && categoriesData[categoriePrincipaleId] && categoriesData[categoriePrincipaleId].length > 0) {
+            sousCategorieContainer.style.display = 'block';
+            categoriesData[categoriePrincipaleId].forEach(function(sousCat) {
+                const option = document.createElement('option');
+                option.value = sousCat.id;
+                option.textContent = sousCat.nom;
+                sousCategorieSelect.appendChild(option);
+            });
+            categorieFinale.value = categoriePrincipaleId;
+        } else {
+            sousCategorieContainer.style.display = 'none';
+            categorieFinale.value = categoriePrincipaleId;
+        }
     }
+
+    document.getElementById('sous_categorie').addEventListener('change', function() {
+        const sousCategorieId = this.value;
+        const categorieFinale = document.getElementById('categorie');
+        if (sousCategorieId) {
+            categorieFinale.value = sousCategorieId;
+        } else {
+            categorieFinale.value = document.getElementById('categorie_principale').value;
+        }
+    });
+
+    // Définir les contraintes de date (1 mois avant, 2 ans après)
+    const today = new Date();
+    const minDate = new Date();
+    minDate.setMonth(today.getMonth() - 1);
+    const maxDate = new Date();
+    maxDate.setFullYear(today.getFullYear() + 2);
     
-    .form-control:focus, .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
+    const dateInput = document.getElementById('date_depense');
+    dateInput.min = minDate.toISOString().split('T')[0];
+    dateInput.max = maxDate.toISOString().split('T')[0];
     
-    .btn {
-        border-radius: 8px;
-        font-weight: 600;
+    // Définir la date d'aujourd'hui par défaut
+    if (!dateInput.value) {
+        dateInput.valueAsDate = new Date();
     }
-</style>
+
+    function selectCategorie(categorieId, categorieNom, categorieIcon, categorieCouleur) {
+        // Mettre à jour le select
+        const select = document.getElementById('categorie_principale');
+        select.value = categorieId;
+        
+        // Mettre à jour l'affichage
+        const display = document.getElementById('selected_categorie_display');
+        const iconSpan = document.getElementById('selected_categorie_icon');
+        const nomSpan = document.getElementById('selected_categorie_nom');
+        
+        // Déterminer l'icône
+        let iconClass = categorieIcon;
+        if (!iconClass.startsWith('bx') && !iconClass.startsWith('bi')) {
+            iconClass = 'bx-category';
+        }
+        
+        iconSpan.innerHTML = `<i class='${iconClass.startsWith("bx") ? iconClass : "bi " + iconClass}' style="color: ${categorieCouleur};"></i>`;
+        nomSpan.textContent = categorieNom;
+        display.style.display = 'block';
+        
+        // Mettre à jour les cartes visuelles
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            if (card.getAttribute('data-categorie-id') == categorieId) {
+                card.style.border = '3px solid var(--primary)';
+                card.style.background = 'var(--light-primary)';
+                card.style.transform = 'scale(1.05)';
+            } else {
+                card.style.border = '2px solid var(--grey)';
+                card.style.background = 'var(--light)';
+                card.style.transform = 'scale(1)';
+            }
+        });
+        
+        // Charger les sous-catégories
+        loadSousCategories();
+    }
+
+    function clearCategorieSelection() {
+        document.getElementById('categorie_principale').value = '';
+        document.getElementById('selected_categorie_display').style.display = 'none';
+        document.getElementById('sous_categorie_container').style.display = 'none';
+        document.getElementById('categorie').value = '';
+        
+        // Réinitialiser les cartes
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            card.style.border = '2px solid var(--grey)';
+            card.style.background = 'var(--light)';
+            card.style.transform = 'scale(1)';
+        });
+    }
+
+    // Ajouter les styles hover pour les cartes
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                if (this.style.border !== '3px solid var(--primary)') {
+                    this.style.border = '2px solid var(--primary)';
+                    this.style.transform = 'scale(1.02)';
+                }
+            });
+            card.addEventListener('mouseleave', function() {
+                if (this.style.border !== '3px solid var(--primary)') {
+                    this.style.border = '2px solid var(--grey)';
+                    this.style.transform = 'scale(1)';
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

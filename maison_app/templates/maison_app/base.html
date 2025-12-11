@@ -5,9 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Gestion Tâches{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo_keyper_nuit.png' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        :root {
+            --navbar-bg: #1e3a5f;
+            --navbar-text: white;
+        }
+        
+        body.theme-day {
+            --navbar-bg: #fffef0;
+            --navbar-text: #5D4037;
+        }
+        
         body { 
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
@@ -15,12 +26,25 @@
         }
         .navbar {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            background: #000 !important;  /* NOIR COMME L'IMAGE */
+            background: var(--navbar-bg) !important;
+            transition: background 0.8s ease;
+        }
+        
+        .navbar .logo-img {
+            height: 50px;
+            width: auto;
+            transition: opacity 0.8s ease;
         }
         .navbar-nav .nav-link {
-            color: white;
+            color: var(--navbar-text);
             font-size: 1.1rem;
             padding: 0.5rem 1rem;
+            transition: color 0.8s ease;
+        }
+        
+        .navbar-brand {
+            color: var(--navbar-text) !important;
+            transition: color 0.8s ease;
         }
         .nav-icons {
             display: flex;
@@ -32,13 +56,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: white;
+            color: var(--navbar-text);
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all 0.3s ease, color 0.8s ease;
         }
         .nav-icon:hover {
             transform: scale(1.1);
-            color: white;
+            color: var(--navbar-text);
         }
         .nav-icon i {
             font-size: 2rem;
@@ -62,14 +86,15 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="{% url 'dashboard' %}">
-                <img src="{% static 'images/keyper-logo.svg' %}" alt="Keyper" width="40" height="40" class="me-2">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'accueil' %}{% endif %}">
+                <img src="{% static 'images/logo_keyper_nuit.png' %}" alt="Keyper" class="logo-img me-2" onerror="this.style.display='none'">
                 <span>Keyper</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                {% if user.is_authenticated %}
                 <div class="nav-icons mx-auto">
                     <!-- ICÔNE DASHBOARD (CYAN) -->
                     <a href="{% url 'dashboard' %}" class="nav-icon" style="color: white;">
@@ -87,7 +112,7 @@
                         <span>Foyer</span>
                     </a>
                     <!-- ICÔNE CHAT (VERT) -->
-                    {% if user.is_authenticated and user.foyer_actif %}
+                    {% if user.foyer_actif %}
                     <a href="{% url 'chat_foyer' user.foyer_actif.id %}" class="nav-icon icon-chat">
                         <i class="bi bi-chat-dots"></i>
                         <span>Chat</span>
@@ -103,11 +128,13 @@
                         <i class="bi bi-journal-text"></i>
                         <span>Mes notes</span>
                     </a>
-                    <!-- ICÔNE BUDGET (ORANGE) -->
+                    <!-- ICÔNE BUDGET (ORANGE) - Admin et Trésorier uniquement -->
+                    {% if user.role == 'admin' or user.role == 'tresorier' or user.is_staff %}
                     <a href="{% url 'budget_foyer' %}" class="nav-icon" style="color: white;">
                         <i class="bi bi-wallet" style="color: #ff9500;"></i>
                         <span>Budget</span>
                     </a>
+                    {% endif %}
                     <!-- ICÔNE RÉCOMPENSES (OR) -->
                     <a href="{% url 'mes_recompenses' %}" class="nav-icon" style="color: white;">
                         <i class="bi bi-trophy" style="color: #ffd700;"></i>
@@ -117,35 +144,46 @@
                     <a href="{% url 'mes_notifications' %}" class="nav-icon" style="color: white; position: relative;">
                         <i class="bi bi-bell" style="color: #00d4ff;"></i>
                         {% if user.is_authenticated %}
-                            {% with user.notifications.filter|default:0 as non_lues %}
-                                <span class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 0.7rem; display: none;" id="notif-badge"></span>
-                            {% endwith %}
+                            <span class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 0.7rem; min-width: 18px; height: 18px; display: none; padding: 2px 6px; border-radius: 9px; line-height: 14px;" id="notif-badge">0</span>
                         {% endif %}
                         <span>Notifs</span>
                     </a>
+                    <!-- ICÔNE CALENDRIER -->
+                    <a href="{% url 'calendrier_taches' %}" class="nav-icon" style="color: white;">
+                        <i class="bi bi-calendar3" style="color: #6c757d;"></i>
+                        <span>Calendrier</span>
+                    </a>
+                    <!-- ICÔNE DEMANDES MODIFICATION (Admin uniquement) -->
+                    {% if user.role == 'admin' or user.is_staff %}
+                    <a href="{% url 'gerer_demandes_modification' %}" class="nav-icon" style="color: white; position: relative;" id="demandes-link">
+                        <i class="bi bi-calendar-check" style="color: #ff6b6b;"></i>
+                        <span>Demandes</span>
+                        {% if user.foyer_actif %}
+                        <span class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 0.7rem; display: none;" id="demandes-badge"></span>
+                        {% endif %}
+                    </a>
+                    {% endif %}
                     <!-- ICÔNE PROFIL (VIOLET) -->
                     <a href="{% url 'mon_profil' %}" class="nav-icon icon-profil">
                         <i class="bi bi-person-circle"></i>
                         <span>Profil</span>
                     </a>
                 </div>
+                {% endif %}
 
                 <!-- DROPDOWN UTILISATEUR -->
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" style="color: var(--navbar-text);">
                             {{ user.email }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Déconnexion</a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}" onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')">Déconnexion</a></li>
                         </ul>
                     </li>
-                    {% else %}
-                    <li class="nav-item"><a class="nav-link text-white" href="{% url 'login' %}">Connexion</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="{% url 'inscription' %}">Inscription</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -167,21 +205,84 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Charger le nombre de notifications non lues
-        document.addEventListener('DOMContentLoaded', function() {
-            if (document.querySelector('#notif-badge')) {
-                // Faire une requête pour obtenir le nombre de notifications non lues
-                fetch('/api/notifications-count/')
-                    .then(response => response.json())
-                    .then(data => {
-                        const badge = document.querySelector('#notif-badge');
-                        if (data.count > 0) {
-                            badge.textContent = data.count;
-                            badge.style.display = 'inline-block';
-                        }
-                    })
-                    .catch(err => console.log('Notifications count API not available'));
+        // Fonction pour mettre à jour le badge de notifications
+        function updateNotificationBadge() {
+            const badge = document.querySelector('#notif-badge');
+            if (!badge) return;
+            
+            fetch('/api/notifications-count/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 99 ? '99+' : data.count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(err => console.log('Erreur lors de la mise à jour du badge de notifications:', err));
+        }
+        
+        // Fonction pour mettre à jour le badge de demandes (admin uniquement)
+        function updateDemandesBadge() {
+            {% if user.role == 'admin' or user.is_staff %}
+            const badge = document.querySelector('#demandes-badge');
+            if (!badge) return;
+            
+            fetch('/api/demandes-count/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 99 ? '99+' : data.count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(err => console.log('Erreur lors de la mise à jour du badge de demandes:', err));
+            {% endif %}
+        }
+        
+        // Gestion du thème pour la navbar
+        const themes = {
+            night: {
+                logo: "{% static 'images/logo_keyper_nuit.png' %}"
+            },
+            day: {
+                logo: "{% static 'images/keyper_logo_jour.svg' %}"
             }
+        };
+        
+        function initNavbarTheme() {
+            const savedTheme = localStorage.getItem('authTheme') || localStorage.getItem('theme');
+            const hour = new Date().getHours();
+            const logoImg = document.querySelector('.logo-img');
+            
+            let theme = savedTheme || (hour >= 6 && hour < 20 ? 'day' : 'night');
+            
+            if (theme === 'day') {
+                document.body.classList.add('theme-day');
+            } else {
+                document.body.classList.remove('theme-day');
+            }
+            
+            if (logoImg) {
+                logoImg.src = theme === 'day' ? themes.day.logo : themes.night.logo;
+            }
+        }
+        
+        // Charger le nombre de notifications non lues au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialiser le thème de la navbar
+            initNavbarTheme();
+            
+            // Mettre à jour immédiatement au chargement
+            updateNotificationBadge();
+            updateDemandesBadge();
+            
+            // Actualisation automatique désactivée
+            // setInterval(updateNotificationBadge, 2000);
+            // setInterval(updateDemandesBadge, 2000);
         });
     </script>
 </body>

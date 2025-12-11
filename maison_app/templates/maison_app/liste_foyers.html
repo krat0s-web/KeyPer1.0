@@ -1,76 +1,79 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
 {% block title %}Foyers{% endblock %}
+{% block page_title %}Foyers{% endblock %}
+{% block page_heading %}Foyers{% endblock %}
 
-{% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4 text-primary fw-bold">Mes Foyers</h2>
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Foyers</a></li>
+</ul>
+{% endblock %}
 
-    <!-- Bouton Créer / Rejoindre -->
-    {% if user.role == 'admin' %}
-    <a href="{% url 'creer_foyer' %}" class="btn btn-success btn-lg mb-4 shadow-sm">
-        + Créer un foyer
-    </a>
-    {% else %}
-    <a href="{% url 'rejoindre_foyer' %}" class="btn btn-primary btn-lg mb-4 shadow-sm">
-        Rejoindre un foyer
-    </a>
-    {% endif %}
-
-    <!-- LISTE DES FOYERS (TOUJOURS AFFICHÉE) -->
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        {% for foyer in foyers %}
-        <div class="col">
-            <a href="{% url 'detail_foyer' foyer.id %}" class="text-decoration-none">
-                <div class="card h-100 shadow-sm hover-shadow border-0">
-                    {% if foyer.photo %}
-                    <img src="{{ foyer.photo.url }}" class="card-img-top" alt="{{ foyer.nom }}" style="height: 200px; object-fit: cover;">
-                    {% else %}
-                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                        <span class="text-muted">Pas d'image</span>
-                    </div>
-                    {% endif %}
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-primary fw-bold">{{ foyer.nom }}</h5>
-                        <p class="card-text text-muted small">
-                            {{ foyer.description|truncatewords:15|default:"Aucune description" }}
-                        </p>
-                        <span class="badge bg-info">
-                            {{ foyer.pieces.count }} pièce{{ foyer.pieces.count|pluralize }}
-                        </span>
-                    </div>
-                </div>
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 12px;">
+                <i class='bx bx-home' style="font-size: 28px; color: var(--primary);"></i>Mes Foyers
+            </h3>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{% url 'creer_foyer' %}" style="padding: 10px 20px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class='bx bx-plus'></i>Créer un foyer
+            </a>
+            <a href="{% url 'rejoindre_foyer' %}" style="padding: 10px 20px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                <i class='bx bx-log-in'></i>Rejoindre un foyer
             </a>
         </div>
-        {% empty %}
-        <!-- NE S'AFFICHE QUE SI VRAIMENT VIDE -->
-        <div class="col-12">
-            <div class="alert alert-info text-center p-5 rounded-4 shadow-sm">
-                <h5>Aucun foyer</h5>
-                <p>
-                    {% if user.role == 'admin' %}
-                    Créez votre premier foyer !
-                    {% else %}
-                    Rejoignez un foyer avec un code d'invitation.
-                    {% endif %}
-                </p>
-                <a href="{% if user.role == 'admin' %}{% url 'creer_foyer' %}{% else %}{% url 'rejoindre_foyer' %}{% endif %}" class="btn btn-primary">
-                    {% if user.role == 'admin' %}Créer un foyer{% else %}Rejoindre un foyer{% endif %}
-                </a>
+    </div>
+
+    {% if foyers %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
+        {% for foyer in foyers %}
+        <a href="{% url 'detail_foyer' foyer.id %}" style="text-decoration: none; color: inherit;">
+            <div class="card-dashboard" style="padding: 0; overflow: hidden; transition: all 0.3s ease; border-left: 4px solid 
+                {% cycle 'var(--card-purple)' 'var(--card-orange)' 'var(--card-green)' %};" 
+                onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" 
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                {% if foyer.photo %}
+                <img src="{{ foyer.photo.url }}" alt="{{ foyer.nom }}" style="width: 100%; height: 200px; object-fit: cover;">
+                {% else %}
+                <div style="height: 200px; background: var(--grey); display: flex; align-items: center; justify-content: center;">
+                    <i class='bx bx-home' style="font-size: 4rem; color: var(--dark-grey);"></i>
+                </div>
+                {% endif %}
+                <div style="padding: 24px;">
+                    <h5 style="margin: 0 0 12px 0; color: var(--dark); font-weight: 600; font-size: 20px;">{{ foyer.nom }}</h5>
+                    <p style="margin: 0 0 16px 0; color: var(--dark-grey); font-size: 14px;">{{ foyer.description|truncatewords:15|default:"Aucune description" }}</p>
+                    <span style="padding: 6px 12px; background: var(--light-primary); color: var(--primary); border-radius: 20px; font-size: 12px; font-weight: 500;">
+                        {{ foyer.pieces.count }} pièce{{ foyer.pieces.count|pluralize }}
+                    </span>
+                </div>
             </div>
-        </div>
+        </a>
         {% endfor %}
     </div>
+    {% else %}
+    <div style="background: var(--grey); padding: 48px; border-radius: 12px; text-align: center;">
+        <i class='bx bx-home' style="font-size: 4rem; margin-bottom: 16px; display: block; color: var(--dark-grey); opacity: 0.5;"></i>
+        <h5 style="margin: 0 0 16px 0; color: var(--dark); font-size: 24px;">Aucun foyer</h5>
+        <p style="margin: 0 0 24px 0; color: var(--dark-grey);">
+            Créez votre premier foyer ou rejoignez-en un avec un code d'invitation !
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <a href="{% url 'creer_foyer' %}" 
+               style="padding: 12px 24px; background: var(--success); color: var(--light); border-radius: 36px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: all 0.3s ease;">
+                <i class='bx bx-plus'></i>Créer un foyer
+            </a>
+            <a href="{% url 'rejoindre_foyer' %}" 
+               style="padding: 12px 24px; background: var(--primary); color: var(--light); border-radius: 36px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: all 0.3s ease;">
+                <i class='bx bx-log-in'></i>Rejoindre un foyer
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
-
-<style>
-    .hover-shadow:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
-        transition: all 0.3s ease;
-    }
-    .card-img-top {
-        border-top-left-radius: 16px;
-        border-top-right-radius: 16px;
-    }
-</style>
 {% endblock %}

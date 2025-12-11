@@ -2,8 +2,33 @@ services:
   - type: web
     name: keyper
     env: python
-    buildCommand: pip install -r requirements.txt && python manage.py migrate
-    startCommand: gunicorn gestion_taches_project.wsgi:application --bind 0.0.0.0:$PORT
+    region: fra
+    plan: standard
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
+    startCommand: gunicorn gestion_taches_project.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --worker-class sync
+    numInstances: 1
     envVars:
-      DEBUG: "False"
-      SECRET_KEY: "ton-secret-key-tres-long-ici"
+      - key: DJANGO_SETTINGS_MODULE
+        value: gestion_tacles_project.settings_production
+      - key: DEBUG
+        value: "False"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+      - key: SECURE_HSTS_SECONDS
+        value: "31536000"
+      - key: SECRET_KEY
+        fromService:
+          type: pserv
+          name: keyper-db
+          property: Env.SECRET_KEY
+        sync: false
+  - type: pserv
+    name: keyper-db
+    env: postgres
+    plan: standard
+    ipAllowList: []
+    postgresMajorVersion: 15

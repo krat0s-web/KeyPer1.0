@@ -1,0 +1,243 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% load permission_tags %}
+{% block page_title %}Demandes{% endblock %}
+{% block page_heading %}Demandes{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Demandes</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <!-- Header avec boutons d'action -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <i class='bx bx-message-square-detail' style="font-size: 28px; color: var(--warning);"></i>Demandes du foyer
+            </h3>
+            <p style="color: var(--dark-grey); margin: 0;">Foyer: <strong style="color: var(--dark);">{{ foyer.nom }}</strong></p>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {% if user|can:"can_request_budget" %}
+            <a href="{% url 'creer_demande' %}" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                <i class='bx bx-plus'></i>Faire une demande
+            </a>
+            {% endif %}
+            {% if mes_demandes_en_cours.count > 0 %}
+            <a href="{% url 'mes_demandes' %}" style="padding: 10px 20px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500; position: relative;">
+                <i class='bx bx-list-check'></i>Mes demandes en cours
+                <span style="position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600;">{{ mes_demandes_en_cours.count }}</span>
+            </a>
+            {% else %}
+            <a href="{% url 'mes_demandes' %}" style="padding: 10px 20px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                <i class='bx bx-list-check'></i>Consulter mes demandes
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Messages Django -->
+    {% if messages %}
+        {% for message in messages %}
+            <div style="background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% else %}var(--light-primary){% endif %}; color: {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% else %}var(--primary){% endif %}; padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% else %}var(--primary){% endif %};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Section pour les admins : Demandes en attente -->
+    {% if is_admin and demandes_en_attente %}
+    <div style="margin-bottom: 32px;">
+        <div style="background: var(--light-warning); padding: 16px; border-radius: 12px; border-left: 4px solid var(--warning); margin-bottom: 16px;">
+            <h4 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-time-five' style="font-size: 20px; color: var(--warning);"></i>Demandes en attente de traitement
+                <span style="padding: 4px 12px; background: var(--warning); color: var(--dark); border-radius: 12px; font-size: 12px; margin-left: 8px;">{{ demandes_en_attente.count }}</span>
+            </h4>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for demande in demandes_en_attente %}
+                <div class="card-dashboard" style="border-left: 4px solid var(--warning); transition: all 0.3s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex-grow: 1;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+                                <h5 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                                    {% if demande.type_demande == 'budget' %}
+                                        <i class='bx bx-wallet' style="color: var(--primary);"></i>
+                                    {% elif demande.type_demande == 'depense' %}
+                                        <i class='bx bx-money' style="color: var(--success);"></i>
+                                    {% elif demande.type_demande == 'acces_page' %}
+                                        <i class='bx bx-lock-open' style="color: var(--warning);"></i>
+                                    {% elif demande.type_demande == 'acces_fonctionnalite' %}
+                                        <i class='bx bx-cog' style="color: var(--primary);"></i>
+                                    {% endif %}
+                                    {{ demande.titre }}
+                                </h5>
+                                <span style="padding: 6px 12px; border-radius: 20px; font-weight: 500; font-size: 12px; background: var(--light-warning); color: var(--warning);">
+                                    ⏳ En attente
+                                </span>
+                            </div>
+                            
+                            <p style="color: var(--dark-grey); margin: 0 0 12px 0; line-height: 1.6;">{{ demande.description }}</p>
+                            
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px;">
+                                <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-user'></i>Par {{ demande.id_user.nom|default:demande.id_user.email }}
+                                </small>
+                                <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-calendar'></i>Créée le {{ demande.date_creation|date:"d/m/Y à H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions admin -->
+                        <div style="display: flex; flex-direction: column; gap: 8px; min-width: 200px;">
+                            <form method="POST" id="form-accepter-{{ demande.id }}" style="display: none;">
+                                {% csrf_token %}
+                                <input type="hidden" name="demande_id" value="{{ demande.id }}">
+                                <input type="hidden" name="action" value="accepter">
+                                <textarea name="reponse" id="reponse-accepter-{{ demande.id }}" placeholder="Réponse (optionnel)" rows="3" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 8px; margin-bottom: 8px; resize: vertical; font-size: 12px;"></textarea>
+                            </form>
+                            <form method="POST" id="form-refuser-{{ demande.id }}" style="display: none;">
+                                {% csrf_token %}
+                                <input type="hidden" name="demande_id" value="{{ demande.id }}">
+                                <input type="hidden" name="action" value="refuser">
+                                <textarea name="reponse" id="reponse-refuser-{{ demande.id }}" placeholder="Réponse (optionnel)" rows="3" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 8px; margin-bottom: 8px; resize: vertical; font-size: 12px;"></textarea>
+                            </form>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <textarea id="reponse-{{ demande.id }}" placeholder="Réponse (optionnel)" rows="3" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 8px; resize: vertical; font-size: 12px;"></textarea>
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="button" onclick="traiterDemande({{ demande.id }}, 'accepter')" style="flex: 1; padding: 8px 16px; background: var(--success); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 500;">
+                                        <i class='bx bx-check-circle'></i>Accepter
+                                    </button>
+                                    <button type="button" onclick="traiterDemande({{ demande.id }}, 'refuser')" style="flex: 1; padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 500;">
+                                        <i class='bx bx-x-circle'></i>Refuser
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Toutes les demandes -->
+    <div>
+        <h4 style="margin-bottom: 16px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-list-ul' style="font-size: 20px; color: var(--primary);"></i>Toutes les demandes
+            <span style="padding: 4px 12px; background: var(--primary); color: var(--light); border-radius: 12px; font-size: 12px; margin-left: 8px;">{{ toutes_demandes.count }}</span>
+        </h4>
+        
+        {% if toutes_demandes %}
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% for demande in toutes_demandes %}
+                    <div class="card-dashboard" style="border-left: 4px solid {% if demande.statut == 'acceptee' %}var(--success){% elif demande.statut == 'refusee' %}var(--danger){% else %}var(--warning){% endif %}; transition: all 0.3s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex-grow: 1;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+                                    <h5 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                                        {% if demande.type_demande == 'budget' %}
+                                            <i class='bx bx-wallet' style="color: var(--primary);"></i>
+                                        {% elif demande.type_demande == 'depense' %}
+                                            <i class='bx bx-money' style="color: var(--success);"></i>
+                                        {% elif demande.type_demande == 'acces_page' %}
+                                            <i class='bx bx-lock-open' style="color: var(--warning);"></i>
+                                        {% elif demande.type_demande == 'acces_fonctionnalite' %}
+                                            <i class='bx bx-cog' style="color: var(--primary);"></i>
+                                        {% endif %}
+                                        {{ demande.titre }}
+                                    </h5>
+                                    <span style="padding: 6px 12px; border-radius: 20px; font-weight: 500; font-size: 12px; 
+                                        {% if demande.statut == 'acceptee' %}
+                                            background: var(--light-success); color: var(--success);
+                                        {% elif demande.statut == 'refusee' %}
+                                            background: var(--light-danger); color: var(--danger);
+                                        {% else %}
+                                            background: var(--light-warning); color: var(--warning);
+                                        {% endif %}">
+                                        {% if demande.statut == 'acceptee' %}
+                                            ✅ Acceptée
+                                        {% elif demande.statut == 'refusee' %}
+                                            ❌ Refusée
+                                        {% else %}
+                                            ⏳ En attente
+                                        {% endif %}
+                                    </span>
+                                    {% if demande.id_user == user %}
+                                    <span style="padding: 4px 8px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 11px;">
+                                        Ma demande
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <p style="color: var(--dark-grey); margin: 0 0 12px 0; line-height: 1.6;">{{ demande.description }}</p>
+                                
+                                <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px;">
+                                    <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                        <i class='bx bx-user'></i>{{ demande.id_user.nom|default:demande.id_user.email }}
+                                    </small>
+                                    <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                        <i class='bx bx-calendar'></i>{{ demande.date_creation|date:"d/m/Y à H:i" }}
+                                    </small>
+                                    {% if demande.date_traitement %}
+                                    <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                        <i class='bx bx-check-circle'></i>Traitée le {{ demande.date_traitement|date:"d/m/Y à H:i" }}
+                                    </small>
+                                    {% endif %}
+                                    {% if demande.traite_par %}
+                                    <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                        <i class='bx bx-user-check'></i>Par {{ demande.traite_par.nom|default:demande.traite_par.email }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if demande.reponse %}
+                                <div style="margin-top: 16px; padding: 12px; background: var(--light-primary); border-radius: 8px; border-left: 4px solid var(--primary);">
+                                    <strong style="color: var(--dark); display: block; margin-bottom: 8px;">Réponse de l'administrateur :</strong>
+                                    <p style="margin: 0; color: var(--dark); line-height: 1.6;">{{ demande.reponse }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="background: var(--light-primary); color: var(--primary); padding: 48px; border-radius: 12px; text-align: center;">
+                <i class='bx bx-inbox' style="font-size: 4rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+                <h5 style="margin: 0 0 8px 0; color: var(--dark);">Aucune demande pour le moment</h5>
+                <p style="margin: 0 0 24px 0; color: var(--dark-grey);">Aucune demande n'a encore été créée dans ce foyer.</p>
+                {% if user|can:"can_request_budget" %}
+                <a href="{% url 'creer_demande' %}" style="padding: 12px 24px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                    <i class='bx bx-plus'></i>Créer la première demande
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function traiterDemande(demandeId, action) {
+    const reponse = document.getElementById('reponse-' + demandeId).value;
+    const form = document.getElementById('form-' + action + '-' + demandeId);
+    const reponseField = document.getElementById('reponse-' + action + '-' + demandeId);
+    
+    if (reponseField) {
+        reponseField.value = reponse;
+    }
+    
+    const actionText = action === 'accepter' ? 'accepter' : 'refuser';
+    if (confirm('Êtes-vous sûr de vouloir ' + actionText + ' cette demande ?')) {
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
+

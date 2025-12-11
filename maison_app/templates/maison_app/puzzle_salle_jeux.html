@@ -1,0 +1,208 @@
+{% extends "maison_app/base.html" %}
+{% block title %}Puzzle - {{ piece.nom }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-primary fw-bold mb-0">
+            <i class="bi bi-puzzle me-2"></i>Puzzle - {{ piece.nom }}
+        </h1>
+        <a href="{% url 'detail_piece' piece.id %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Retour à la pièce
+        </a>
+    </div>
+    
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h3 class="text-primary mb-0">{{ pieces_possede }}</h3>
+                    <small class="text-muted">Pièces possédées</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h3 class="text-success mb-0">{{ pieces_placees }}</h3>
+                    <small class="text-muted">Pièces placées</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h3 class="text-warning mb-0">{{ pieces_manquantes }}</h3>
+                    <small class="text-muted">Pièces manquantes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h3 class="text-info mb-0">{{ total_points }}</h3>
+                    <small class="text-muted">Points disponibles</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if puzzle_reussi %}
+    <div class="alert alert-success text-center mb-4">
+        <h4><i class="bi bi-trophy me-2"></i>🎉 Félicitations !</h4>
+        <p class="mb-0">Vous avez réussi le puzzle en plaçant 5 pièces ! Vous avez gagné 50 points bonus !</p>
+    </div>
+    {% endif %}
+    
+    <!-- Zone du puzzle -->
+    <div class="card border-0 shadow-lg mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Zone de Puzzle</h5>
+        </div>
+        <div class="card-body p-4">
+            {% if puzzle.image_complete %}
+            <div class="text-center mb-4">
+                <img src="{{ puzzle.image_complete.url }}" alt="Puzzle complet" class="img-fluid" style="max-height: 400px; border-radius: 8px;">
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle me-2"></i>Image du puzzle à venir
+            </div>
+            {% endif %}
+            
+            <div class="progress mb-3" style="height: 30px;">
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: {% widthratio pieces_placees 5 100 %}%;" 
+                     aria-valuenow="{{ pieces_placees }}" aria-valuemin="0" aria-valuemax="5">
+                    {{ pieces_placees }}/5 pièces placées
+                </div>
+            </div>
+            
+            {% if pieces_placees < 5 %}
+            <p class="text-center text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Placez 5 pièces correctement pour réussir le puzzle !
+            </p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Pièces possédées -->
+    <div class="card border-0 shadow-lg mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-box me-2"></i>Mes Pièces ({{ pieces_possede }}/{{ puzzle.total_pieces }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pieces_non_placees %}
+            <h6 class="mb-3">Pièces à placer :</h6>
+            <div class="row g-3 mb-4">
+                {% for piece_puzzle in pieces_non_placees %}
+                <div class="col-md-2 col-sm-3 col-4">
+                    <div class="card border border-primary">
+                        <div class="card-body text-center p-2">
+                            <div class="mb-2">
+                                <i class="bi bi-puzzle-fill" style="font-size: 2rem; color: #0d6efd;"></i>
+                            </div>
+                            <small class="d-block fw-bold">Pièce #{{ piece_puzzle.numero_piece }}</small>
+                            <form method="post" class="mt-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="placer_piece">
+                                <input type="hidden" name="numero_piece" value="{{ piece_puzzle.numero_piece }}">
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="bi bi-check-circle me-1"></i>Placer
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if pieces_placees_list %}
+            <h6 class="mb-3">Pièces placées :</h6>
+            <div class="row g-3">
+                {% for piece_puzzle in pieces_placees_list %}
+                <div class="col-md-2 col-sm-3 col-4">
+                    <div class="card border border-success bg-light">
+                        <div class="card-body text-center p-2">
+                            <div class="mb-2">
+                                <i class="bi bi-puzzle-fill" style="font-size: 2rem; color: #198754;"></i>
+                            </div>
+                            <small class="d-block fw-bold text-success">Pièce #{{ piece_puzzle.numero_piece }}</small>
+                            <span class="badge bg-success">✓ Placée</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if pieces_possede == 0 %}
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle me-2"></i>
+                Vous n'avez pas encore de pièces. Achetez-en avec vos points !
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Acheter des pièces -->
+    {% if pieces_manquantes > 0 %}
+    <div class="card border-0 shadow-lg">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="bi bi-cart me-2"></i>Acheter des Pièces
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-2">
+                        <strong>Prix :</strong> {{ prix_piece }} points par pièce
+                    </p>
+                    <p class="mb-2">
+                        <strong>Vos points :</strong> <span class="badge bg-info">{{ total_points }} points</span>
+                    </p>
+                    <p class="mb-0 text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Il vous reste {{ pieces_manquantes }} pièces à obtenir pour compléter le puzzle.
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    {% if total_points >= prix_piece %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="acheter_piece">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-cart-plus me-2"></i>Acheter une pièce ({{ prix_piece }} pts)
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Points insuffisants !</strong><br>
+                        Il vous faut {{ prix_piece }} points. Complétez des tâches pour gagner des points.
+                        <div class="mt-2">
+                            <a href="{% url 'liste_taches' %}" class="btn btn-success btn-sm">
+                                <i class="bi bi-list-check me-1"></i>Voir les tâches
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-success text-center">
+        <h5><i class="bi bi-trophy me-2"></i>Félicitations !</h5>
+        <p class="mb-0">Vous possédez toutes les pièces du puzzle !</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

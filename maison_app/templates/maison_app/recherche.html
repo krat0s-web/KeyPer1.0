@@ -1,0 +1,130 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Recherche{% endblock %}
+{% block page_title %}Recherche{% endblock %}
+{% block page_heading %}Recherche{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Recherche</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+        <i class='bx bx-search' style="font-size: 28px; color: var(--primary);"></i>Résultats de recherche
+    </h3>
+    
+    {% if query %}
+    <p style="color: var(--dark-grey); margin-bottom: 24px;">
+        Recherche pour : <strong>"{{ query }}"</strong> ({{ results.total }} résultat{{ results.total|pluralize }})
+    </p>
+    
+    {% if results.total == 0 %}
+    <div style="background: var(--light-primary); color: var(--primary); padding: 32px; border-radius: 12px; text-align: center;">
+        <i class='bx bx-info-circle' style="font-size: 3rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+        <p style="margin: 0; color: var(--dark);">Aucun résultat trouvé pour "{{ query }}"</p>
+    </div>
+    {% else %}
+    
+    <!-- Tâches -->
+    {% if results.taches %}
+    <div style="margin-bottom: 32px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-task' style="color: var(--primary);"></i>Tâches ({{ results.taches|length }})
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for tache in results.taches %}
+            <div style="background: var(--light); padding: 16px; border-radius: 8px; border-left: 4px solid {% if tache.priorite == 'Haute' %}var(--danger){% elif tache.priorite == 'Moyenne' %}var(--warning){% else %}var(--success){% endif %};">
+                <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 12px;">
+                    <div style="flex: 1;">
+                        <h5 style="margin: 0 0 8px 0; color: var(--dark);">
+                            <a href="{% url 'detail_tache' tache.id %}" style="color: var(--primary); text-decoration: none;">
+                                {{ tache.titre }}
+                            </a>
+                        </h5>
+                        {% if tache.description %}
+                        <p style="color: var(--dark-grey); margin: 0; font-size: 14px;">{{ tache.description|truncatewords:20 }}</p>
+                        {% endif %}
+                        <small style="color: var(--dark-grey);">
+                            Priorité: {{ tache.get_priorite_display }} | 
+                            Statut: {{ tache.id_statut.nom }} |
+                            {% if tache.date_limite %}Date limite: {{ tache.date_limite|date:"d/m/Y" }}{% endif %}
+                        </small>
+                    </div>
+                    <a href="{% url 'detail_tache' tache.id %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-show'></i>Voir
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Foyers -->
+    {% if results.foyers %}
+    <div style="margin-bottom: 32px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-home' style="color: var(--primary);"></i>Foyers ({{ results.foyers|length }})
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            {% for foyer in results.foyers %}
+            <div style="background: var(--light); padding: 20px; border-radius: 12px; border-left: 4px solid var(--primary);">
+                <h5 style="margin: 0 0 8px 0; color: var(--dark);">
+                    <a href="{% url 'detail_foyer' foyer.id %}" style="color: var(--primary); text-decoration: none;">
+                        {{ foyer.nom }}
+                    </a>
+                </h5>
+                {% if foyer.description %}
+                <p style="color: var(--dark-grey); margin: 0 0 12px 0; font-size: 14px;">{{ foyer.description|truncatewords:15 }}</p>
+                {% endif %}
+                <a href="{% url 'detail_foyer' foyer.id %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-show'></i>Voir le foyer
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Notes -->
+    {% if results.notes %}
+    <div style="margin-bottom: 32px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-note' style="color: var(--primary);"></i>Notes ({{ results.notes|length }})
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            {% for note in results.notes %}
+            <div style="background: {{ note.couleur_fond|default:'#FFF9C4' }}; padding: 20px; border-radius: 12px; border-left: 4px solid var(--warning);">
+                <h5 style="margin: 0 0 8px 0; color: var(--dark);">{{ note.titre }}</h5>
+                <p style="color: var(--dark); margin: 0 0 12px 0; font-size: 14px;">{{ note.contenu|truncatewords:20 }}</p>
+                <small style="color: var(--dark-grey);">{{ note.date_modification|date:"d/m/Y H:i" }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% endif %}
+    {% else %}
+    <div style="background: var(--light-primary); color: var(--primary); padding: 32px; border-radius: 12px; text-align: center;">
+        <i class='bx bx-search' style="font-size: 3rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+        <p style="margin: 0; color: var(--dark);">Entrez un terme de recherche dans la barre de recherche</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+

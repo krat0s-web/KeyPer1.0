@@ -9,7 +9,7 @@ class LoginForm(forms.Form):
     )
     password = forms.CharField(
         label="Mot de passe",
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '••••••••'})
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '••••••••', 'id': 'id_password'})
     )
 
 class DepenseForm(forms.ModelForm):

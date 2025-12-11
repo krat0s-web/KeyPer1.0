@@ -1,0 +1,69 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Historique des Actions Dispositifs{% endblock %}
+{% block page_title %}Historique des Actions Dispositifs{% endblock %}
+{% block page_heading %}Historique des Actions{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_dispositifs' %}">Dispositifs</a></li>
+    /
+    <li><a href="#" class="active">Historique</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-history' style="font-size: 28px; color: var(--info);"></i>Historique des Actions
+        </h3>
+        <a href="{% url 'liste_dispositifs' %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+            <i class='bx bx-arrow-back'></i>Retour aux dispositifs
+        </a>
+    </div>
+    
+    {% if actions %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: var(--grey);">
+                    <th style="padding: 12px; text-align: left; color: var(--dark); font-weight: 600; border-bottom: 2px solid var(--grey);">Date</th>
+                    <th style="padding: 12px; text-align: left; color: var(--dark); font-weight: 600; border-bottom: 2px solid var(--grey);">Dispositif</th>
+                    <th style="padding: 12px; text-align: center; color: var(--dark); font-weight: 600; border-bottom: 2px solid var(--grey);">Action</th>
+                    <th style="padding: 12px; text-align: left; color: var(--dark); font-weight: 600; border-bottom: 2px solid var(--grey);">Tâche</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for action in actions %}
+                <tr style="border-bottom: 1px solid var(--grey);">
+                    <td style="padding: 12px; color: var(--dark);">{{ action.date_execution|date:"d/m/Y H:i" }}</td>
+                    <td style="padding: 12px; color: var(--dark); font-weight: 500;">{{ action.id_dispositif.nom }}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <span style="padding: 4px 12px; background: {% if action.action == 'allumer' %}var(--success){% else %}var(--dark-grey){% endif %}; color: var(--light); border-radius: 12px; font-size: 12px; font-weight: 500;">
+                            {% if action.action == 'allumer' %}💡 Allumé{% else %}🔌 Éteint{% endif %}
+                        </span>
+                    </td>
+                    <td style="padding: 12px; color: var(--dark-grey);">
+                        {% if action.id_tache %}
+                        <a href="{% url 'detail_tache' action.id_tache.id %}" style="color: var(--primary); text-decoration: none;">{{ action.id_tache.titre }}</a>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 48px; color: var(--dark-grey);">
+        <i class='bx bx-history' style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <p>Aucune action enregistrée pour le moment.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

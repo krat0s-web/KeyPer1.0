@@ -1,0 +1,218 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% load permission_tags %}
+
+{% block title %}Budget & Dépenses{% endblock %}
+{% block page_title %}Budget & Dépenses{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li> / <li><a href="#" class="active">Budget</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <h3>💰 Budget & Dépenses</h3>
+    <p><strong>Foyer:</strong> {{ foyer.nom }}</p>
+    <p><strong>Total Dépenses:</strong> {{ total_depenses|floatformat:2 }}€</p>
+    <p><strong>Total Budget:</strong> {{ total_budget|floatformat:2 }}€</p>
+    
+    {% if budget_depasse %}
+    <div style="background: #ffcccc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        <p><strong style="color: red;">⚠️ ALERTE: Budget dépassé de {{ montant_depasse_global|floatformat:2 }}€!</strong></p>
+    </div>
+    {% else %}
+    <div style="background: #ccffcc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        <p><strong style="color: green;">✅ Reste disponible: {{ reste_disponible|floatformat:2 }}€</strong></p>
+    </div>
+    {% endif %}
+    
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0;">
+        <div style="background: #667eea; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px;">Cette Semaine</div>
+            <div id="depenses-semaine" style="font-size: 18px; font-weight: bold;">0€</div>
+        </div>
+        <div style="background: #f093fb; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px;">Ce Mois</div>
+            <div id="depenses-mois" style="font-size: 18px; font-weight: bold;">0€</div>
+        </div>
+        <div style="background: #4facfe; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px;">Ce Trimestre</div>
+            <div id="depenses-trimestre" style="font-size: 18px; font-weight: bold;">0€</div>
+        </div>
+        <div style="background: #43e97b; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 12px;">Cette Année</div>
+            <div id="depenses-annee" style="font-size: 18px; font-weight: bold;">0€</div>
+        </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
+        <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px;">
+            <h4>Répartition par Catégorie (30 jours)</h4>
+            <canvas id="chart1" width="400" height="250"></canvas>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px;">
+            <h4>Évolution (6 mois)</h4>
+            <canvas id="chart2" width="400" height="250"></canvas>
+        </div>
+    </div>
+    
+    <div style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-top: 20px;">
+        <h4>Budget vs Dépenses par Catégorie</h4>
+        <canvas id="chart3" width="800" height="200"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script type="application/json" id="data-depenses">{{ depenses_par_categorie }}</script>
+<script type="application/json" id="data-evolution">{{ evolution_depenses }}</script>
+<script type="application/json" id="data-comparaison">{{ comparaison_budget_depenses }}</script>
+
+<script>
+console.log('✅ Script chargé');
+
+// Afficher les périodes
+document.getElementById('depenses-semaine').textContent = ({{ depenses_semaine|default:0 }} || 0).toFixed(2) + '€';
+document.getElementById('depenses-mois').textContent = ({{ depenses_mois|default:0 }} || 0).toFixed(2) + '€';
+document.getElementById('depenses-trimestre').textContent = ({{ depenses_trimestre|default:0 }} || 0).toFixed(2) + '€';
+document.getElementById('depenses-annee').textContent = ({{ depenses_annee|default:0 }} || 0).toFixed(2) + '€';
+
+// Attendre que Chart soit chargé
+setTimeout(function() {
+    if (typeof Chart === 'undefined') {
+        console.error('❌ Chart.js non chargé');
+        return;
+    }
+    
+    console.log('✅ Chart.js disponible');
+    
+    // Récupérer les données
+    const depensesScript = document.getElementById('data-depenses');
+    const evolutionScript = document.getElementById('data-evolution');
+    const comparaisonScript = document.getElementById('data-comparaison');
+    
+    let depensesData = {};
+    let evolutionData = {};
+    let comparaisonData = {};
+    
+    try {
+        if (depensesScript && depensesScript.textContent) {
+            depensesData = JSON.parse(depensesScript.textContent);
+        }
+    } catch (e) {
+        console.error('Erreur dépenses:', e);
+    }
+    
+    try {
+        if (evolutionScript && evolutionScript.textContent) {
+            evolutionData = JSON.parse(evolutionScript.textContent);
+        }
+    } catch (e) {
+        console.error('Erreur évolution:', e);
+    }
+    
+    try {
+        if (comparaisonScript && comparaisonScript.textContent) {
+            comparaisonData = JSON.parse(comparaisonScript.textContent);
+        }
+    } catch (e) {
+        console.error('Erreur comparaison:', e);
+    }
+    
+    console.log('📊 Données:', { depensesData, evolutionData, comparaisonData });
+    
+    // Graphique 1: Dépenses par catégorie
+    if (Object.keys(depensesData).length > 0) {
+        const labels = Object.keys(depensesData);
+        const values = Object.values(depensesData);
+        
+        new Chart(document.getElementById('chart1'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#43e97b', '#f093fb', '#667eea']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true
+            }
+        });
+        console.log('✅ Graphique 1 créé');
+    }
+    
+    // Graphique 2: Évolution
+    if (Object.keys(evolutionData).length > 0) {
+        const labels = Object.keys(evolutionData);
+        const values = Object.values(evolutionData);
+        
+        new Chart(document.getElementById('chart2'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Dépenses (€)',
+                    data: values,
+                    borderColor: '#36A2EB',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: true }
+                }
+            }
+        });
+        console.log('✅ Graphique 2 créé');
+    }
+    
+    // Graphique 3: Comparaison budget/dépenses
+    if (Object.keys(comparaisonData).length > 0) {
+        const labels = Object.keys(comparaisonData);
+        const budgets = labels.map(k => comparaisonData[k].budget || 0);
+        const depenses = labels.map(k => comparaisonData[k].depenses || 0);
+        
+        new Chart(document.getElementById('chart3'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Budget',
+                        data: budgets,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                    },
+                    {
+                        label: 'Dépenses',
+                        data: depenses,
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+        console.log('✅ Graphique 3 créé');
+    }
+    
+    console.log('🎉 Tous les graphiques initialisés');
+}, 1000);
+</script>
+
+{% endblock %}

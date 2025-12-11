@@ -1,0 +1,245 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Historique des Tâches{% endblock %}
+{% block page_title %}Historique des Tâches{% endblock %}
+{% block page_heading %}Historique des Tâches Complétées{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Historique</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+{% if not foyer %}
+<div class="card-dashboard" style="text-align: center; padding: 48px;">
+    <i class='bx bx-home' style="font-size: 5rem; color: var(--dark-grey); margin-bottom: 24px; display: block;"></i>
+    <h3 style="color: var(--dark); margin-bottom: 16px;">Aucun foyer sélectionné</h3>
+    <p style="color: var(--dark-grey); margin-bottom: 32px;">Pour voir l'historique, vous devez sélectionner un foyer.</p>
+    <a href="{% url 'mon_profil' %}" style="padding: 12px 24px; border-radius: 36px; background: var(--primary); color: var(--light); display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500; text-decoration: none; transition: all 0.3s ease;">
+        <i class='bx bx-user'></i>
+        <span>Aller au profil</span>
+    </a>
+</div>
+{% else %}
+
+<!-- Boutons de navigation -->
+<div class="card-dashboard" style="margin-bottom: 24px; border-left: 4px solid var(--primary);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <h3 style="color: var(--dark); margin: 0; display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-history' style="font-size: 28px; color: var(--primary);"></i>Historique des Tâches
+        </h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{% url 'liste_taches' %}" style="padding: 10px 20px; background: var(--primary); color: var(--light); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-list-ul'></i>Vue Tâches
+            </a>
+            <a href="{% url 'calendrier_taches' %}" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-calendar'></i>Vue Calendrier
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques -->
+<div class="card-dashboard" style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: #FFFFFF; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px;">
+        <div>
+            <h2 style="margin: 0 0 8px 0; font-size: 36px; font-weight: 700; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px;">
+                <i class='bx bx-history' style="font-size: 40px; color: #FFFFFF;"></i>{{ total_completions }}
+            </h2>
+            <p style="margin: 0; opacity: 0.95; font-size: 16px; color: #FFFFFF !important;">Tâches complétées au total</p>
+        </div>
+        <div style="text-align: right;">
+            <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #FFFFFF !important;">Foyer : {{ foyer.nom }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="card-dashboard" style="margin-bottom: 24px; border-left: 4px solid var(--primary);">
+    <h5 style="color: var(--dark); margin-bottom: 16px; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <i class='bx bx-filter' style="color: var(--primary);"></i>Filtrer par utilisateur
+    </h5>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{% url 'historique_taches' %}" style="padding: 8px 16px; border-radius: 8px; background: {% if not request.GET.user %}var(--primary){% else %}var(--grey){% endif %}; color: {% if not request.GET.user %}var(--light){% else %}var(--dark){% endif %}; text-decoration: none; font-size: 14px; transition: all 0.3s ease;">
+            Tous
+        </a>
+        {% for user in utilisateurs_foyer %}
+        <a href="{% url 'historique_taches' %}?user={{ user.id }}" style="padding: 8px 16px; border-radius: 8px; background: {% if request.GET.user == user.id|stringformat:'s' %}var(--primary){% else %}var(--grey){% endif %}; color: {% if request.GET.user == user.id|stringformat:'s' %}var(--light){% else %}var(--dark){% endif %}; text-decoration: none; font-size: 14px; transition: all 0.3s ease;">
+            {{ user.nom|default:user.email }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Historique -->
+<div class="card-dashboard" style="border-left: 4px solid var(--success);">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-check-circle' style="color: var(--success);"></i>Historique des Complétions
+    </h3>
+    
+    {% if historique %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: var(--grey); border-bottom: 2px solid var(--grey);">
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Tâche</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Complétée par</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Date</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Durée</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Commentaire</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in historique %}
+                <tr style="border-bottom: 1px solid var(--grey); transition: all 0.3s ease;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class='bx bx-task' style="color: var(--success); font-size: 20px;"></i>
+                            <div>
+                                <p style="margin: 0; font-weight: 600; color: var(--dark);">{{ entry.id_tache.titre }}</p>
+                                {% if entry.id_tache.id_piece %}
+                                <small style="color: var(--dark-grey); font-size: 12px;">
+                                    <i class='bx bx-home'></i> {{ entry.id_tache.id_piece.nom }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 16px;">
+                        <span style="padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: var(--light-primary); color: var(--primary); display: inline-flex; align-items: center; gap: 6px;">
+                            <i class='bx bx-user'></i>{{ entry.id_user.nom|default:entry.id_user.email }}
+                        </span>
+                    </td>
+                    <td style="padding: 16px; color: var(--dark-grey);">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <i class='bx bx-calendar' style="font-size: 16px;"></i>
+                            {{ entry.date_execution|date:"d/m/Y" }}
+                        </div>
+                        <small style="color: var(--dark-grey); font-size: 12px;">
+                            {{ entry.date_execution|date:"H:i" }}
+                        </small>
+                    </td>
+                    <td style="padding: 16px; color: var(--dark-grey);">
+                        {% if entry.duree %}
+                        <span style="display: flex; align-items: center; gap: 6px;">
+                            <i class='bx bx-time-five'></i>{{ entry.duree|time:"H:i" }}
+                        </span>
+                        {% else %}
+                        <span style="color: var(--dark-grey); font-style: italic;">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 16px; color: var(--dark-grey); max-width: 300px;">
+                        {% if entry.commentaire %}
+                        <p style="margin: 0; font-size: 13px;">{{ entry.commentaire|truncatewords:15 }}</p>
+                        {% else %}
+                        <span style="color: var(--dark-grey); font-style: italic;">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 16px;">
+                        {% if entry.id_tache.terminee and entry.id_user.id == user.id %}
+                        <a href="{% url 'annuler_tache_terminee' entry.id_tache.id %}" 
+                           style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s ease;"
+                           onclick="return confirm('Voulez-vous réactiver cette tâche ?');">
+                            <i class='bx bx-refresh'></i>Réactiver
+                        </a>
+                        {% elif entry.id_tache.terminee and user.role == 'admin' %}
+                        <a href="{% url 'annuler_tache_terminee' entry.id_tache.id %}" 
+                           style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s ease;"
+                           onclick="return confirm('Voulez-vous réactiver cette tâche ?');">
+                            <i class='bx bx-refresh'></i>Réactiver
+                        </a>
+                        {% else %}
+                        <span style="color: var(--dark-grey); font-style: italic; font-size: 12px;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-dashboard" style="text-align: center; padding: 48px;">
+        <i class='bx bx-info-circle' style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--dark-grey);"></i>
+        <p style="margin: 0; color: var(--dark-grey);">Aucune tâche complétée pour le moment.</p>
+        <p style="margin: 8px 0 0 0; color: var(--dark-grey);">Complétez des tâches pour voir l'historique !</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Section Tâches Terminées (pour réactivation) -->
+{% if taches_terminees %}
+<div class="card-dashboard" style="margin-top: 24px; border-left: 4px solid var(--warning);">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-check-square' style="color: var(--warning);"></i>Tâches Terminées (Réactivation)
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+        {% for tache in taches_terminees %}
+        <div style="background: var(--grey); padding: 16px; border-radius: 10px; border-left: 4px solid var(--warning);">
+            <div style="display: flex; align-items: start; justify-content: space-between; gap: 12px;">
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--dark); font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class='bx bx-task' style="color: var(--warning); font-size: 18px;"></i>
+                        {{ tache.titre }}
+                    </h4>
+                    {% if tache.description %}
+                    <p style="margin: 0 0 8px 0; color: var(--dark-grey); font-size: 13px; line-height: 1.5;">
+                        {{ tache.description|truncatewords:10 }}
+                    </p>
+                    {% endif %}
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+                        {% if tache.complete_par %}
+                        <span style="padding: 4px 8px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                            <i class='bx bx-user'></i>{{ tache.complete_par.nom|default:tache.complete_par.email }}
+                        </span>
+                        {% endif %}
+                        {% if tache.id_piece %}
+                        <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                            <i class='bx bx-home'></i>{{ tache.id_piece.nom }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        {% if tache.complete_par.id == user.id or user.role == 'admin' %}
+                        <a href="{% url 'annuler_tache_terminee' tache.id %}" 
+                           style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;"
+                           onclick="return confirm('Voulez-vous réactiver cette tâche ? Elle redeviendra active dans la liste des tâches.');">
+                            <i class='bx bx-refresh'></i>Réactiver
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'detail_tache' tache.id %}" 
+                           style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
+                            <i class='bx bx-show'></i>Voir détails
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Statistiques par utilisateur -->
+{% if completions_par_user %}
+<div class="card-dashboard" style="margin-top: 24px; border-left: 4px solid var(--warning);">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-bar-chart-alt-2' style="color: var(--warning);"></i>Statistiques par Utilisateur
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+        {% for stat in completions_par_user %}
+        <div style="padding: 16px; background: var(--grey); border-radius: 8px; text-align: center;">
+            <div style="font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">{{ stat.count }}</div>
+            <p style="margin: 0; color: var(--dark-grey); font-size: 14px;">{{ stat.id_user__nom|default:stat.id_user__email }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
+

@@ -1,0 +1,118 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block page_title %}Mes demandes{% endblock %}
+{% block page_heading %}Mes demandes{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Mes demandes</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <i class='bx bx-message-square-detail' style="font-size: 28px; color: var(--warning);"></i>Mes demandes
+            </h3>
+            <p style="color: var(--dark-grey); margin: 0;">Foyer: <strong style="color: var(--dark);">{{ foyer.nom }}</strong></p>
+        </div>
+        <div>
+            <a href="{% url 'creer_demande' %}" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                <i class='bx bx-plus'></i>Créer une demande
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages Django -->
+    {% if messages %}
+        {% for message in messages %}
+            <div style="background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% else %}var(--light-primary){% endif %}; color: {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% else %}var(--primary){% endif %}; padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% else %}var(--primary){% endif %};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Liste des demandes -->
+    {% if demandes %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for demande in demandes %}
+                <div class="card-dashboard" style="border-left: 4px solid {% if demande.statut == 'acceptee' %}var(--success){% elif demande.statut == 'refusee' %}var(--danger){% else %}var(--warning){% endif %}; transition: all 0.3s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px; flex-wrap: wrap;">
+                        <div style="flex-grow: 1;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+                                <h5 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                                    {% if demande.type_demande == 'budget' %}
+                                        <i class='bx bx-wallet' style="color: var(--primary);"></i>
+                                    {% elif demande.type_demande == 'depense' %}
+                                        <i class='bx bx-money' style="color: var(--success);"></i>
+                                    {% elif demande.type_demande == 'acces_page' %}
+                                        <i class='bx bx-lock-open' style="color: var(--warning);"></i>
+                                    {% elif demande.type_demande == 'acces_fonctionnalite' %}
+                                        <i class='bx bx-cog' style="color: var(--primary);"></i>
+                                    {% endif %}
+                                    {{ demande.titre }}
+                                </h5>
+                                <span style="padding: 6px 12px; border-radius: 20px; font-weight: 500; font-size: 12px; 
+                                    {% if demande.statut == 'acceptee' %}
+                                        background: var(--light-success); color: var(--success);
+                                    {% elif demande.statut == 'refusee' %}
+                                        background: var(--light-danger); color: var(--danger);
+                                    {% else %}
+                                        background: var(--light-warning); color: var(--warning);
+                                    {% endif %}">
+                                    {% if demande.statut == 'acceptee' %}
+                                        ✅ Acceptée
+                                    {% elif demande.statut == 'refusee' %}
+                                        ❌ Refusée
+                                    {% else %}
+                                        ⏳ En attente
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <p style="color: var(--dark-grey); margin: 0 0 12px 0; line-height: 1.6;">{{ demande.description }}</p>
+                            
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px;">
+                                <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-calendar'></i>Créée le {{ demande.date_creation|date:"d/m/Y à H:i" }}
+                                </small>
+                                {% if demande.date_traitement %}
+                                <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-check-circle'></i>Traitée le {{ demande.date_traitement|date:"d/m/Y à H:i" }}
+                                </small>
+                                {% endif %}
+                                {% if demande.traite_par %}
+                                <small style="color: var(--dark-grey); display: flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-user'></i>Par {{ demande.traite_par.nom|default:demande.traite_par.email }}
+                                </small>
+                                {% endif %}
+                            </div>
+                            
+                            {% if demande.reponse %}
+                            <div style="margin-top: 16px; padding: 12px; background: var(--light-primary); border-radius: 8px; border-left: 4px solid var(--primary);">
+                                <strong style="color: var(--dark); display: block; margin-bottom: 8px;">Réponse de l'administrateur :</strong>
+                                <p style="margin: 0; color: var(--dark); line-height: 1.6;">{{ demande.reponse }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="background: var(--light-primary); color: var(--primary); padding: 48px; border-radius: 12px; text-align: center;">
+            <i class='bx bx-inbox' style="font-size: 4rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+            <h5 style="margin: 0 0 8px 0; color: var(--dark);">Aucune demande pour le moment</h5>
+            <p style="margin: 0 0 24px 0; color: var(--dark-grey);">Vous n'avez pas encore créé de demande.</p>
+            <a href="{% url 'creer_demande' %}" style="padding: 12px 24px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                <i class='bx bx-plus'></i>Créer votre première demande
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

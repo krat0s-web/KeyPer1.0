@@ -1,69 +1,529 @@
-{% extends "maison_app/base.html" %}
-{% block title %}Ajouter une Tâche{% endblock %}
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block page_title %}Ajouter une Tâche{% endblock %}
+{% block page_heading %}Ajouter une Tâche{% endblock %}
 
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card border-0 shadow-lg rounded-4">
-            <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
-                <h4 class="mb-0">✅ Nouvelle Tâche</h4>
-            </div>
-            <div class="card-body p-4">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">Titre <span class="text-danger">*</span></label>
-                        <input type="text" name="titre" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Date limite</label>
-                        <input type="date" name="date_limite" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Priorité</label>
-                        <select name="priorite" class="form-select">
-                            <option value="">—</option>
-                            <option value="Haute">🔴 Haute</option>
-                            <option value="Moyenne">🟡 Moyenne</option>
-                            <option value="Basse">🟢 Basse</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Pièce</label>
-                        <select name="id_piece" class="form-select">
-                            <option value="">— Aucune pièce —</option>
-                            {% for piece in pieces %}
-                            <option value="{{ piece.id }}">{{ piece.nom }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Animal (optionnel)</label>
-                        <select name="id_animal" class="form-select">
-                            <option value="">— Aucun animal —</option>
-                            {% for animal in animaux %}
-                            <option value="{{ animal.id }}">{{ animal.nom }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">👤 Assigner à (optionnel)</label>
-                        <select name="assignees" class="form-select" multiple>
-                            <option value="">-- Sélectionner des membres --</option>
-                            {% for membre in membres %}
-                            <option value="{{ membre.id }}">{% if membre.nom %}{{ membre.nom }}{% else %}{{ membre.email }}{% endif %}</option>
-                            {% endfor %}
-                        </select>
-                        <small class="text-muted">Maintenez Ctrl/Cmd pour sélectionner plusieurs</small>
-                    </div>
-                    <button type="submit" class="btn w-100" style="background: #000; color: white; font-weight: bold;">Ajouter la tâche</button>
-                </form>
-            </div>
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_taches' %}">Tâches</a></li>
+    /
+    <li><a href="#" class="active">Ajouter une Tâche</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 800px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: #FFFFFF; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-plus-circle' style="font-size: 28px; color: #FFFFFF;"></i>Nouvelle Tâche
+        </h3>
+    </div>
+    
+    <div style="padding: 24px;">
+        <!-- Tâches prédéfinies (Accessibles à tous) -->
+        <div class="card-dashboard" style="background: var(--light-primary); padding: 20px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--primary);">
+            <label style="display: block; margin-bottom: 12px; color: var(--dark); font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-list-check' style="color: var(--primary);"></i>Tâches Prédéfinies
+            </label>
+            <p style="color: var(--dark-grey); margin: 0 0 12px 0; font-size: 14px;">
+                <i class='bx bx-info-circle' style="color: var(--primary);"></i>
+                <strong>Astuce :</strong> Sélectionnez une tâche prédéfinie, puis ajoutez simplement la <strong>date</strong> et la <strong>personne assignée</strong> ! Vous pouvez aussi modifier d'autres détails si vous le souhaitez.
+            </p>
+            <select id="tache_predefinie" onchange="chargerTachePredefinie()" style="width: 100%; padding: 12px; border: 2px solid var(--primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; font-size: 15px;">
+                <option value="">— Choisir une tâche prédéfinie —</option>
+                {% for tache_predef in taches_predefinies %}
+                <option value="{{ forloop.counter0 }}" 
+                        data-titre="{{ tache_predef.titre }}"
+                        data-description="{{ tache_predef.description }}"
+                        data-piece-id="{{ tache_predef.piece_id|default:'' }}"
+                        data-piece-nom="{{ tache_predef.piece_nom|default:'' }}">
+                    {{ tache_predef.titre }}{% if tache_predef.piece_nom %} ({{ tache_predef.piece_nom }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
         </div>
+        <hr style="border: none; border-top: 1px solid var(--grey); margin: 24px 0;">
+        
+        <form method="post" id="form_tache" aria-label="Formulaire d'ajout de tâche">
+            {% csrf_token %}
+            <div style="display: grid; gap: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Titre <span style="color: var(--danger);">*</span></label>
+                    <input type="text" name="titre" id="titre" required oninput="mettreAJourSuggestions()"
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Description</label>
+                    <textarea name="description" id="description" rows="3" oninput="mettreAJourSuggestions()"
+                              style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;"></textarea>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-calendar-check'></i>Date limite <span id="date_required" style="color: var(--danger); display: none;">*</span>
+                    </label>
+                    <input type="date" name="date_limite" id="date_limite" min="" max=""
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <small style="color: var(--dark-grey); font-size: 12px;">Date entre aujourd'hui et 2 ans maximum (optionnel, obligatoire avec tâche prédéfinie)</small>
+                </div>
+                
+                <script>
+                    const today = new Date();
+                    const maxDate = new Date();
+                    maxDate.setFullYear(today.getFullYear() + 2);
+                    const dateInput = document.getElementById('date_limite');
+                    dateInput.min = today.toISOString().split('T')[0];
+                    dateInput.max = maxDate.toISOString().split('T')[0];
+                </script>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Priorité</label>
+                    <select name="priorite" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">—</option>
+                        <option value="Haute">🔴 Haute</option>
+                        <option value="Moyenne">🟡 Moyenne</option>
+                        <option value="Basse">🟢 Basse</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-time'></i>Temps estimé (optionnel)
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" name="temps_estime" min="1" max="1440" placeholder="Ex: 30"
+                               style="flex: 1; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <span style="padding: 12px; background: var(--grey); color: var(--dark); border-radius: 8px; display: flex; align-items: center;">minutes</span>
+                    </div>
+                    <small style="color: var(--dark-grey); font-size: 12px;">Estimez le temps nécessaire pour compléter cette tâche</small>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-bell'></i>Rappel automatique (optionnel)
+                    </label>
+                    <input type="date" name="date_rappel" id="date_rappel" min="" max=""
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <small style="color: var(--dark-grey); font-size: 12px;">Date à laquelle vous recevrez une notification de rappel (1-2 jours avant la date limite recommandé)</small>
+                </div>
+                
+                <script>
+                    const todayRappel = new Date();
+                    const maxDateRappel = new Date();
+                    maxDateRappel.setFullYear(todayRappel.getFullYear() + 2);
+                    const dateRappelInput = document.getElementById('date_rappel');
+                    if (dateRappelInput) {
+                        dateRappelInput.min = todayRappel.toISOString().split('T')[0];
+                        dateRappelInput.max = maxDateRappel.toISOString().split('T')[0];
+                    }
+                </script>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Pièce</label>
+                    <select name="id_piece" id="id_piece" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">— Aucune pièce —</option>
+                        {% for piece in pieces %}
+                        <option value="{{ piece.id }}">{{ piece.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Animal (optionnel)</label>
+                    <select name="id_animal" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">— Aucun animal —</option>
+                        {% for animal in animaux %}
+                        <option value="{{ animal.id }}">{{ animal.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-user-check'></i>👤 Assigner à <span id="assignee_required" style="color: var(--danger); display: none;">*</span>
+                    </label>
+                    
+                    <!-- Suggestions basées sur les préférences -->
+                    <div id="suggestions_preferences" style="display: none; background: var(--light-primary); padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid var(--success);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <i class='bx bx-star' style="color: var(--success); font-size: 18px;"></i>
+                            <strong style="color: var(--dark); font-size: 14px;">Suggestions basées sur les préférences :</strong>
+                        </div>
+                        <div id="suggestions_list" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <!-- Les suggestions seront ajoutées ici dynamiquement -->
+                        </div>
+                        <small style="color: var(--dark-grey); font-size: 11px; display: block; margin-top: 12px; line-height: 1.5;">
+                            <i class='bx bx-info-circle'></i> 
+                            <strong>Ces utilisateurs aiment ce type de tâche</strong> et ont indiqué leur disponibilité préférée. 
+                            Cliquez sur un badge pour les sélectionner automatiquement. 
+                            Les utilisateurs qui n'aiment pas ce type de tâche ne sont pas suggérés.
+                        </small>
+                    </div>
+                    
+                    <select name="assignees" id="assignees" multiple size="5" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        {% for membre in membres %}
+                        <option value="{{ membre.id }}" data-nom="{% if membre.nom %}{{ membre.nom }}{% else %}{{ membre.email }}{% endif %}">{% if membre.nom %}{{ membre.nom }}{% else %}{{ membre.email }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <small style="color: var(--dark-grey); font-size: 12px;">Maintenez Ctrl/Cmd pour sélectionner plusieurs membres (optionnel, obligatoire avec tâche prédéfinie)</small>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid var(--grey); margin: 24px 0;">
+                
+                <!-- Tâches récurrentes -->
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-refresh'></i>Tâche récurrente (optionnel)
+                    </label>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="est_recurrente" id="est_recurrente" onchange="toggleRecurrence()" style="width: 18px; height: 18px; cursor: pointer;">
+                            <strong style="color: var(--dark);">Créer une tâche récurrente</strong>
+                        </label>
+                    </div>
+                    <div id="recurrence_fields" style="display: none;">
+                        <select name="frequence_recurrence" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                            <option value="Quotidien">📅 Quotidienne (tous les jours)</option>
+                            <option value="Hebdo">📆 Hebdomadaire (toutes les semaines)</option>
+                            <option value="Mensuel">🗓️ Mensuelle (tous les mois)</option>
+                        </select>
+                        <small style="color: var(--dark-grey); font-size: 12px; display: block; margin-top: 8px;">
+                            <i class='bx bx-info-circle'></i>
+                            La tâche sera automatiquement recréée selon la fréquence choisie. Vous pourrez ensuite assigner chaque occurrence à un membre.
+                        </small>
+                    </div>
+                </div>
+                
+                <button type="submit" style="width: 100%; padding: 14px 24px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;">
+                    <i class='bx bx-plus-circle'></i>Ajouter la tâche
+                </button>
+            </div>
+        </form>
     </div>
 </div>
+
+<script>
+function toggleRecurrence() {
+    const checkbox = document.getElementById('est_recurrente');
+    const fields = document.getElementById('recurrence_fields');
+    if (checkbox.checked) {
+        fields.style.display = 'block';
+    } else {
+        fields.style.display = 'none';
+    }
+}
+
+// Données des suggestions pour les tâches prédéfinies
+const suggestionsPredefinies = {
+    {% for index, suggestions in suggestions_predefinies.items %}
+    {{ index }}: [{% for user_id in suggestions %}{{ user_id }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+    {% endfor %}
+};
+
+// Préférences des membres (types aimés)
+const preferencesMembres = {
+    {% for membre_id, prefs in preferences_membres.items %}
+    {{ membre_id }}: [{% for pref in prefs %}'{{ pref }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+    {% endfor %}
+};
+
+// Préférences négatives (types désapprouvés)
+const preferencesNegatives = {
+    {% for membre_id, prefs in preferences_negatives.items %}
+    {{ membre_id }}: [{% for pref in prefs %}'{{ pref }}'{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
+// Disponibilités par membre et type de tâche
+const disponibilitesMembres = {
+    {% for membre_id, dispo_dict in disponibilites_membres.items %}
+    {{ membre_id }}: {
+        {% for type_tache, disponibilite in dispo_dict.items %}
+        '{{ type_tache }}': '{{ disponibilite }}'{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
+// Mapping des disponibilités vers des heures de rappel suggérées
+const heuresRappelParDisponibilite = {
+    'matin': '08:00',
+    'jour': '14:00',
+    'soir': '19:00'
+};
+
+function mettreAJourSuggestions() {
+    const titre = document.getElementById('titre').value.toLowerCase();
+    const description = document.getElementById('description').value.toLowerCase();
+    const texte = titre + ' ' + description;
+    
+    if (texte.trim().length < 3) {
+        document.getElementById('suggestions_preferences').style.display = 'none';
+        return;
+    }
+    
+    // Mots-clés pour chaque type de tâche (correspondant à ceux du backend)
+    const mots_cles_nettoyage = ['nettoyer', 'nettoyage', 'aspirateur', 'aspirer', 'lessive', 'laver', 'ranger', 'propre', 'salle de bain', 'douche', 'wc', 'toilette', 'vitre', 'fenêtre', 'poubelle', 'sortir les poubelles', 'faire le lit', 'chambre'];
+    const mots_cles_cuisine = ['cuisine', 'cuisiner', 'repas', 'dîner', 'déjeuner', 'préparer', 'vaisselle', 'lave-vaisselle', 'cuire', 'four', 'plaque', 'manger'];
+    const mots_cles_courses = ['courses', 'acheter', 'magasin', 'supermarché', 'épicerie', 'produits', 'aliments', 'nourriture', 'faire les courses'];
+    const mots_cles_entretien = ['entretien', 'réparer', 'réparation', 'maintenance', 'jardin', 'plante', 'arroser', 'tondeuse', 'outil', 'jardinage'];
+    
+    // Compter les occurrences
+    let score_nettoyage = mots_cles_nettoyage.filter(mot => texte.includes(mot)).length;
+    let score_cuisine = mots_cles_cuisine.filter(mot => texte.includes(mot)).length;
+    let score_courses = mots_cles_courses.filter(mot => texte.includes(mot)).length;
+    let score_entretien = mots_cles_entretien.filter(mot => texte.includes(mot)).length;
+    
+    const scores = {
+        'nettoyage': score_nettoyage,
+        'cuisine': score_cuisine,
+        'courses': score_courses,
+        'entretien': score_entretien
+    };
+    
+    const type_tache = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+    
+    if (scores[type_tache] === 0) {
+        document.getElementById('suggestions_preferences').style.display = 'none';
+        return;
+    }
+    
+    // Trouver les utilisateurs qui aiment ce type de tâche (et exclure ceux qui ne l'aiment pas)
+    const suggestions = [];
+    const assigneesSelect = document.getElementById('assignees');
+    
+    for (let option of assigneesSelect.options) {
+        const membreId = parseInt(option.value);
+        
+        // Vérifier que l'utilisateur aime ce type de tâche
+        const aimeType = preferencesMembres[membreId] && Array.isArray(preferencesMembres[membreId]) && preferencesMembres[membreId].includes(type_tache);
+        
+        // Vérifier que l'utilisateur ne désapprouve pas ce type de tâche
+        const desapprouveType = preferencesNegatives[membreId] && Array.isArray(preferencesNegatives[membreId]) && preferencesNegatives[membreId].includes(type_tache);
+        
+        if (aimeType && !desapprouveType) {
+            const disponibilite = disponibilitesMembres[membreId] && disponibilitesMembres[membreId][type_tache] 
+                ? disponibilitesMembres[membreId][type_tache] 
+                : null;
+            
+            suggestions.push({
+                id: membreId,
+                nom: option.getAttribute('data-nom') || option.text,
+                disponibilite: disponibilite
+            });
+        }
+    }
+    
+    afficherSuggestions(suggestions, type_tache);
+}
+
+function afficherSuggestions(suggestions, type_tache) {
+    const container = document.getElementById('suggestions_preferences');
+    const list = document.getElementById('suggestions_list');
+    
+    if (suggestions.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    list.innerHTML = '';
+    
+    // Trier les suggestions : d'abord ceux avec disponibilité, puis les autres
+    suggestions.sort((a, b) => {
+        if (a.disponibilite && !b.disponibilite) return -1;
+        if (!a.disponibilite && b.disponibilite) return 1;
+        return 0;
+    });
+    
+    suggestions.forEach(suggestion => {
+        const badge = document.createElement('button');
+        badge.type = 'button';
+        badge.className = 'suggestion-badge';
+        badge.setAttribute('data-user-id', suggestion.id);
+        badge.setAttribute('data-user-nom', suggestion.nom);
+        if (suggestion.disponibilite) {
+            badge.setAttribute('data-disponibilite', suggestion.disponibilite);
+        }
+        badge.style.cssText = 'padding: 10px 16px; background: var(--success); color: var(--light); border: none; border-radius: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; flex-direction: column; min-width: 130px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+        
+        let badgeContent = `<div style="display: flex; align-items: center; gap: 6px;"><i class='bx bx-user'></i><span style="font-weight: 600;">${suggestion.nom}</span></div>`;
+        
+        if (suggestion.disponibilite) {
+            const iconeDispo = suggestion.disponibilite === 'matin' ? 'bx-sun' : 
+                              suggestion.disponibilite === 'soir' ? 'bx-moon' : 'bx-time';
+            const labelDispo = suggestion.disponibilite === 'matin' ? 'Matin' : 
+                              suggestion.disponibilite === 'soir' ? 'Soir' : 'Jour';
+            badgeContent += `<div style="font-size: 10px; opacity: 0.95; display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 500;"><i class='bx ${iconeDispo}' style="font-size: 14px;"></i>${labelDispo}</div>`;
+        }
+        
+        badge.innerHTML = badgeContent;
+        badge.onclick = () => {
+            selectionnerUtilisateur(suggestion.id, badge);
+            // Suggérer une heure de rappel si disponibilité disponible
+            if (suggestion.disponibilite && heuresRappelParDisponibilite[suggestion.disponibilite]) {
+                suggererHeureRappel(suggestion.disponibilite);
+            }
+        };
+        badge.onmouseover = () => {
+            badge.style.transform = 'scale(1.05)';
+            badge.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+        };
+        badge.onmouseout = () => {
+            badge.style.transform = 'scale(1)';
+            badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        };
+        list.appendChild(badge);
+    });
+}
+
+function suggererHeureRappel(disponibilite) {
+    // Cette fonction pourrait être étendue pour suggérer une date de rappel
+    // basée sur la disponibilité préférée de l'utilisateur
+    console.log(`Suggestion: rappel à ${heuresRappelParDisponibilite[disponibilite]} pour disponibilité ${disponibilite}`);
+}
+
+function selectionnerUtilisateur(membreId, badge) {
+    const assigneesSelect = document.getElementById('assignees');
+    const option = Array.from(assigneesSelect.options).find(opt => parseInt(opt.value) === membreId);
+    
+    if (option) {
+        option.selected = true;
+        badge.style.background = 'var(--primary)';
+        // Préserver le contenu original mais avec une icône de check pour l'utilisateur
+        const nom = badge.getAttribute('data-user-nom') || option.getAttribute('data-nom') || option.text;
+        const disponibilite = badge.getAttribute('data-disponibilite');
+        
+        let badgeContent = `<div style="display: flex; align-items: center; gap: 6px;"><i class='bx bx-check'></i><span style="font-weight: 600;">${nom}</span></div>`;
+        if (disponibilite) {
+            const iconeDispo = disponibilite === 'matin' ? 'bx-sun' : 
+                              disponibilite === 'soir' ? 'bx-moon' : 'bx-time';
+            const labelDispo = disponibilite === 'matin' ? 'Matin' : 
+                              disponibilite === 'soir' ? 'Soir' : 'Jour';
+            badgeContent += `<div style="font-size: 10px; opacity: 0.95; display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 500;"><i class='bx ${iconeDispo}' style="font-size: 14px;"></i>${labelDispo}</div>`;
+        }
+        badge.innerHTML = badgeContent;
+        badge.onclick = () => deselectionnerUtilisateur(membreId, badge);
+    }
+}
+
+function deselectionnerUtilisateur(membreId, badge) {
+    const assigneesSelect = document.getElementById('assignees');
+    const option = Array.from(assigneesSelect.options).find(opt => parseInt(opt.value) === membreId);
+    
+    if (option) {
+        option.selected = false;
+        badge.style.background = 'var(--success)';
+        const nom = badge.getAttribute('data-user-nom') || option.getAttribute('data-nom') || option.text;
+        const disponibilite = badge.getAttribute('data-disponibilite');
+        
+        // Restaurer le contenu original avec disponibilité si disponible
+        let badgeContent = `<div style="display: flex; align-items: center; gap: 6px;"><i class='bx bx-user'></i><span style="font-weight: 600;">${nom}</span></div>`;
+        if (disponibilite) {
+            const iconeDispo = disponibilite === 'matin' ? 'bx-sun' : 
+                              disponibilite === 'soir' ? 'bx-moon' : 'bx-time';
+            const labelDispo = disponibilite === 'matin' ? 'Matin' : 
+                              disponibilite === 'soir' ? 'Soir' : 'Jour';
+            badgeContent += `<div style="font-size: 10px; opacity: 0.95; display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 500;"><i class='bx ${iconeDispo}' style="font-size: 14px;"></i>${labelDispo}</div>`;
+        }
+        badge.innerHTML = badgeContent;
+        badge.onclick = () => selectionnerUtilisateur(membreId, badge);
+    }
+}
+
+function chargerTachePredefinie() {
+    const select = document.getElementById('tache_predefinie');
+    const option = select.options[select.selectedIndex];
+    const dateInput = document.getElementById('date_limite');
+    const assigneesSelect = document.getElementById('assignees');
+    const dateRequired = document.getElementById('date_required');
+    const assigneeRequired = document.getElementById('assignee_required');
+    
+    if (option.value === '') {
+        document.getElementById('titre').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('id_piece').value = '';
+        document.getElementById('titre').style.backgroundColor = '';
+        document.getElementById('description').style.backgroundColor = '';
+        document.getElementById('id_piece').style.backgroundColor = '';
+        dateInput.required = false;
+        assigneesSelect.required = false;
+        dateRequired.style.display = 'none';
+        assigneeRequired.style.display = 'none';
+        document.getElementById('suggestions_preferences').style.display = 'none';
+        return;
+    }
+    
+    const titre = option.getAttribute('data-titre');
+    const description = option.getAttribute('data-description');
+    const pieceId = option.getAttribute('data-piece-id');
+    const index = parseInt(option.value);
+    
+    document.getElementById('titre').value = titre;
+    document.getElementById('description').value = description;
+    
+    if (pieceId) {
+        document.getElementById('id_piece').value = pieceId;
+    }
+    
+    document.getElementById('titre').style.backgroundColor = '#e7f3ff';
+    document.getElementById('description').style.backgroundColor = '#e7f3ff';
+    if (pieceId) {
+        document.getElementById('id_piece').style.backgroundColor = '#e7f3ff';
+    }
+    
+    dateInput.required = true;
+    assigneesSelect.required = true;
+    dateRequired.style.display = 'inline';
+    assigneeRequired.style.display = 'inline';
+    
+    // Afficher les suggestions pour cette tâche prédéfinie
+    if (suggestionsPredefinies[index] && suggestionsPredefinies[index].length > 0) {
+        // Déterminer le type de tâche pour cette tâche prédéfinie
+        const texte = (titre + ' ' + description).toLowerCase();
+        const mots_cles_nettoyage = ['nettoyer', 'nettoyage', 'aspirateur', 'aspirer', 'lessive', 'laver', 'ranger', 'propre', 'salle de bain', 'douche', 'wc', 'toilette', 'vitre', 'fenêtre', 'poubelle', 'sortir les poubelles', 'faire le lit', 'chambre'];
+        const mots_cles_cuisine = ['cuisine', 'cuisiner', 'repas', 'dîner', 'déjeuner', 'préparer', 'vaisselle', 'lave-vaisselle', 'cuire', 'four', 'plaque', 'manger'];
+        const mots_cles_courses = ['courses', 'acheter', 'magasin', 'supermarché', 'épicerie', 'produits', 'aliments', 'nourriture', 'faire les courses'];
+        const mots_cles_entretien = ['entretien', 'réparer', 'réparation', 'maintenance', 'jardin', 'plante', 'arroser', 'tondeuse', 'outil', 'jardinage'];
+        
+        let type_tache = null;
+        if (mots_cles_nettoyage.some(mot => texte.includes(mot))) type_tache = 'nettoyage';
+        else if (mots_cles_cuisine.some(mot => texte.includes(mot))) type_tache = 'cuisine';
+        else if (mots_cles_courses.some(mot => texte.includes(mot))) type_tache = 'courses';
+        else if (mots_cles_entretien.some(mot => texte.includes(mot))) type_tache = 'entretien';
+        
+        const suggestions = suggestionsPredefinies[index].map(id => {
+            const option = Array.from(assigneesSelect.options).find(opt => parseInt(opt.value) === id);
+            const membreId = parseInt(id);
+            const disponibilite = disponibilitesMembres[membreId] && type_tache && disponibilitesMembres[membreId][type_tache] 
+                ? disponibilitesMembres[membreId][type_tache] 
+                : null;
+            
+            return {
+                id: membreId,
+                nom: option ? (option.getAttribute('data-nom') || option.text) : '',
+                disponibilite: disponibilite
+            };
+        }).filter(s => {
+            if (!s.nom) return false;
+            // Exclure si l'utilisateur désapprouve ce type de tâche
+            if (preferencesNegatives[s.id] && Array.isArray(preferencesNegatives[s.id]) && preferencesNegatives[s.id].includes(type_tache)) {
+                return false;
+            }
+            return true;
+        });
+        
+        afficherSuggestions(suggestions, type_tache);
+    } else {
+        mettreAJourSuggestions();
+    }
+    
+    setTimeout(() => {
+        dateInput.focus();
+    }, 100);
+}
+</script>
 {% endblock %}

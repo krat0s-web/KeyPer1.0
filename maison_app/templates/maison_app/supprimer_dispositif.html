@@ -1,0 +1,49 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Supprimer un Dispositif{% endblock %}
+{% block page_title %}Supprimer un Dispositif{% endblock %}
+{% block page_heading %}Supprimer le Dispositif{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_dispositifs' %}">Dispositifs</a></li>
+    /
+    <li><a href="#" class="active">Supprimer</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="border-left: 4px solid var(--danger);">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-trash' style="color: var(--danger);"></i>Supprimer le Dispositif
+    </h3>
+    
+    <div style="background: var(--light-danger); padding: 20px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--danger);">
+        <p style="margin: 0; color: var(--dark); font-weight: 500;">Êtes-vous sûr de vouloir supprimer le dispositif <strong>"{{ dispositif.nom }}"</strong> ?</p>
+        <p style="margin: 8px 0 0 0; color: var(--dark-grey); font-size: 14px;">Cette action est irréversible.</p>
+    </div>
+    
+    <div style="background: var(--grey); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+        <p style="margin: 0 0 8px 0; color: var(--dark); font-weight: 500;">Détails du dispositif :</p>
+        <p style="margin: 4px 0; color: var(--dark-grey);"><strong>Nom :</strong> {{ dispositif.nom }}</p>
+        <p style="margin: 4px 0; color: var(--dark-grey);"><strong>Type :</strong> {{ dispositif.get_type_display }}</p>
+        {% if dispositif.id_piece %}
+        <p style="margin: 4px 0; color: var(--dark-grey);"><strong>Pièce :</strong> {{ dispositif.id_piece.nom }}</p>
+        {% endif %}
+        <p style="margin: 4px 0; color: var(--dark-grey);"><strong>État :</strong> {% if dispositif.etat %}Allumé{% else %}Éteint{% endif %}</p>
+    </div>
+    
+    <form method="post" style="display: flex; gap: 12px; flex-wrap: wrap;">
+        {% csrf_token %}
+        <button type="submit" style="padding: 12px 24px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+            <i class='bx bx-trash'></i>Confirmer la suppression
+        </button>
+        <a href="{% url 'liste_dispositifs' %}" style="padding: 12px 24px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+            <i class='bx bx-x'></i>Annuler
+        </a>
+    </form>
+</div>
+{% endblock %}
+
