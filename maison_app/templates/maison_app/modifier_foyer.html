@@ -1,0 +1,537 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block page_title %}Modifier le Foyer{% endblock %}
+{% block page_heading %}Modifier le Foyer{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_foyers' %}">Foyers</a></li>
+    /
+    <li><a href="{% url 'detail_foyer' foyer.id %}">{{ foyer.nom }}</a></li>
+    /
+    <li><a href="#" class="active">Modifier</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 800px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: #FFFFFF; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-edit' style="font-size: 28px; color: #FFFFFF;"></i>Modifier le Foyer : {{ foyer.nom }}
+        </h3>
+    </div>
+    <div style="padding: 24px;">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-home'></i>Nom du foyer <span style="color: var(--danger);">*</span>
+                </label>
+                <input type="text" name="nom" value="{{ foyer.nom }}" required
+                       style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-text'></i>Description
+                </label>
+                <textarea name="description" rows="4" placeholder="Description du foyer..."
+                          style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;">{{ foyer.description|default:'' }}</textarea>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-image'></i>Photo du foyer
+                </label>
+                {% if foyer.photo %}
+                <div style="margin-bottom: 12px;">
+                    <img src="{{ foyer.photo.url }}" alt="{{ foyer.nom }}" style="max-height: 200px; border-radius: 8px; border: 2px solid var(--grey);">
+                    <p style="color: var(--dark-grey); font-size: 12px; margin-top: 8px;">Photo actuelle</p>
+                </div>
+                <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" name="supprimer_photo" id="supprimer_photo" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="supprimer_photo" style="color: var(--dark); cursor: pointer;">Supprimer la photo actuelle</label>
+                </div>
+                {% endif %}
+                <input type="file" name="photo" accept="image/*"
+                       style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                <small style="color: var(--dark-grey); font-size: 12px;">JPG, PNG (max 5MB). Laisser vide pour conserver la photo actuelle.</small>
+            </div>
+            
+            <div class="card-dashboard" style="background: var(--light-primary); padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary);">
+                <i class='bx bx-info-circle' style="color: var(--primary); margin-right: 8px;"></i>
+                <strong style="color: var(--dark);">Note :</strong> Les modifications seront visibles immédiatement pour tous les membres du foyer.
+            </div>
+            
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button type="submit" style="flex: 1; min-width: 200px; padding: 12px 24px; background: var(--success); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                    <i class='bx bx-check-circle'></i>Enregistrer les modifications
+                </button>
+                <a href="{% url 'detail_foyer' foyer.id %}" style="flex: 1; min-width: 150px; padding: 12px 24px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                    <i class='bx bx-x-circle'></i>Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Section Gestion des Membres -->
+<div class="card-dashboard" style="max-width: 100%; margin: 24px auto 0;">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: #FFFFFF; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-group' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Membres ({{ membres_foyer|length }})
+        </h3>
+    </div>
+    <div style="padding: 24px;">
+        <!-- Messages affichés ici -->
+        {% if messages %}
+        <div style="margin-bottom: 24px;">
+            {% for message in messages %}
+            <div style="padding: 12px 16px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% elif message.tags == 'warning' %}var(--warning){% else %}var(--primary){% endif %}; background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% elif message.tags == 'warning' %}var(--light-warning){% else %}var(--light-primary){% endif %}; color: var(--dark);">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- SECTION 1: Ajouter un membre -->
+        <div style="background: var(--light-primary); padding: 20px; border-radius: 12px; margin-bottom: 32px; border-left: 4px solid var(--primary);">
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
+                <i class='bx bx-user-plus' style="color: var(--primary);"></i>➕ Ajouter un nouveau membre
+            </h5>
+            <form method="post" style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="ajouter_membre">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Email du membre <span style="color: var(--danger);">*</span></label>
+                    <input type="email" name="email_membre" placeholder="utilisateur@exemple.com" required
+                           style="width: 100%; padding: 12px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; transition: all 0.3s ease;"
+                           onmouseover="this.style.borderColor='var(--primary)'" 
+                           onmouseout="this.style.borderColor='var(--light-primary)'">
+                </div>
+                <button type="submit" style="padding: 12px 24px; background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 600; white-space: nowrap;"
+                        onmouseover="this.style.transform='scale(1.05)'" 
+                        onmouseout="this.style.transform='scale(1)'">
+                    <i class='bx bx-plus-circle'></i>Ajouter le membre
+                </button>
+            </form>
+            <small style="color: var(--dark-grey); font-size: 12px; display: flex; align-items: center; gap: 4px; margin-top: 12px;">
+                <i class='bx bx-info-circle'></i>
+                💡 L'utilisateur doit avoir un compte existant sur la plateforme KeyPer.
+            </small>
+        </div>
+
+        <hr style="border: none; border-top: 2px solid var(--grey); margin: 32px 0;">
+
+        <!-- SECTION 2: Lister les membres -->
+        <div>
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
+                <i class='bx bx-group' style="color: var(--primary);"></i>👥 Membres du foyer ({{ membres_foyer|length }})
+            </h5>
+            {% if membres_foyer %}
+            <div style="display: grid; gap: 12px;">
+                {% for membre in membres_foyer %}
+                <div class="card-dashboard" style="padding: 16px; border-left: 4px solid var(--primary); background: var(--light-primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <!-- Infos membre -->
+                        <div style="flex: 1; min-width: 200px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 50px; height: 50px; background: var(--primary); color: var(--light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.2rem;">
+                                    {{ membre.email|first|upper }}
+                                </div>
+                                <div>
+                                    <h6 style="margin: 0 0 4px 0; color: var(--dark); font-weight: 600;">{{ membre.nom|default:membre.email }}</h6>
+                                    <p style="margin: 0 0 4px 0; color: var(--dark-grey); font-size: 13px;">{{ membre.email }}</p>
+                                    <span style="padding: 4px 12px; background: var(--primary); color: var(--light); border-radius: 12px; font-size: 12px; display: inline-block; font-weight: 600;">
+                                        {% if membre.get_role_display %}
+                                            🎯 {{ membre.get_role_display }}
+                                        {% else %}
+                                            👤 Membre
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div>
+                            {% if membre.id != user.id %}
+                            <form method="post" style="display: inline;" onsubmit="return confirm('⚠️ Êtes-vous SÛR de vouloir RETIRER {{ membre.email }} du foyer ?\n\nCette action ne peut pas être annulée.');"> 
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="supprimer_membre">
+                                <input type="hidden" name="membre_id" value="{{ membre.id }}">
+                                <button type="submit" style="padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
+                                    <i class='bx bx-trash'></i>Retirer
+                                </button>
+                            </form>
+                            {% else %}
+                            <span style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 8px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class='bx bx-check-circle'></i>C'est vous
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card-dashboard" style="background: var(--light-primary); padding: 24px; border-radius: 8px; text-align: center; border-left: 4px solid var(--primary);">
+                <i class='bx bx-group' style="color: var(--primary); font-size: 2rem; margin-bottom: 8px; display: block;"></i>
+                <p style="margin: 0 0 8px 0; color: var(--dark); font-size: 16px; font-weight: 600;">👥 Aucun membre dans ce foyer</p>
+                <p style="margin: 0; color: var(--dark-grey); font-size: 14px;">Utilisez le formulaire ci-dessus pour ajouter des membres ⬆️</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Section Gestion des Animaux -->
+<div class="card-dashboard" style="max-width: 100%; margin: 24px auto 0;">
+    <div style="background: linear-gradient(135deg, var(--success), #4CAF50); color: #FFFFFF; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-dog' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Animaux ({{ animaux_foyer|length }})
+        </h3>
+    </div>
+    <div style="padding: 24px;">
+        <!-- Messages affichés ici -->
+        {% if messages %}
+        <div style="margin-bottom: 24px;">
+            {% for message in messages %}
+            <div style="padding: 12px 16px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% elif message.tags == 'warning' %}var(--warning){% else %}var(--primary){% endif %}; background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% elif message.tags == 'warning' %}var(--light-warning){% else %}var(--light-primary){% endif %}; color: var(--dark);">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Liste et gestion des animaux -->
+        <div>
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
+                <i class='bx bx-dog' style="color: var(--success);"></i>🐾 Animaux du foyer ({{ animaux_foyer|length }})
+            </h5>
+            {% if animaux_foyer %}
+            <div style="display: grid; gap: 16px;">
+                {% for animal in animaux_foyer %}
+                <div class="card-dashboard" style="padding: 16px; border-left: 4px solid var(--success); background: var(--light-success);">
+                    <form method="post" enctype="multipart/form-data" id="form-animal-{{ animal.id }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="modifier_animal">
+                        <input type="hidden" name="animal_id" value="{{ animal.id }}">
+                        
+                        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start;">
+                            <!-- Photo de l'animal -->
+                            <div style="min-width: 110px;">
+                                {% if animal.photo %}
+                                <img src="{{ animal.photo.url }}" alt="{{ animal.nom }}" style="width: 110px; height: 110px; object-fit: cover; border-radius: 8px; border: 3px solid var(--success); display: block;">
+                                {% else %}
+                                <div style="width: 110px; height: 110px; background: var(--grey); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--grey);">
+                                    <i class='bx bx-dog' style="font-size: 2.5rem; color: var(--dark-grey);"></i>
+                                </div>
+                                {% endif %}
+                                <div style="margin-top: 8px;">
+                                    <input type="file" name="photo_animal" accept="image/*" style="width: 100%; padding: 6px; border: 1px solid var(--grey); border-radius: 4px; font-size: 12px;">
+                                    {% if animal.photo %}
+                                    <div style="margin-top: 4px;">
+                                        <input type="checkbox" name="supprimer_photo_animal" id="supprimer_photo_{{ animal.id }}" style="width: 14px; height: 14px;">
+                                        <label for="supprimer_photo_{{ animal.id }}" style="font-size: 11px; color: var(--dark-grey); cursor: pointer;">Supprimer la photo</label>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Informations de l'animal -->
+                            <div style="flex: 1;">
+                                <div style="margin-bottom: 12px;">
+                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Nom de l'animal</label>
+                                    <input type="text" name="nom_animal" value="{{ animal.nom }}" required
+                                           style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
+                                </div>
+                                
+                                <div style="margin-bottom: 12px;">
+                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Pièce / Localisation</label>
+                                    <select name="piece_id" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
+                                        <option value="">🏠 Aucune pièce spécifiée</option>
+                                        {% for piece in pieces_foyer %}
+                                        <option value="{{ piece.id }}" {% if animal.id_piece and animal.id_piece.id == piece.id %}selected{% endif %}>📍 {{ piece.nom }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="submit" style="padding: 8px 16px; background: var(--success); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
+                                        <i class='bx bx-save'></i>Enregistrer modifications
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Bouton supprimer -->
+                            <div>
+                                <form method="post" style="display: block;" onsubmit="return confirm('⚠️ Êtes-vous SÛR de vouloir SUPPRIMER l\'animal {{ animal.nom }} ?\n\nCette action ne peut pas être annulée.');"><div style="display: flex;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="supprimer_animal">
+                                    <input type="hidden" name="animal_id" value="{{ animal.id }}">
+                                    <button type="submit" style="padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease; white-space: nowrap;">
+                                        <i class='bx bx-trash'></i>Supprimer
+                                    </button></div>
+                                </form>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card-dashboard" style="background: var(--light-success); padding: 24px; border-radius: 8px; text-align: center; border-left: 4px solid var(--success);">
+                <i class='bx bx-dog' style="color: var(--success); font-size: 2rem; margin-bottom: 8px; display: block;"></i>
+                <p style="margin: 0 0 8px 0; color: var(--dark); font-size: 16px; font-weight: 600;">🐾 Aucun animal dans ce foyer</p>
+                <p style="margin: 0; color: var(--dark-grey); font-size: 14px;">Utilisez le lien ci-dessous pour ajouter votre premier animal ⬇️</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if animaux_foyer %}
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--grey);">
+            <a href="{% url 'ajouter_animal' %}" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;"
+               onmouseover="this.style.transform='scale(1.05)'" 
+               onmouseout="this.style.transform='scale(1)'">
+                <i class='bx bx-plus-circle'></i>➕ Ajouter un nouvel animal
+            </a>
+        </div>
+        {% else %}
+        <div style="margin-top: 24px;">
+            <a href="{% url 'ajouter_animal' %}" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; font-size: 16px;"
+               onmouseover="this.style.transform='scale(1.05)'" 
+               onmouseout="this.style.transform='scale(1)'">
+                <i class='bx bx-plus-circle'></i>➕ Ajouter un animal au foyer
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Section Gestion des Pièces -->
+<div class="card-dashboard" style="max-width: 100%; margin: 24px auto 0;">
+    <div style="background: linear-gradient(135deg, var(--warning), #ffc107); color: #FFFFFF; padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-door-open' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Pièces ({{ pieces_foyer|length }})
+        </h3>
+    </div>
+    <div style="padding: 24px;">
+        <!-- Messages d'erreur/succès affichés ici -->
+        {% if messages %}
+        <div style="margin-bottom: 24px;">
+            {% for message in messages %}
+            <div style="padding: 12px 16px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% elif message.tags == 'warning' %}var(--warning){% else %}var(--primary){% endif %}; background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% elif message.tags == 'warning' %}var(--light-warning){% else %}var(--light-primary){% endif %}; color: var(--dark);">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- SECTION 1: Ajouter une pièce -->
+        <div style="background: var(--grey); padding: 20px; border-radius: 12px; margin-bottom: 32px;">
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
+                <i class='bx bx-plus-circle' style="color: var(--warning);"></i>➕ Ajouter une nouvelle pièce
+            </h5>
+            <form method="post" enctype="multipart/form-data" style="display: grid; gap: 16px;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="ajouter_piece">
+                <input type="hidden" name="type_piece" value="personnalise" id="hidden_type_piece">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Nom de la pièce <span style="color: var(--danger);">*</span></label>
+                        <input type="text" name="nom_piece" placeholder="Ex: Cuisine, Chambre principale..." required
+                               style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; transition: all 0.3s ease;" 
+                               onmouseover="this.style.borderColor='var(--primary)'" 
+                               onmouseout="this.style.borderColor='var(--light-primary)'">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Type de pièce</label>
+                        <select name="type_piece_select" id="type_piece_select_add" style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; transition: all 0.3s ease;"
+                                onmouseover="this.style.borderColor='var(--primary)'" 
+                                onmouseout="this.style.borderColor='var(--light-primary)'"
+                                onchange="document.getElementById('hidden_type_piece').value = this.value">
+                            <option value="cuisine" selected>🍳 Cuisine</option>
+                            <option value="chambre">🛏️ Chambre</option>
+                            <option value="salon">🛋️ Salon</option>
+                            <option value="salle_de_bain">🚿 Salle de bain</option>
+                            <option value="toilettes">🚽 Toilettes</option>
+                            <option value="bureau">💼 Bureau</option>
+                            <option value="jardin">🌳 Jardin</option>
+                            <option value="garage">🚗 Garage</option>
+                            <option value="salle_de_jeux">🎮 Salle de jeux</option>
+                            <option value="buanderie">🧺 Buanderie</option>
+                            <option value="salle_a_manger">🍽️ Salle à manger</option>
+                            <option value="personnalise">Personnalisé</option>
+                        </select>
+                        <script>
+                        // Initialiser la valeur cachée au chargement de la page
+                        document.getElementById('hidden_type_piece').value = document.getElementById('type_piece_select_add').value;
+                        </script>
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Description <small style="font-weight: normal; color: var(--dark-grey);">(optionnel)</small></label>
+                    <textarea name="description_piece" rows="2" placeholder="Décrivez la fonction de cette pièce..."
+                              style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical; transition: all 0.3s ease;"
+                              onmouseover="this.style.borderColor='var(--primary)'" 
+                              onmouseout="this.style.borderColor='var(--light-primary)'"></textarea>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Photo <small style="font-weight: normal; color: var(--dark-grey);">(optionnel)</small></label>
+                    <input type="file" name="photo_piece" accept="image/*"
+                           style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; transition: all 0.3s ease;"
+                           onmouseover="this.style.borderColor='var(--primary)'" 
+                           onmouseout="this.style.borderColor='var(--light-primary)'">
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Accès restreint <small style="font-weight: normal; color: var(--dark-grey);">(optionnel)</small></label>
+                    <select name="utilisateurs_autorises_piece" multiple size="4"
+                            style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        {% for membre in membres_foyer %}
+                        <option value="{{ membre.id }}">{{ membre.nom|default:membre.email }}</option>
+                        {% endfor %}
+                    </select>
+                    <small style="color: var(--dark-grey); font-size: 12px; display: block; margin-top: 8px;">💡 Maintenez Ctrl/Cmd pour sélectionner plusieurs. Laissez vide = tous les membres peuvent accéder.</small>
+                </div>
+                
+                <button type="submit" style="padding: 12px 20px; background: linear-gradient(135deg, var(--warning), #ffc107); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 16px; transition: all 0.3s ease; width: fit-content;"
+                        onmouseover="this.style.transform='scale(1.05)'" 
+                        onmouseout="this.style.transform='scale(1)'">
+                    <i class='bx bx-plus-circle'></i>Ajouter la pièce
+                </button>
+            </form>
+        </div>
+
+        <hr style="border: none; border-top: 2px solid var(--grey); margin: 32px 0;">
+
+        <!-- SECTION 2: Lister et modifier les pièces -->
+        <div>
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
+                <i class='bx bx-door-open' style="color: var(--warning);"></i>📍 Pièces du foyer ({{ pieces_foyer|length }})
+            </h5>
+            {% if pieces_foyer %}
+            <div style="display: grid; gap: 16px;">
+                {% for piece in pieces_foyer %}
+                <div class="card-dashboard" style="padding: 16px; border-left: 4px solid var(--warning); background: var(--light-warning);">
+                    <form method="post" enctype="multipart/form-data" id="form-piece-{{ piece.id }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="modifier_piece">
+                        <input type="hidden" name="piece_id" value="{{ piece.id }}">
+                        
+                        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start;">
+                            <!-- Photo de la pièce -->
+                            <div style="min-width: 100px;">
+                                {% if piece.photo %}
+                                <img src="{{ piece.photo.url }}" alt="{{ piece.nom }}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid var(--grey);">
+                                {% else %}
+                                <div style="width: 100px; height: 100px; background: var(--grey); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class='bx bx-door-open' style="font-size: 2rem; color: var(--dark-grey);"></i>
+                                </div>
+                                {% endif %}
+                                <div style="margin-top: 8px;">
+                                    <input type="file" name="photo_piece" accept="image/*" style="width: 100%; padding: 6px; border: 1px solid var(--grey); border-radius: 4px; font-size: 12px;">
+                                    {% if piece.photo %}
+                                    <div style="margin-top: 4px;">
+                                        <input type="checkbox" name="supprimer_photo_piece" id="supprimer_photo_piece_{{ piece.id }}" style="width: 14px; height: 14px;">
+                                        <label for="supprimer_photo_piece_{{ piece.id }}" style="font-size: 11px; color: var(--dark-grey); cursor: pointer;">Supprimer</label>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Informations de la pièce -->
+                            <div style="flex: 1;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                    <div>
+                                        <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Nom</label>
+                                        <input type="text" name="nom_piece" value="{{ piece.nom }}" required
+                                               style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
+                                    </div>
+                                    
+                                    <div>
+                                        <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Type</label>
+                                        <select name="type_piece" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
+                                            <option value="personnalise" {% if piece.type_piece == 'personnalise' %}selected{% endif %}>Personnalisé</option>
+                                            <option value="cuisine" {% if piece.type_piece == 'cuisine' %}selected{% endif %}>🍳 Cuisine</option>
+                                            <option value="chambre" {% if piece.type_piece == 'chambre' %}selected{% endif %}>🛏️ Chambre</option>
+                                            <option value="salon" {% if piece.type_piece == 'salon' %}selected{% endif %}>🛋️ Salon</option>
+                                            <option value="salle_de_bain" {% if piece.type_piece == 'salle_de_bain' %}selected{% endif %}>🚿 Salle de bain</option>
+                                            <option value="toilettes" {% if piece.type_piece == 'toilettes' %}selected{% endif %}>🚽 Toilettes</option>
+                                            <option value="bureau" {% if piece.type_piece == 'bureau' %}selected{% endif %}>💼 Bureau</option>
+                                            <option value="jardin" {% if piece.type_piece == 'jardin' %}selected{% endif %}>🌳 Jardin</option>
+                                            <option value="garage" {% if piece.type_piece == 'garage' %}selected{% endif %}>🚗 Garage</option>
+                                            <option value="salle_de_jeux" {% if piece.type_piece == 'salle_de_jeux' %}selected{% endif %}>🎮 Salle de jeux</option>
+                                            <option value="buanderie" {% if piece.type_piece == 'buanderie' %}selected{% endif %}>🧺 Buanderie</option>
+                                            <option value="salle_a_manger" {% if piece.type_piece == 'salle_a_manger' %}selected{% endif %}>🍽️ Salle à manger</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom: 12px;">
+                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Description</label>
+                                    <textarea name="description_piece" rows="2" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none; resize: vertical;">{{ piece.description|default:'' }}</textarea>
+                                </div>
+                                
+                                <div style="margin-bottom: 12px;">
+                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Accès restreint</label>
+                                    <select name="utilisateurs_autorises_piece" multiple size="3" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
+                                        {% for membre in membres_foyer %}
+                                        <option value="{{ membre.id }}" {% if membre in piece.utilisateurs_autorises.all %}selected{% endif %}>{{ membre.nom|default:membre.email }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <small style="color: var(--dark-grey); font-size: 11px; display: block; margin-top: 4px;">💡 Maintenez Ctrl/Cmd pour sélectionner.</small>
+                                </div>
+                                
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="submit" style="padding: 8px 16px; background: var(--primary); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
+                                        <i class='bx bx-save'></i>Enregistrer modifications
+                                    </button>
+                                    {% if piece.type_piece == 'cuisine' %}
+                                    <a href="{% url 'cuisine_view' piece.id %}" style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
+                                        <i class='bx bx-food-menu'></i>Voir la cuisine
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'detail_piece' piece.id %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
+                                        <i class='bx bx-show'></i>Voir la pièce
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Bouton supprimer -->
+                            <div>
+                                <form method="post" style="display: block;" onsubmit="return confirm('⚠️ Êtes-vous SÛR de vouloir SUPPRIMER la pièce {{ piece.nom }} ?\n\n⚠️ Attention : Toutes les tâches et données associées seront DÉFINITIVEMENT supprimées !');"><div style="display: flex;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="supprimer_piece">
+                                    <input type="hidden" name="piece_id" value="{{ piece.id }}">
+                                    <button type="submit" style="padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease; white-space: nowrap;">
+                                        <i class='bx bx-trash'></i>Supprimer
+                                    </button></div>
+                                </form>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card-dashboard" style="background: var(--light-primary); padding: 24px; border-radius: 8px; text-align: center; border-left: 4px solid var(--warning);">
+                <i class='bx bx-door-open' style="color: var(--warning); font-size: 2rem; margin-bottom: 8px; display: block;"></i>
+                <p style="margin: 0; color: var(--dark); font-size: 16px; font-weight: 600;">📭 Aucune pièce dans ce foyer</p>
+                <p style="margin: 8px 0 0 0; color: var(--dark-grey); font-size: 14px;">Créez votre première pièce avec le formulaire ci-dessus ⬆️</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,147 @@
+{% extends "maison_app/base.html" %}
+{% block title %}Puzzle - {{ piece.nom }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-primary fw-bold mb-0">
+            <i class="bi bi-puzzle me-2"></i>Puzzle - {{ piece.nom }}
+        </h1>
+        <a href="{% url 'detail_piece' piece.id %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Retour à la pièce
+        </a>
+    </div>
+    
+    <!-- Statistiques du puzzle -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ pieces_placees }}/5</h3>
+                    <p class="text-muted mb-0">Pièces placées</p>
+                    {% if puzzle_reussi %}
+                    <span class="badge bg-success mt-2">🎉 Puzzle réussi !</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ pieces_totales }}/{{ puzzle.total_pieces }}</h3>
+                    <p class="text-muted mb-0">Pièces possédées</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ pieces_manquantes }}</h3>
+                    <p class="text-muted mb-0">Pièces manquantes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ total_points }}</h3>
+                    <p class="text-muted mb-0">Points disponibles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Image du puzzle complet (optionnel) -->
+    {% if puzzle.image_complete %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Image du puzzle complet</h5>
+        </div>
+        <div class="card-body text-center">
+            <img src="{{ puzzle.image_complete.url }}" alt="Puzzle complet" class="img-fluid" style="max-height: 300px;">
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Pièces possédées -->
+    <div class="card border-0 shadow-lg mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Mes pièces du puzzle</h5>
+            {% if pieces_manquantes > 0 %}
+            <a href="{% url 'acheter_piece_puzzle' piece.id %}" class="btn btn-light btn-sm">
+                <i class="bi bi-cart-plus me-1"></i>Acheter des pièces ({{ puzzle.prix_piece }} pts/pièce)
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if pieces_possede %}
+            <div class="row g-3">
+                {% for piece_puzzle in pieces_possede %}
+                <div class="col-md-2 col-sm-3 col-4">
+                    <div class="card h-100 {% if piece_puzzle.placee %}border-success bg-light{% else %}border-primary{% endif %}">
+                        <div class="card-body text-center p-2">
+                            <div class="mb-2">
+                                {% if piece_puzzle.image %}
+                                <img src="{{ piece_puzzle.image.url }}" alt="Pièce {{ piece_puzzle.numero_piece }}" class="img-fluid" style="max-height: 60px;">
+                                {% else %}
+                                <div class="bg-info text-white rounded d-flex align-items-center justify-content-center" style="height: 60px; font-size: 1.5rem;">
+                                    {{ piece_puzzle.numero_piece }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <small class="d-block fw-bold">Pièce #{{ piece_puzzle.numero_piece }}</small>
+                            {% if piece_puzzle.placee %}
+                            <span class="badge bg-success mt-1">
+                                <i class="bi bi-check-circle me-1"></i>Placée
+                            </span>
+                            {% else %}
+                            <a href="{% url 'placer_piece_puzzle' piece.id piece_puzzle.numero_piece %}" class="btn btn-primary btn-sm mt-1 w-100">
+                                <i class="bi bi-cursor me-1"></i>Placer
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle me-2"></i>Vous n'avez pas encore de pièces. Achetez-en avec vos points !
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Message si pas assez de points -->
+    {% if pieces_manquantes > 0 and total_points < puzzle.prix_piece %}
+    <div class="alert alert-warning">
+        <h5><i class="bi bi-exclamation-triangle me-2"></i>Points insuffisants</h5>
+        <p class="mb-2">Vous n'avez pas assez de points pour acheter des pièces.</p>
+        <p class="mb-0">
+            <strong>Solution :</strong> Complétez des tâches pour gagner des points ! 
+            <a href="{% url 'liste_taches' %}" class="btn btn-success btn-sm ms-2">
+                <i class="bi bi-list-check me-1"></i>Voir les tâches
+            </a>
+        </p>
+    </div>
+    {% endif %}
+    
+    <!-- Progression -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="mb-3">Progression</h6>
+            <div class="progress mb-2" style="height: 30px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio pieces_placees 5 100 %}%">
+                    {{ pieces_placees }}/5 placées
+                </div>
+            </div>
+            <div class="progress" style="height: 30px;">
+                <div class="progress-bar bg-info" role="progressbar" style="width: {% widthratio pieces_totales puzzle.total_pieces 100 %}%">
+                    {{ pieces_totales }}/{{ puzzle.total_pieces }} possédées
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,92 +1,372 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% load tache_tags %}
+{% load permission_tags %}
 {% block title %}To Do List{% endblock %}
+{% block page_title %}To Do List{% endblock %}
+{% block page_heading %}Tâches{% endblock %}
 
-{% block content %}
-<div class="container mt-5">
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Tâches</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
     <!-- TITRE "TO DO LIST" + BOUTON ALIGNÉ -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="text-primary fw-bold mb-0">To Do List</h1>
-        <a href="{% url 'ajouter_tache' %}" class="btn btn-success btn-lg shadow-sm">
-            <i class="bi bi-plus-circle me-2"></i> + Ajouter une tâche
-        </a>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-list-ul' style="font-size: 28px; color: var(--primary);"></i>To Do List
+        </h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{% url 'calendrier_taches' %}" style="padding: 10px 20px; background: var(--primary); color: var(--light); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-calendar'></i>Vue Calendrier
+            </a>
+            <a href="{% url 'historique_taches' %}" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-history'></i>Historique
+            </a>
+            {% if user|can:"can_create_tache" %}
+            <a href="{% url 'ajouter_tache' %}" style="padding: 10px 20px; background: var(--success); color: var(--light); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-plus-circle'></i>Ajouter une tâche
+            </a>
+            {% endif %}
+        </div>
     </div>
 
-    {% if taches %}
-    <div class="row g-4">
-        {% for tache in taches %}
-        <div class="col-md-6">
-            <div class="card h-100 shadow-sm hover-shadow">
-                <div class="card-header d-flex justify-content-between align-items-center bg-black text-white">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-check-circle-fill me-2 text-success"></i>{{ tache.titre }}
-                    </h5>
-                    <span class="badge bg-info">
-                        <i class="bi bi-star-fill me-1"></i>{{ tache.priorite|default:"—" }}
+    <!-- FILTRES ET RECHERCHE -->
+    <div class="card-dashboard mb-4">
+        <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-search'></i> Recherche
+                </label>
+                <input type="text" name="recherche" placeholder="Titre ou description..." value="{{ recherche }}"
+                       style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-star'></i> Priorité
+                </label>
+                <select name="priorite" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Toutes</option>
+                    <option value="Haute" {% if filtre_priorite == 'Haute' %}selected{% endif %}>Haute</option>
+                    <option value="Moyenne" {% if filtre_priorite == 'Moyenne' %}selected{% endif %}>Moyenne</option>
+                    <option value="Basse" {% if filtre_priorite == 'Basse' %}selected{% endif %}>Basse</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-check-square'></i> Statut
+                </label>
+                <select name="statut" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Tous</option>
+                    {% for statut in statuts %}
+                    <option value="{{ statut.libelle }}" {% if filtre_statut == statut.libelle %}selected{% endif %}>
+                        {{ statut.libelle }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-home'></i> Pièce
+                </label>
+                <select name="piece" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Toutes</option>
+                    {% for piece in pieces %}
+                    <option value="{{ piece.id }}" {% if filtre_piece == piece.id|stringformat:"s" %}selected{% endif %}>
+                        {{ piece.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit" style="width: 100%; padding: 10px 20px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;">
+                    <i class='bx bx-filter'></i>Filtrer
+                </button>
+                {% if filtre_priorite or filtre_statut or filtre_piece or recherche %}
+                <a href="{% url 'liste_taches' %}" style="display: block; margin-top: 8px; padding: 10px 20px; background: var(--grey); color: var(--dark); border-radius: 8px; text-align: center; text-decoration: none; transition: all 0.3s ease;">
+                    <i class='bx bx-x'></i>Réinitialiser
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- TÂCHES À FAIRE AUJOURD'HUI -->
+    {% if taches_aujourdhui %}
+    <div style="margin-bottom: 32px;">
+        <div style="background: var(--light-warning); padding: 16px; border-radius: 12px; border-left: 4px solid var(--warning); margin-bottom: 16px;">
+            <h4 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-error-circle' style="font-size: 20px; color: var(--danger);"></i>À Faire Aujourd'hui
+                <span style="padding: 4px 12px; background: var(--danger); color: var(--light); border-radius: 12px; font-size: 12px; margin-left: 8px;">{{ taches_aujourdhui.count }}</span>
+            </h4>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            {% for tache in taches_aujourdhui %}
+            <div class="card-dashboard" style="border-left: 4px solid var(--danger); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                <div style="background: var(--danger); color: #FFFFFF; padding: 12px 16px; border-radius: 8px 8px 0 0; margin: -24px -24px 16px -24px; display: flex; justify-content: space-between; align-items: center;">
+                    <h6 style="margin: 0; color: #FFFFFF !important; font-weight: 600;">{{ tache.titre }}</h6>
+                    {% if tache.priorite %}
+                    <span style="padding: 4px 8px; background: var(--light); color: var(--dark); border-radius: 12px; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-star'></i>{{ tache.priorite }}
                     </span>
+                    {% endif %}
                 </div>
-                <div class="card-body">
-                    <p class="card-text">{{ tache.description|truncatewords:20|default:"Aucune description" }}</p>
-                    <small class="text-muted">
-                        {% if tache.id_piece %}
-                        <i class="bi bi-house-door me-1"></i>Pièce : {{ tache.id_piece.nom }}
-                        {% endif %}
-                        {% if tache.id_animal %}
-                        <i class="bi bi-heart-fill me-1 text-danger"></i>Animal : {{ tache.id_animal.nom }}
-                        {% endif %}
+                <p style="color: var(--dark-grey); font-size: 14px; margin-bottom: 12px;">{{ tache.description|truncatewords:10|default:"Aucune description" }}</p>
+                {% if tache.id_piece %}
+                <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; margin-right: 8px;">
+                    <i class='bx bx-home'></i>{{ tache.id_piece.nom }}
+                </span>
+                {% endif %}
+                {% if tache.tacheassignee_set.all %}
+                <div style="margin-top: 12px;">
+                    <small style="color: var(--dark-grey); display: block; margin-bottom: 4px;">
+                        <i class='bx bx-user-check'></i><strong>Assigné à :</strong>
                     </small>
-                    <div class="mt-3">
-                        <span class="badge bg-secondary">
-                            <i class="bi bi-clock-history me-1"></i>{{ tache.id_statut.libelle|default:"À faire" }}
-                        </span>
-                        {% if tache.date_limite %}
-                        <span class="badge bg-warning ms-2">
-                            <i class="bi bi-calendar-check me-1"></i>{{ tache.date_limite|date:"d/m/Y" }}
-                        </span>
-                        {% endif %}
-                        {% if tache.terminee %}
-                        <span class="badge bg-success ms-2">
-                            <i class="bi bi-check-lg me-1"></i>Terminé par {{ tache.complete_par.nom|default:tache.complete_par.email }}
-                        </span>
-                        {% endif %}
-                    </div>
-                    {% if not tache.terminee %}
-                    <a href="{% url 'terminer_tache' tache.id %}" class="btn btn-success btn-sm mt-2">
-                        <i class="bi bi-check-circle me-1"></i>Terminer
-                    </a>
+                    {% for assignation in tache.tacheassignee_set.all %}
+                    <span style="padding: 4px 8px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 11px; display: inline-block; margin-right: 4px;">
+                        {{ assignation.id_user.nom|default:assignation.id_user.email }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    {% if user.role == 'admin' or tache.tacheassignee_set.all %}
+                        {% for assignation in tache.tacheassignee_set.all %}
+                            {% if assignation.id_user.id == user.id or user.role == 'admin' %}
+                                <a href="{% url 'detail_tache' tache.id %}" style="padding: 6px 12px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-show'></i>Voir
+                                </a>
+                                {% if user.role != 'observateur' %}
+                                <a href="{% url 'terminer_tache' tache.id %}" style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-check-circle'></i>Terminer
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                        {% empty %}
+                            {% if user.role == 'admin' %}
+                                <a href="{% url 'detail_tache' tache.id %}" style="padding: 6px 12px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-show'></i>Voir
+                                </a>
+                                {% if user.role != 'observateur' %}
+                                <a href="{% url 'terminer_tache' tache.id %}" style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-check-circle'></i>Terminer
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
                     {% endif %}
                     {% if user.role == 'admin' %}
-                    <a href="{% url 'supprimer_tache' tache.id %}" class="btn btn-danger btn-sm mt-2 ms-1">
-                        <i class="bi bi-trash me-1"></i>Supprimer
+                    <a href="{% url 'modifier_tache' tache.id %}" style="padding: 6px 12px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-edit'></i>Modifier
                     </a>
                     {% endif %}
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="alert alert-info text-center p-5 rounded-4 shadow-sm">
-        <h5>Aucune tâche</h5>
-        <p>Rejoignez un foyer ou ajoutez-en une !</p>
-        <a href="{% url 'ajouter_tache' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>Ajouter une tâche
-        </a>
     </div>
     {% endif %}
-</div>
 
-<style>
-    .hover-shadow:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
-        transition: all 0.3s ease;
-    }
-    .card-header {
-        background: #000 !important;  /* NOIR COMME NAVBAR */
-        color: white;
-    }
-    .badge {
-        border-radius: 20px;
-    }
-</style>
+    <!-- TÂCHES URGENTES (dans les 2 prochains jours) -->
+    {% if taches_urgentes %}
+    <div style="margin-bottom: 32px;">
+        <h4 style="margin-bottom: 16px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-time-five' style="font-size: 20px; color: var(--warning);"></i>Urgentes (dans 2 jours)
+            <span style="padding: 4px 12px; background: var(--warning); color: var(--dark); border-radius: 12px; font-size: 12px; margin-left: 8px;">{{ taches_urgentes.count }}</span>
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            {% for tache in taches_urgentes %}
+            <div class="card-dashboard" style="border-left: 4px solid var(--warning); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                <div style="background: var(--warning); color: #000000; padding: 12px 16px; border-radius: 8px 8px 0 0; margin: -24px -24px 16px -24px; display: flex; justify-content: space-between; align-items: center;">
+                    <h6 style="margin: 0; color: #1a237e !important; font-weight: 700; font-size: 1rem;">{{ tache.titre }}</h6>
+                    {% if tache.date_limite %}
+                    <small style="color: #000000; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-calendar-check'></i>{{ tache.date_limite|date:"d/m" }}
+                    </small>
+                    {% endif %}
+                </div>
+                <p style="color: var(--dark-grey); font-size: 14px; margin-bottom: 12px;">{{ tache.description|truncatewords:10|default:"Aucune description" }}</p>
+                {% if tache.id_piece %}
+                <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; margin-right: 8px;">
+                    <i class='bx bx-home'></i>{{ tache.id_piece.nom }}
+                </span>
+                {% endif %}
+                <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    {% if user.role == 'admin' or tache.tacheassignee_set.all %}
+                        {% for assignation in tache.tacheassignee_set.all %}
+                            {% if assignation.id_user.id == user.id or user.role == 'admin' %}
+                                <a href="{% url 'detail_tache' tache.id %}" style="padding: 6px 12px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-show'></i>Voir
+                                </a>
+                                {% if user.role != 'observateur' %}
+                                <a href="{% url 'terminer_tache' tache.id %}" style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-check-circle'></i>Terminer
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                        {% empty %}
+                            {% if user.role == 'admin' %}
+                                <a href="{% url 'detail_tache' tache.id %}" style="padding: 6px 12px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-show'></i>Voir
+                                </a>
+                                {% if user.role != 'observateur' %}
+                                <a href="{% url 'terminer_tache' tache.id %}" style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-check-circle'></i>Terminer
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    {% if user.role == 'admin' %}
+                    <a href="{% url 'modifier_tache' tache.id %}" style="padding: 6px 12px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-edit'></i>Modifier
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TÂCHES ACTIVES -->
+    <div style="margin-bottom: 32px;">
+        <h4 style="margin-bottom: 16px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-list-task' style="font-size: 20px; color: var(--primary);"></i>Tâches Actives
+            <span style="padding: 4px 12px; background: var(--primary); color: var(--light); border-radius: 12px; font-size: 12px; margin-left: 8px;">{{ taches_actives.count }}</span>
+        </h4>
+        
+        {% if taches_actives %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            {% for tache in taches_actives %}
+            <div class="card-dashboard" style="border-left: 4px solid {% if tache.priorite == 'Haute' %}var(--danger){% elif tache.priorite == 'Moyenne' %}var(--warning){% else %}var(--primary){% endif %}; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                <div style="background: {% if tache.priorite == 'Haute' %}var(--danger){% elif tache.priorite == 'Moyenne' %}var(--warning){% else %}var(--primary){% endif %}; color: #FFFFFF; padding: 12px 16px; border-radius: 8px 8px 0 0; margin: -24px -24px 16px -24px; display: flex; justify-content: space-between; align-items: center;">
+                    <h6 style="margin: 0; color: #FFFFFF !important; font-weight: 600;">{{ tache.titre }}</h6>
+                    {% if tache.priorite %}
+                    <span style="padding: 4px 8px; background: rgba(255,255,255,0.3); color: #FFFFFF; border-radius: 12px; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-star'></i>{{ tache.priorite }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% if tache|has_demande_en_attente:user %}
+                <div style="background: var(--light-primary); color: var(--primary); padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid var(--primary);">
+                    <i class='bx bx-time-five'></i>
+                    <small style="font-weight: 600;">Demande de modification en attente</small>
+                </div>
+                {% endif %}
+                
+                <p style="color: var(--dark-grey); font-size: 14px; margin-bottom: 12px;">{{ tache.description|truncatewords:15|default:"Aucune description" }}</p>
+                
+                <div style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% if tache.id_piece %}
+                    <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-home'></i>{{ tache.id_piece.nom }}
+                    </span>
+                    {% endif %}
+                    {% if tache.id_animal %}
+                    <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-heart'></i>{{ tache.id_animal.nom }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                    <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-time'></i>{{ tache.id_statut.libelle|default:"À faire" }}
+                    </span>
+                    {% if tache.date_limite %}
+                    <span style="padding: 4px 8px; background: var(--warning); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-calendar-check'></i>{{ tache.date_limite|date:"d/m/Y" }}
+                    </span>
+                    {% endif %}
+                    {% if tache.temps_estime %}
+                    <span style="padding: 4px 8px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-time-five'></i>{{ tache.temps_estime }} min
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Assignations -->
+                {% if tache.tacheassignee_set.all %}
+                <div style="margin-bottom: 12px;">
+                    <small style="color: var(--dark-grey); display: block; margin-bottom: 4px;">
+                        <i class='bx bx-user-check'></i><strong>Assigné à :</strong>
+                    </small>
+                    {% for assignation in tache.tacheassignee_set.all %}
+                    <span style="padding: 4px 8px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 11px; display: inline-block; margin-right: 4px;">
+                        {{ assignation.id_user.nom|default:assignation.id_user.email }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    {% if user.role == 'admin' or tache.tacheassignee_set.all %}
+                        {% for assignation in tache.tacheassignee_set.all %}
+                            {% if assignation.id_user.id == user.id or user.role == 'admin' %}
+                                <a href="{% url 'detail_tache' tache.id %}" style="padding: 6px 12px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-show'></i>Voir
+                                </a>
+                            {% endif %}
+                        {% empty %}
+                            {% if user.role == 'admin' %}
+                                <a href="{% url 'detail_tache' tache.id %}" style="padding: 6px 12px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class='bx bx-show'></i>Voir
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    {% if not tache.terminee %}
+                        {% if user.role == 'admin' %}
+                            <a href="{% url 'terminer_tache' tache.id %}" style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class='bx bx-check-circle'></i>Terminer
+                            </a>
+                        {% else %}
+                            {% for assignation in tache.tacheassignee_set.all %}
+                                {% if assignation.id_user.id == user.id %}
+                                    <a href="{% url 'terminer_tache' tache.id %}" style="padding: 6px 12px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class='bx bx-check-circle'></i>Terminer
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {% if tache.date_limite and not tache|has_demande_en_attente:user %}
+                            {% if user.role != 'admin' %}
+                                {% for assignation in tache.tacheassignee_set.all %}
+                                    {% if assignation.id_user.id == user.id %}
+                                        <a href="{% url 'demander_modification_date' tache.id %}" style="padding: 6px 12px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class='bx bx-calendar-check'></i>Demander modification
+                                        </a>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                    {% if user.role == 'admin' and user.role != 'observateur' %}
+                    <a href="{% url 'modifier_tache' tache.id %}" style="padding: 6px 12px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-edit'></i>Modifier
+                    </a>
+                    <a href="{% url 'supprimer_tache' tache.id %}" style="padding: 6px 12px; background: var(--danger); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-trash'></i>Supprimer
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="background: var(--light-primary); color: var(--primary); padding: 48px; border-radius: 12px; text-align: center;">
+            <i class='bx bx-check-circle' style="font-size: 4rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+            <h5 style="margin: 0 0 8px 0; color: var(--dark);">Aucune tâche active</h5>
+            <p style="margin: 0; color: var(--dark-grey);">Toutes vos tâches sont terminées ! 🎉</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
 {% endblock %}

@@ -1,0 +1,71 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Historique des Recettes - {{ piece.nom }}{% endblock %}
+{% block page_title %}Historique des Recettes - {{ piece.nom }}{% endblock %}
+{% block page_heading %}Historique des Recettes{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'cuisine_view' piece.id %}">Cuisine</a></li>
+    /
+    <li><a href="#" class="active">Historique des Recettes</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="padding: 0; overflow: hidden;">
+    <div style="background: linear-gradient(135deg, #6f42c1, #5a32a3); color: var(--light); padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <h3 style="margin: 0; color: var(--light); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-history' style="font-size: 28px;"></i>Historique des Recettes
+        </h3>
+        <a href="{% url 'cuisine_view' piece.id %}" style="padding: 8px 16px; background: rgba(255,255,255,0.2); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+            <i class='bx bx-arrow-back'></i>Retour
+        </a>
+    </div>
+    
+    <div style="padding: 24px;">
+        {% if recettes %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            {% for recette in recettes %}
+            <div class="card-dashboard" style="border-left: 4px solid #6f42c1; transition: all 0.3s ease; overflow: hidden;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                {% if recette.image_url %}
+                <div style="width: 100%; height: 200px; overflow: hidden; margin: -24px -24px 16px -24px; background: var(--grey);">
+                    <img src="{{ recette.image_url }}" alt="{{ recette.titre }}" 
+                         style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                </div>
+                {% endif %}
+                <h6 style="margin: 0 0 8px 0; color: var(--dark); font-weight: 600;">{{ recette.titre|default:"Recette sans nom" }}</h6>
+                <p style="color: var(--dark-grey); font-size: 12px; margin: 0 0 12px 0; display: flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-calendar'></i>Générée le {{ recette.date_creation|date:"d/m/Y H:i" }}
+                </p>
+                {% if recette.ingredients_recherche %}
+                <p style="margin: 0 0 12px 0; color: var(--dark-grey); font-size: 14px;">
+                    <strong style="color: var(--dark);">Ingrédients recherchés:</strong> {{ recette.ingredients_recherche|truncatewords:15 }}
+                </p>
+                {% endif %}
+                {% if recette.instructions %}
+                <div style="margin-bottom: 12px;">
+                    <strong style="color: var(--dark); font-size: 14px; display: block; margin-bottom: 4px;">Instructions :</strong>
+                    <p style="color: var(--dark-grey); font-size: 13px; margin: 0; line-height: 1.6;">{{ recette.instructions|truncatewords:30 }}</p>
+                </div>
+                {% endif %}
+                {% if recette.source_url %}
+                <a href="{{ recette.source_url }}" target="_blank" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; transition: all 0.3s ease;">
+                    <i class='bx bx-show'></i>Voir la recette
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card-dashboard" style="text-align: center; padding: 48px; background: var(--light-primary);">
+            <i class='bx bx-info-circle' style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--primary); opacity: 0.5;"></i>
+            <p style="margin: 0 0 16px 0; color: var(--dark);">Aucune recette générée pour le moment.</p>
+            <p style="margin: 0; color: var(--dark-grey);">Utilisez la fonctionnalité "Générer des recettes" pour créer votre première recette.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Mes Préférences{% endblock %}
+{% block page_title %}Mes Préférences{% endblock %}
+{% block page_heading %}Mes Préférences{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'mon_profil' %}">Profil</a></li>
+    /
+    <li><a href="#" class="active">Préférences</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+
+<div class="card-dashboard" style="border-left: 4px solid var(--primary); margin-bottom: 24px;">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-cog' style="color: var(--primary);"></i>Gérer mes Préférences
+    </h3>
+    <p style="color: var(--dark-grey); margin-bottom: 0;">Définissez vos préférences pour les types de tâches et votre disponibilité. Ces informations aideront à mieux vous assigner les tâches.</p>
+</div>
+
+<form method="post" style="display: flex; flex-direction: column; gap: 24px;">
+    {% csrf_token %}
+    
+    <!-- Type de tâche : Nettoyage -->
+    <div class="card-dashboard" style="border-left: 4px solid var(--success);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <input type="checkbox" name="type_tache" value="nettoyage" id="nettoyage" {% if preferences.nettoyage %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;">
+            <label for="nettoyage" style="font-size: 18px; font-weight: 600; color: var(--dark); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-broom' style="color: var(--success);"></i>Nettoyage
+            </label>
+        </div>
+        <div id="nettoyage-options" style="display: {% if preferences.nettoyage %}block{% else %}none{% endif %}; margin-left: 32px; padding: 16px; background: var(--grey); border-radius: 8px;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-heart'></i> Préférence
+                </label>
+                <select name="preference_nettoyage" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Sélectionner</option>
+                    <option value="aime" {% if preferences.nettoyage.preference == 'aime' %}selected{% endif %}>J'aime</option>
+                    <option value="desapprouve" {% if preferences.nettoyage.preference == 'desapprouve' %}selected{% endif %}>Je n'aime pas</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-time'></i> Disponibilité
+                </label>
+                <select name="disponibilite_nettoyage" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Sélectionner</option>
+                    <option value="matin" {% if preferences.nettoyage.disponibilite == 'matin' %}selected{% endif %}>Matin</option>
+                    <option value="jour" {% if preferences.nettoyage.disponibilite == 'jour' %}selected{% endif %}>Jour</option>
+                    <option value="soir" {% if preferences.nettoyage.disponibilite == 'soir' %}selected{% endif %}>Soir</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Type de tâche : Cuisine -->
+    <div class="card-dashboard" style="border-left: 4px solid var(--warning);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <input type="checkbox" name="type_tache" value="cuisine" id="cuisine" {% if preferences.cuisine %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;">
+            <label for="cuisine" style="font-size: 18px; font-weight: 600; color: var(--dark); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-bowl-rice' style="color: var(--warning);"></i>Cuisine
+            </label>
+        </div>
+        <div id="cuisine-options" style="display: {% if preferences.cuisine %}block{% else %}none{% endif %}; margin-left: 32px; padding: 16px; background: var(--grey); border-radius: 8px;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-heart'></i> Préférence
+                </label>
+                <select name="preference_cuisine" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Sélectionner</option>
+                    <option value="aime" {% if preferences.cuisine.preference == 'aime' %}selected{% endif %}>J'aime</option>
+                    <option value="desapprouve" {% if preferences.cuisine.preference == 'desapprouve' %}selected{% endif %}>Je n'aime pas</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-time'></i> Disponibilité
+                </label>
+                <select name="disponibilite_cuisine" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Sélectionner</option>
+                    <option value="matin" {% if preferences.cuisine.disponibilite == 'matin' %}selected{% endif %}>Matin</option>
+                    <option value="jour" {% if preferences.cuisine.disponibilite == 'jour' %}selected{% endif %}>Jour</option>
+                    <option value="soir" {% if preferences.cuisine.disponibilite == 'soir' %}selected{% endif %}>Soir</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Type de tâche : Courses -->
+    <div class="card-dashboard" style="border-left: 4px solid var(--primary);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <input type="checkbox" name="type_tache" value="courses" id="courses" {% if preferences.courses %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;">
+            <label for="courses" style="font-size: 18px; font-weight: 600; color: var(--dark); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-shopping-bag' style="color: var(--primary);"></i>Courses
+            </label>
+        </div>
+        <div id="courses-options" style="display: {% if preferences.courses %}block{% else %}none{% endif %}; margin-left: 32px; padding: 16px; background: var(--grey); border-radius: 8px;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-heart'></i> Préférence
+                </label>
+                <select name="preference_courses" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Sélectionner</option>
+                    <option value="aime" {% if preferences.courses.preference == 'aime' %}selected{% endif %}>J'aime</option>
+                    <option value="desapprouve" {% if preferences.courses.preference == 'desapprouve' %}selected{% endif %}>Je n'aime pas</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-time'></i> Disponibilité
+                </label>
+                <select name="disponibilite_courses" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Sélectionner</option>
+                    <option value="matin" {% if preferences.courses.disponibilite == 'matin' %}selected{% endif %}>Matin</option>
+                    <option value="jour" {% if preferences.courses.disponibilite == 'jour' %}selected{% endif %}>Jour</option>
+                    <option value="soir" {% if preferences.courses.disponibilite == 'soir' %}selected{% endif %}>Soir</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Type de tâche : Entretien -->
+    <div class="card-dashboard" style="border-left: 4px solid var(--danger);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <input type="checkbox" name="type_tache" value="entretien" id="entretien" {% if preferences.entretien %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;">
+            <label for="entretien" style="font-size: 18px; font-weight: 600; color: var(--dark); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-wrench' style="color: var(--danger);"></i>Entretien
+            </label>
+        </div>
+        <div id="entretien-options" style="display: {% if preferences.entretien %}block{% else %}none{% endif %}; margin-left: 32px; padding: 16px; background: var(--grey); border-radius: 8px;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-heart'></i> Préférence
+                </label>
+                <select name="preference_entretien" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Sélectionner</option>
+                    <option value="aime" {% if preferences.entretien.preference == 'aime' %}selected{% endif %}>J'aime</option>
+                    <option value="desapprouve" {% if preferences.entretien.preference == 'desapprouve' %}selected{% endif %}>Je n'aime pas</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">
+                    <i class='bx bx-time'></i> Disponibilité
+                </label>
+                <select name="disponibilite_entretien" style="width: 100%; padding: 10px 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <option value="">Sélectionner</option>
+                    <option value="matin" {% if preferences.entretien.disponibilite == 'matin' %}selected{% endif %}>Matin</option>
+                    <option value="jour" {% if preferences.entretien.disponibilite == 'jour' %}selected{% endif %}>Jour</option>
+                    <option value="soir" {% if preferences.entretien.disponibilite == 'soir' %}selected{% endif %}>Soir</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px;">
+        <button type="submit" style="padding: 12px 24px; background: var(--success); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+            <i class='bx bx-check'></i>Enregistrer les préférences
+        </button>
+        <a href="{% url 'mon_profil' %}" style="padding: 12px 24px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+            <i class='bx bx-x'></i>Annuler
+        </a>
+    </div>
+</form>
+
+<script>
+// Afficher/masquer les options selon la case cochée
+document.querySelectorAll('input[type="checkbox"][name="type_tache"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const optionsDiv = document.getElementById(this.value + '-options');
+        if (optionsDiv) {
+            optionsDiv.style.display = this.checked ? 'block' : 'none';
+        }
+    });
+});
+</script>
+
+{% endblock %}
+

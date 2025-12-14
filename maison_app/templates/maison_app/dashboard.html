@@ -1,296 +1,658 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
 {% load static %}
-{% block title %}Dashboard - {{ foyer.nom }}{% endblock %}
+{% load permission_tags %}
+{% block title %}Dashboard{% if foyer %} - {{ foyer.nom }}{% endif %}{% endblock %}
+{% block page_title %}Dashboard{% if foyer %} - {{ foyer.nom }}{% endif %}{% endblock %}
+{% block page_heading %}Bonjour {{ nom_affichage }} !{% endblock %}
 
-{% block content %}
-<div class="container-fluid mt-4">
-    <!-- En-tête du Dashboard -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card border-0 shadow-lg rounded-4" style="background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);">
-                <div class="card-body p-5">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="text-white mb-2">📊 Dashboard</h1>
-                            <h2 class="text-white" style="font-size: 1.8rem;">{{ foyer.nom }}</h2>
-                            <p class="text-light opacity-75">{{ foyer.description|default:"Bienvenue sur votre tableau de bord" }}</p>
-                        </div>
-                        <div class="text-end">
-                            <div class="progress" style="width: 150px; height: 30px;">
-                                <div class="progress-bar" role="progressbar" style="width: {{ taux_completion }}%; background: linear-gradient(90deg, #ffc107, #ff6b6b);" aria-valuenow="{{ taux_completion }}" aria-valuemin="0" aria-valuemax="100">
-                                    <strong style="color: white;">{{ taux_completion }}% ✓</strong>
-                                </div>
-                            </div>
-                            <small class="text-light mt-2 d-block">Tâches complétées</small>
-                        </div>
-                    </div>
-                </div>
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">{% if foyer %}{{ foyer.nom }}{% else %}Accueil{% endif %}</a></li>
+    /
+    <li><a href="#" class="active">Dashboard</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+{% if not foyer %}
+<!-- Message pour utilisateur sans foyer -->
+<div class="card-dashboard" style="text-align: center; padding: 48px;">
+    <i class='bx bx-home' style="font-size: 5rem; color: var(--dark-grey); margin-bottom: 24px; display: block;"></i>
+    <h3 style="color: var(--dark); margin-bottom: 16px;">Aucun foyer sélectionné</h3>
+    <p style="color: var(--dark-grey); margin-bottom: 32px;">
+        Pour commencer à utiliser KeyPer, vous pouvez créer un foyer ou rejoindre un foyer existant avec un code d'invitation.
+    </p>
+    <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="/creer-foyer/" style="padding: 12px 24px; border-radius: 36px; background: var(--success); color: var(--light); display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500; text-decoration: none; transition: all 0.3s ease;">
+            <i class='bx bx-plus-circle'></i>
+            <span>Créer un foyer</span>
+        </a>
+        <a href="{% url 'rejoindre_foyer' %}" style="padding: 12px 24px; border-radius: 36px; background: var(--primary); color: var(--light); display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500; text-decoration: none; transition: all 0.3s ease;">
+            <i class='bx bx-log-in'></i>
+            <span>Rejoindre un foyer</span>
+        </a>
+    </div>
+</div>
+{% else %}
+
+<!-- Insights -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 24px;">
+    <div class="card-dashboard insight-card" style="background: linear-gradient(135deg, var(--card-purple), var(--primary)); border: none;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <i class='bx bx-list-ul' style="font-size: 3rem; opacity: 0.9;"></i>
+            <div>
+                <h3 class="insight-number">{{ taches_total }}</h3>
+                <p class="insight-text">Tâches Totales</p>
             </div>
         </div>
     </div>
-
-    <!-- Cartes de statistiques principales -->
-    <div class="row mb-4 g-3">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-lg rounded-4 h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body p-4 text-white text-center">
-                    <h3 style="font-size: 2.5rem;">📋 {{ taches_total }}</h3>
-                    <p class="mb-0 opacity-85">Tâches Totales</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-lg rounded-4 h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="card-body p-4 text-white text-center">
-                    <h3 style="font-size: 2.5rem;">✅ {{ taches_terminees }}</h3>
-                    <p class="mb-0 opacity-85">Complétées</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-lg rounded-4 h-100" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                <div class="card-body p-4 text-white text-center">
-                    <h3 style="font-size: 2.5rem;">⏳ {{ taches_en_attente }}</h3>
-                    <p class="mb-0 opacity-85">En attente</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-lg rounded-4 h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="card-body p-4 text-white text-center">
-                    <h3 style="font-size: 2.5rem;">🔴 {{ stats_priorite.Haute }}</h3>
-                    <p class="mb-0 opacity-85">Priorité Haute</p>
-                </div>
+    <div class="card-dashboard insight-card" style="background: linear-gradient(135deg, var(--card-orange), var(--danger)); border: none;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <i class='bx bx-check-circle' style="font-size: 3rem; opacity: 0.9;"></i>
+            <div>
+                <h3 class="insight-number">{{ taches_terminees }}</h3>
+                <p class="insight-text">Tâches Complétées</p>
             </div>
         </div>
     </div>
-
-    <!-- Infos du foyer -->
-    <div class="row mb-4 g-3">
-        <div class="col-md-4">
-            <div class="card border-0 shadow rounded-4">
-                <div class="card-body text-center p-4">
-                    <h4 style="font-size: 2rem; color: #667eea;">🏠 {{ pieces }}</h4>
-                    <p class="text-muted mb-0">Pièces</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow rounded-4">
-                <div class="card-body text-center p-4">
-                    <h4 style="font-size: 2rem; color: #764ba2;">🐾 {{ animaux }}</h4>
-                    <p class="text-muted mb-0">Animaux</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow rounded-4">
-                <div class="card-body text-center p-4">
-                    <h4 style="font-size: 2rem; color: #f5576c;">👥 {{ membres }}</h4>
-                    <p class="text-muted mb-0">Membres</p>
-                </div>
+    <div class="card-dashboard insight-card" style="background: linear-gradient(135deg, var(--card-green), var(--success)); border: none;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <i class='bx bx-time' style="font-size: 3rem; opacity: 0.9;"></i>
+            <div>
+                <h3 class="insight-number">{{ taches_en_attente }}</h3>
+                <p class="insight-text">En Attente</p>
             </div>
         </div>
     </div>
-
-    <!-- Section principale: Tâches à venir et Prioritaires -->
-    <div class="row g-3 mb-4">
-        <!-- Tâches à venir -->
-        <div class="col-md-6">
-            <div class="card border-0 shadow-lg rounded-4 h-100">
-                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
-                    <h5 class="mb-0">📅 Tâches à Venir (7 jours)</h5>
-                </div>
-                <div class="card-body p-4">
-                    {% if taches_a_venir %}
-                        <div class="list-group list-group-flush">
-                            {% for tache in taches_a_venir %}
-                            <div class="list-group-item border-bottom py-3 px-0">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1 fw-bold">{{ tache.titre }}</h6>
-                                        <small class="text-muted d-block">
-                                            {% if tache.id_piece %}
-                                            📍 {{ tache.id_piece.nom }}
-                                            {% endif %}
-                                        </small>
-                                    </div>
-                                    <span class="badge" style="background: 
-                                        {% if tache.priorite == 'Haute' %}#dc3545
-                                        {% elif tache.priorite == 'Moyenne' %}#ffc107
-                                        {% else %}#28a745{% endif %};">
-                                        {{ tache.priorite }}
-                                    </span>
-                                </div>
-                                {% if tache.date_limite %}
-                                <small class="text-muted">⏰ {{ tache.date_limite|date:"d/m/Y" }}</small>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                    <p class="text-center text-muted py-4">Aucune tâche à venir</p>
-                    {% endif %}
-                    <a href="{% url 'liste_taches' %}" class="btn btn-sm w-100 mt-3" style="background: #000; color: white; font-weight: bold;">
-                        Voir toutes les tâches →
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tâches prioritaires -->
-        <div class="col-md-6">
-            <div class="card border-0 shadow-lg rounded-4 h-100">
-                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
-                    <h5 class="mb-0">🔴 Tâches Prioritaires</h5>
-                </div>
-                <div class="card-body p-4">
-                    {% if taches_prioritaires %}
-                        <div class="list-group list-group-flush">
-                            {% for tache in taches_prioritaires %}
-                            <div class="list-group-item border-bottom py-3 px-0">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1 fw-bold">{{ tache.titre }}</h6>
-                                        <small class="text-muted d-block">
-                                            {% if tache.id_animal %}
-                                            🐾 {{ tache.id_animal.nom }}
-                                            {% elif tache.id_piece %}
-                                            📍 {{ tache.id_piece.nom }}
-                                            {% endif %}
-                                        </small>
-                                    </div>
-                                    <span class="badge bg-danger">HAUTE</span>
-                                </div>
-                                {% if tache.date_limite %}
-                                <small class="text-danger fw-bold">⏰ {{ tache.date_limite|date:"d/m/Y" }}</small>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                    <p class="text-center text-muted py-4">Aucune tâche prioritaire</p>
-                    {% endif %}
-                    <a href="{% url 'ajouter_tache' %}" class="btn btn-sm w-100 mt-3" style="background: #000; color: white; font-weight: bold;">
-                        ➕ Ajouter une tâche
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Statistiques par priorité et Tâches récentes -->
-    <div class="row g-3">
-        <!-- Répartition par priorité -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-lg rounded-4">
-                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
-                    <h5 class="mb-0">📊 Répartition</h5>
-                </div>
-                <div class="card-body p-4">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>🔴 Haute Priorité</span>
-                            <strong>{{ stats_priorite.Haute }}</strong>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-danger" role="progressbar" 
-                                 style="width: {% widthratio stats_priorite.Haute taches_en_attente 100 %}%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>🟡 Moyenne Priorité</span>
-                            <strong>{{ stats_priorite.Moyenne }}</strong>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-warning" role="progressbar" 
-                                 style="width: {% widthratio stats_priorite.Moyenne taches_en_attente 100 %}%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>🟢 Basse Priorité</span>
-                            <strong>{{ stats_priorite.Basse }}</strong>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-success" role="progressbar" 
-                                 style="width: {% widthratio stats_priorite.Basse taches_en_attente 100 %}%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tâches récentes -->
-        <div class="col-md-8">
-            <div class="card border-0 shadow-lg rounded-4">
-                <div class="card-header" style="background: #000; color: white; border-radius: 16px 16px 0 0;">
-                    <h5 class="mb-0">⏱️ Tâches Récentes</h5>
-                </div>
-                <div class="card-body p-4">
-                    {% if taches_recentes %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead style="background: #f8f9fa;">
-                                <tr>
-                                    <th>Titre</th>
-                                    <th>Priorité</th>
-                                    <th>Status</th>
-                                    <th>Date limite</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for tache in taches_recentes %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ tache.titre }}</strong>
-                                    </td>
-                                    <td>
-                                        <span class="badge" style="background: 
-                                            {% if tache.priorite == 'Haute' %}#dc3545
-                                            {% elif tache.priorite == 'Moyenne' %}#ffc107
-                                            {% else %}#28a745{% endif %};">
-                                            {{ tache.priorite }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if tache.terminee %}
-                                        <span class="badge bg-success">✓ Complétée</span>
-                                        {% else %}
-                                        <span class="badge bg-warning">⏳ En attente</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if tache.date_limite %}
-                                        {{ tache.date_limite|date:"d/m/Y" }}
-                                        {% else %}
-                                        <span class="text-muted">—</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-center text-muted py-4">Aucune tâche encore</p>
-                    {% endif %}
-                </div>
+    <div class="card-dashboard insight-card" style="background: linear-gradient(135deg, var(--danger), #c82333); border: none;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <i class='bx bx-error-circle' style="font-size: 3rem; opacity: 0.9;"></i>
+            <div>
+                <h3 class="insight-number">{{ stats_priorite.Haute }}</h3>
+                <p class="insight-text">Priorité Haute</p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- BLOC MÉTÉO -->
+<div class="card-dashboard" style="margin-bottom: 24px; border-left: 4px solid var(--card-purple);">
+    <h5 style="color: var(--dark); margin-bottom: 16px; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <i class='bx bx-cloud-sun' style="font-size: 20px; color: var(--primary);"></i>Consulter la Météo
+    </h5>
+    
+    <div style="display: flex; gap: 8px; margin-bottom: 16px; position: relative; flex-wrap: wrap;">
+        <input type="text" 
+               id="city-search"
+               class="weather-input"
+               placeholder="Rechercher une ville pour la météo..."
+               aria-label="Rechercher une ville"
+               style="flex: 1; min-width: 200px; padding: 12px 16px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); font-size: 14px; outline: none; transition: border-color 0.3s ease;">
+        <button type="button" 
+                class="weather-btn" 
+                id="load-weather-btn" 
+                disabled
+                style="padding: 12px 24px; border: none; border-radius: 8px; background: var(--primary); color: var(--light); font-weight: 500; cursor: pointer; transition: background 0.3s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+            <i class='bx bx-search' style="font-size: 16px;"></i>Afficher Météo
+        </button>
+    </div>
+    
+    <ul id="city-suggestions" 
+        class="city-suggestions" 
+        style="position: absolute; width: calc(100% - 48px); max-width: 600px; max-height: 200px; overflow-y: auto; background: var(--light); border: 1px solid var(--grey); border-radius: 8px; margin-top: 4px; z-index: 1000; display: none; list-style: none; padding: 8px 0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+    </ul>
+    
+    <!-- Affichage des favoris -->
+    <div id="favorites-list" style="margin-bottom: 16px;">
+        {% if user.villes_favorites_meteo %}
+        <p style="color: var(--dark-grey); font-size: 13px; margin-bottom: 8px;">Vos favoris :</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for city in user.villes_favorites_meteo %}
+            <button type="button" class="favorite-city-tag" data-city="{{ city }}" style="padding: 8px 16px; border: 1px solid var(--grey); border-radius: 20px; background: var(--light); color: var(--dark); font-size: 13px; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px;">
+                <i class='bx bx-map'></i> {{ city }}
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Conteneur des résultats MÉTÉO (avec pré-chargement) -->
+    <div id="weather-results" style="margin-top: 16px;">
+        {% if initial_weather %}
+        <div style="background: linear-gradient(45deg, #0d6efd, #0dcaf0); color: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <h4 style="margin: 0; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class='bx bx-cloud-sun' style="font-size: 24px;"></i> Météo à {{ initial_weather.city }}
+                </h4>
+                <button type="button" class="remove-favorite-btn" data-city="{{ initial_weather.city }}" title="Retirer des favoris" style="padding: 8px 16px; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; font-size: 13px; cursor: pointer; transition: background 0.3s ease; display: flex; align-items: center; gap: 6px;">
+                    <i class='bx bx-star' style="font-size: 16px;"></i> Retirer
+                </button>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 16px;">
+                <img src="http://openweathermap.org/img/wn/{{ initial_weather.icon }}@2x.png" alt="{{ initial_weather.description }}" style="width: 80px; height: 80px;">
+                <div>
+                    <h1 style="margin: 0; font-size: 48px; font-weight: 700;">{{ initial_weather.temp }}°C</h1>
+                    <p style="margin: 8px 0 4px 0; font-size: 18px; opacity: 0.9;">{{ initial_weather.description }}</p>
+                    <small style="font-size: 14px; opacity: 0.8;">Min: {{ initial_weather.temp_min }}°C / Max: {{ initial_weather.temp_max }}°C</small>
+                </div>
+            </div>
+            
+            <!-- BLOC RECOMMANDATION INITIALE -->
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.2); margin-top: 16px; flex-wrap: wrap; gap: 12px;">
+                <div style="flex: 1; min-width: 200px;">
+                    <p style="margin: 0; font-weight: 600; font-size: 15px;">{{ initial_weather.reco_text }}</p>
+                </div>
+                <div>
+                    <img src="{% static 'images/vetements/' %}{{ initial_weather.reco_image_tag }}.png" alt="{{ initial_weather.reco_image_tag }}" style="height: 60px; max-width: 100%; object-fit: contain;" onerror="this.style.display='none'; console.error('Image not found: {% static 'images/vetements/' %}{{ initial_weather.reco_image_tag }}.png');">
+                </div>
+            </div>
+            <!-- FIN BLOC RECOMMANDATION INITIALE -->
+        </div>
+        {% else %}
+        <div style="background: var(--light-primary); color: var(--primary); padding: 16px; border-radius: 8px; text-align: center; font-size: 14px;">
+            {% if user.villes_favorites_meteo %}
+            Impossible de charger la météo pour la première ville favorite. Veuillez réessayer.
+            {% else %}
+            Sélectionnez une ville pour afficher la météo.
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Événements à Venir -->
+<div class="card-dashboard" style="margin-bottom: 24px; border-left: 4px solid var(--warning);">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <h3 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-calendar-event' style="color: var(--warning); font-size: 24px;"></i>Événements à Venir
+        </h3>
+        <div style="display: flex; gap: 8px;">
+            {% load permission_tags %}
+            {% if user|can:"can_add_evenement" %}
+            <a href="{% url 'ajouter_evenement' %}" style="padding: 8px 16px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
+                <i class='bx bx-plus-circle'></i>Ajouter
+            </a>
+            {% endif %}
+            <a href="{% url 'calendrier_taches' %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
+                <i class='bx bx-calendar'></i>Voir le calendrier
+            </a>
+        </div>
+    </div>
+    {% if evenements_a_venir %}
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for evenement in evenements_a_venir %}
+        <div style="background: var(--grey); padding: 16px; border-radius: 10px; border-left: 4px solid var(--warning); transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateX(0)'; this.style.boxShadow='none'">
+            <div style="display: flex; align-items: start; justify-content: space-between; gap: 12px;">
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--dark); font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class='bx bx-calendar-check' style="color: var(--warning); font-size: 18px;"></i>
+                        {{ evenement.titre }}
+                    </h4>
+                    {% if evenement.description %}
+                    <p style="margin: 0 0 8px 0; color: var(--dark-grey); font-size: 13px; line-height: 1.5;">
+                        {{ evenement.description|truncatewords:15 }}
+                    </p>
+                    {% endif %}
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <span style="padding: 6px 12px; background: var(--light-warning); color: var(--dark); border-radius: 20px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                            <i class='bx bx-calendar'></i>
+                            Du {{ evenement.date_debut|date:"d/m/Y" }}
+                            {% if evenement.date_fin %}
+                            au {{ evenement.date_fin|date:"d/m/Y" }}
+                            {% endif %}
+                        </span>
+                        {% now "Y-m-d" as today_str %}
+                        {% if evenement.date_debut|date:"Y-m-d" == today_str %}
+                        <span style="padding: 6px 12px; background: var(--danger); color: #FFFFFF !important; border-radius: 20px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <i class='bx bx-time-five'></i>Aujourd'hui
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 32px; background: var(--light-primary); border-radius: 8px;">
+        <i class='bx bx-calendar-x' style="font-size: 3rem; color: var(--primary); opacity: 0.5; margin-bottom: 12px; display: block;"></i>
+        <p style="margin: 0 0 16px 0; color: var(--dark-grey);">Aucun événement à venir</p>
+        {% load permission_tags %}
+        {% if user|can:"can_add_evenement" %}
+        <a href="{% url 'ajouter_evenement' %}" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; transition: all 0.3s ease;">
+            <i class='bx bx-plus-circle'></i>Ajouter un événement
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tâches Récentes et Tâches à Venir -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+    <!-- Tâches Récentes -->
+    <div class="card-dashboard" style="border-left: 4px solid var(--card-purple);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <h3 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-receipt' style="color: var(--primary);"></i>Tâches Récentes
+            </h3>
+            <div style="display: flex; gap: 8px;">
+                <i class='bx bx-filter' style="color: var(--dark-grey); cursor: pointer;"></i>
+                <i class='bx bx-search' style="color: var(--dark-grey); cursor: pointer;"></i>
+            </div>
+        </div>
+        {% if taches_recentes %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--grey);">
+                        <th style="padding: 12px; text-align: left; color: var(--dark); font-size: 13px;">Tâche</th>
+                        <th style="padding: 12px; text-align: left; color: var(--dark); font-size: 13px;">Priorité</th>
+                        <th style="padding: 12px; text-align: left; color: var(--dark); font-size: 13px;">Status</th>
+                        <th style="padding: 12px; text-align: left; color: var(--dark); font-size: 13px;">Date limite</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tache in taches_recentes %}
+                    <tr style="border-bottom: 1px solid var(--grey); transition: all 0.3s ease;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 16px 12px; color: var(--dark);">
+                            <p style="margin: 0;">{{ tache.titre }}</p>
+                        </td>
+                        <td style="padding: 16px 12px;">
+                            <span style="padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; color: var(--light);
+                                {% if tache.priorite == 'Haute' %}background: var(--danger);
+                                {% elif tache.priorite == 'Moyenne' %}background: var(--warning); color: var(--dark);
+                                {% else %}background: var(--success);{% endif %}">
+                                {{ tache.priorite }}
+                            </span>
+                        </td>
+                        <td style="padding: 16px 12px;">
+                            <span style="padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; color: var(--light);
+                                {% if tache.terminee %}background: var(--success);
+                                {% else %}background: var(--warning); color: var(--dark);{% endif %}">
+                                {% if tache.terminee %}Complétée{% else %}En attente{% endif %}
+                            </span>
+                        </td>
+                        <td style="padding: 16px 12px; color: var(--dark-grey);">{{ tache.date_limite|date:"d/m/Y"|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; color: var(--dark-grey); padding: 48px; margin: 0;">Aucune tâche récente</p>
+        {% endif %}
+    </div>
+
+    <!-- Tâches à Venir -->
+    <div class="card-dashboard" style="border-left: 4px solid var(--card-green);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <h3 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-note' style="color: var(--success);"></i>Tâches à Venir
+            </h3>
+            <div style="display: flex; gap: 8px;">
+                <i class='bx bx-filter' style="color: var(--dark-grey); cursor: pointer;"></i>
+                <i class='bx bx-plus' style="color: var(--dark-grey); cursor: pointer;"></i>
+            </div>
+        </div>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {% if taches_a_venir %}
+                {% for tache in taches_a_venir|slice:":5" %}
+                <li style="width: 100%; margin-bottom: 16px; background: var(--grey); padding: 14px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border-left: 10px solid {% if tache.terminee %}var(--success){% else %}var(--danger){% endif %};">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class='bx {% if tache.terminee %}bx-check-circle{% else %}bx-x-circle{% endif %}' style="font-size: 20px; color: {% if tache.terminee %}var(--success){% else %}var(--danger){% endif %};"></i>
+                        <p style="margin: 0; color: var(--dark);">{{ tache.titre }}</p>
+                    </div>
+                    <i class='bx bx-dots-vertical-rounded' style="color: var(--dark-grey); cursor: pointer;"></i>
+                </li>
+                {% endfor %}
+            {% else %}
+                <li style="width: 100%; background: var(--grey); padding: 14px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; border-left: 10px solid var(--danger);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class='bx bx-x-circle' style="font-size: 20px; color: var(--danger);"></i>
+                        <p style="margin: 0; color: var(--dark);">Aucune tâche à venir</p>
+                    </div>
+                    <i class='bx bx-dots-vertical-rounded' style="color: var(--dark-grey); cursor: pointer;"></i>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// --- CODE MÉTÉO ---
+const citySearchInput = document.getElementById('city-search');
+const loadWeatherBtn = document.getElementById('load-weather-btn');
+const citySuggestions = document.getElementById('city-suggestions');
+const weatherResults = document.getElementById('weather-results');
+const favoritesContainer = document.getElementById('favorites-list');
+let timeout = null;
+
+// Définition de l'URL Statique de base pour les images de vêtements
+const STATIC_URL_BASE = "{% static 'images/vetements/' %}";
+
+// Fonction utilitaire pour obtenir le token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+const handleFavoriteAction = function(city, actionUrl, verb) {
+    fetch(actionUrl, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ city: city }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualiser la page pour mettre à jour les favoris
+            window.location.reload();
+        } else {
+            alert(data.error || `Erreur lors de l'action ${verb}.`);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert(`Erreur lors de l'action ${verb}.`);
+    });
+};
+
+if (citySearchInput && loadWeatherBtn) {
+    citySearchInput.addEventListener('input', function() {
+        loadWeatherBtn.disabled = !this.value.trim();
+    });
+
+    let autocompleteTimeout;
+    citySearchInput.addEventListener('input', function() {
+        clearTimeout(autocompleteTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            if (citySuggestions) citySuggestions.style.display = 'none';
+            return;
+        }
+        
+        autocompleteTimeout = setTimeout(() => {
+            if (citySuggestions) citySuggestions.style.display = 'none';
+        }, 500);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (citySearchInput && citySuggestions && !citySearchInput.contains(e.target) && !citySuggestions.contains(e.target)) {
+            citySuggestions.style.display = 'none';
+        }
+    });
+
+    const loadWeather = function(cityToLoad) {
+        const city = cityToLoad || citySearchInput.value.trim();
+        if (!city) return;
+
+        loadWeatherBtn.disabled = true;
+        loadWeatherBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Chargement...';
+        if (weatherResults) {
+            weatherResults.innerHTML = '<div style="background: var(--light-warning); color: var(--warning); padding: 16px; border-radius: 8px; text-align: center; font-size: 14px;">Chargement des données météo...</div>';
+        }
+
+        fetch(`/api/get-weather/?city=${encodeURIComponent(city)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error || data.success === false) {
+                    if (weatherResults) {
+                        weatherResults.innerHTML = `
+                            <div style="background: var(--light-danger); color: var(--danger); padding: 16px; border-radius: 8px; text-align: center; font-size: 14px;">
+                                <i class='bx bx-error-circle' style="font-size: 20px; margin-bottom: 8px; display: block;"></i>
+                                ${data.error || data.message || 'Erreur lors de la récupération de la météo'}
+                            </div>
+                        `;
+                    }
+                    loadWeatherBtn.disabled = false;
+                    loadWeatherBtn.innerHTML = '<i class="bx bx-cloud"></i> Charger la météo';
+                    return;
+                }
+                
+                // Vérifier que les données essentielles sont présentes
+                if (!data.city || data.temp === undefined) {
+                    if (weatherResults) {
+                        weatherResults.innerHTML = `
+                            <div style="background: var(--light-danger); color: var(--danger); padding: 16px; border-radius: 8px; text-align: center; font-size: 14px;">
+                                <i class='bx bx-error-circle' style="font-size: 20px; margin-bottom: 8px; display: block;"></i>
+                                Données météo incomplètes reçues du serveur
+                            </div>
+                        `;
+                    }
+                    loadWeatherBtn.disabled = false;
+                    loadWeatherBtn.innerHTML = '<i class="bx bx-cloud"></i> Charger la météo';
+                    return;
+                }
+                
+                if (data) {
+                    // Récupérer les données de recommandation
+                    const recoText = data.reco_text || 'Recommandation météo';
+                    const recoTag = data.reco_tag || 'tenue_mi_saison';
+                    const recoClass = data.reco_class || 'bg-success';
+
+                    // Vérifier si la ville est déjà dans les favoris
+                    const isFavorite = favoritesContainer && favoritesContainer.querySelector(`[data-city="${data.city}"]`) !== null;
+                    
+                    const favoriteButton = isFavorite 
+                        ? `<button type="button" class="remove-favorite-btn" data-city="${data.city}" title="Retirer des favoris" style="padding: 8px 16px; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; font-size: 13px; cursor: pointer; transition: background 0.3s ease; display: flex; align-items: center; gap: 6px;"><i class='bx bx-star' style="font-size: 16px;"></i> Retirer</button>`
+                        : `<button type="button" class="add-favorite-btn" data-city="${data.city}" title="Ajouter aux favoris" style="padding: 8px 16px; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; font-size: 13px; cursor: pointer; transition: background 0.3s ease; display: flex; align-items: center; gap: 6px;"><i class='bx bx-star' style="font-size: 16px;"></i> Ajouter aux Favoris</button>`;
+                    
+                    // Valeurs par défaut pour éviter les "undefined"
+                    const cityName = data.city || city || 'Ville inconnue';
+                    const temp = data.temp !== undefined ? data.temp : '--';
+                    const tempMin = data.temp_min !== undefined ? data.temp_min : '--';
+                    const tempMax = data.temp_max !== undefined ? data.temp_max : '--';
+                    const description = data.description || 'Données non disponibles';
+                    const icon = data.icon || '01d';
+                    
+                    const iconUrl = `http://openweathermap.org/img/wn/${icon}@2x.png`;
+                    if (weatherResults) {
+                        weatherResults.innerHTML = `
+                            <div style="background: linear-gradient(45deg, #0d6efd, #0dcaf0); color: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                                    <h4 style="margin: 0; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        <i class='bx bx-cloud-sun' style="font-size: 24px;"></i> Météo à ${cityName}
+                                    </h4>
+                                    ${favoriteButton}
+                                </div>
+                                <div style="display: flex; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 16px;">
+                                    <img src="${iconUrl}" alt="${description}" style="width: 80px; height: 80px;">
+                                    <div>
+                                        <h1 style="margin: 0; font-size: 48px; font-weight: 700;">${temp}°C</h1>
+                                        <p style="margin: 8px 0 4px 0; font-size: 18px; opacity: 0.9;">${description}</p>
+                                        <small style="font-size: 14px; opacity: 0.8;">Min: ${tempMin}°C / Max: ${tempMax}°C</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- BLOC RECOMMANDATION VESTIMENTAIRE -->
+                                ${recoText ? `
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.2); margin-top: 16px; flex-wrap: wrap; gap: 12px;">
+                                    <div style="flex: 1; min-width: 200px;">
+                                        <p style="margin: 0; font-weight: 600; font-size: 15px;">${recoText}</p>
+                                    </div>
+                                    ${recoTag ? `<div>
+                                        <img src="${STATIC_URL_BASE}${recoTag}.png" alt="${recoTag}" style="height: 60px; max-width: 100%; object-fit: contain;" onerror="this.style.display='none'; console.error('Image not found: ${STATIC_URL_BASE}${recoTag}.png');">
+                                    </div>` : ''}
+                                </div>
+                                ` : ''}
+                                <!-- FIN BLOC RECOMMANDATION -->
+                            </div>
+                        `;
+                    }
+
+                    // Réattacher les gestionnaires d'événements aux nouveaux boutons
+                    const addFavoriteBtn = weatherResults.querySelector('.add-favorite-btn');
+                    if (addFavoriteBtn) {
+                        addFavoriteBtn.addEventListener('click', function() {
+                            const city = this.getAttribute('data-city');
+                            handleFavoriteAction(city, '{% url "api_add_favorite_city" %}', 'ajout');
+                        });
+                    }
+
+                    const removeFavoriteBtn = weatherResults.querySelector('.remove-favorite-btn');
+                    if (removeFavoriteBtn) {
+                        removeFavoriteBtn.addEventListener('click', function() {
+                            const city = this.getAttribute('data-city');
+                            handleFavoriteAction(city, '{% url "api_remove_favorite_city" %}', 'retrait');
+                        });
+                    }
+                }
+                loadWeatherBtn.disabled = false;
+                loadWeatherBtn.innerHTML = '<i class="bx bx-search"></i> Afficher Météo';
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                if (weatherResults) {
+                    weatherResults.innerHTML = `
+                        <div style="background: var(--light-danger); color: var(--danger); padding: 16px; border-radius: 8px; text-align: center; font-size: 14px;">
+                            <i class='bx bx-error-circle' style="font-size: 20px; margin-bottom: 8px; display: block;"></i>
+                            Erreur lors du chargement de la météo. Veuillez réessayer.
+                        </div>
+                    `;
+                }
+                loadWeatherBtn.disabled = false;
+                loadWeatherBtn.innerHTML = '<i class="bx bx-search"></i> Afficher Météo';
+            });
+    };
+
+    loadWeatherBtn.addEventListener('click', function() {
+        loadWeather();
+    });
+
+    // Chargement de la météo via les tags de favoris existants
+    const favoriteTags = document.querySelectorAll('.favorite-city-tag');
+    favoriteTags.forEach(tag => {
+        tag.addEventListener('click', function() {
+            const city = this.getAttribute('data-city');
+            if (citySearchInput) citySearchInput.value = city;
+            loadWeather(city);
+        });
+    });
+
+    // Événement spécifique pour le bouton de retrait pré-rendu (météo initiale)
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-favorite-btn')) {
+            const btn = e.target.closest('.remove-favorite-btn');
+            const city = btn.getAttribute('data-city');
+            handleFavoriteAction(city, '{% url "api_remove_favorite_city" %}', 'retrait');
+        }
+    });
+
+    citySearchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !loadWeatherBtn.disabled) {
+            loadWeather();
+        }
+    });
+
+    // Déchargement initial du bouton de météo si le champ de recherche est vide
+    if (citySearchInput.value.trim() === '') {
+        loadWeatherBtn.disabled = true;
+    }
+}
+
+if (citySuggestions) {
+    citySuggestions.addEventListener('click', function(e) {
+        if (e.target.tagName === 'LI') {
+            if (citySearchInput) citySearchInput.value = e.target.textContent;
+            citySuggestions.style.display = 'none';
+            if (loadWeatherBtn) {
+                loadWeatherBtn.disabled = false;
+                loadWeather();
+            }
+        }
+    });
+}
+</script>
+
 <style>
-    .progress-bar {
-        transition: width 0.6s ease;
-    }
-    .list-group-item {
-        border-color: #e0e0e0 !important;
-    }
-    .list-group-item:hover {
-        background-color: #f8f9fa;
-    }
+/* Styles pour les cards insights - texte blanc en mode nuit, bleu en mode jour */
+.insight-card {
+    color: #FFFFFF !important;
+}
+
+.insight-number {
+    margin: 0;
+    color: #FFFFFF !important;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.insight-text {
+    margin: 0;
+    color: #FFFFFF !important;
+    opacity: 0.95;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Mode jour - texte bleu */
+body:not(.dark) .insight-card {
+    color: #504E76 !important;
+}
+
+body:not(.dark) .insight-number {
+    color: #504E76 !important;
+}
+
+body:not(.dark) .insight-text {
+    color: #504E76 !important;
+}
+
+/* Placeholder météo - plus visible */
+.weather-input::placeholder {
+    color: var(--dark-grey);
+    opacity: 0.8;
+}
+
+body.dark .weather-input::placeholder {
+    color: #C4C3E3;
+    opacity: 0.9;
+}
+
+body:not(.dark) .weather-input::placeholder {
+    color: #504E76;
+    opacity: 0.7;
+}
+
+.weather-input:focus {
+    border-color: var(--primary) !important;
+}
+
+.weather-btn:hover:not(:disabled) {
+    background: var(--primary) !important;
+    opacity: 0.9;
+}
+
+.weather-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+}
+
+.city-suggestions li {
+    padding: 12px 16px;
+    cursor: pointer;
+    color: var(--dark);
+    transition: background 0.2s ease;
+}
+
+.city-suggestions li:hover {
+    background: var(--grey);
+}
 </style>
 {% endblock %}

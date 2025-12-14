@@ -1,0 +1,79 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Débloquer Niveau {{ niveau.numero }}{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 500px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--warning), var(--light-warning)); color: var(--dark); padding: 24px; border-radius: 12px 12px 0 0; margin: -24px -24px 24px -24px; text-align: center;">
+        <h3 style="margin: 0; color: var(--dark) !important; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-lock-open' style="font-size: 32px;"></i>Débloquer le Niveau {{ niveau.numero }}
+        </h3>
+    </div>
+    
+    <div style="padding: 24px; text-align: center;">
+        <div style="font-size: 64px; margin-bottom: 16px;">🔒</div>
+        <h4 style="margin: 0 0 8px 0; color: var(--dark);">{{ niveau.nom }}</h4>
+        <p style="color: var(--dark-grey); margin-bottom: 24px;">{{ niveau.description|default:"Débloquez ce niveau pour y jouer" }}</p>
+        
+        <div style="background: var(--light-primary); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="color: var(--dark-grey);">Coût:</span>
+                <span style="font-size: 24px; font-weight: 700; color: var(--primary);">{{ niveau.points_deblocage }} points</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--dark-grey);">Vos points:</span>
+                <span style="font-size: 20px; font-weight: 600; color: {% if total_points >= niveau.points_deblocage %}var(--success){% else %}var(--danger){% endif %};">
+                    {{ total_points }} points
+                </span>
+            </div>
+        </div>
+        
+        {% if total_points >= niveau.points_deblocage %}
+        <form method="post" style="margin-top: 24px;">
+            {% csrf_token %}
+            <button type="submit" style="
+                width: 100%;
+                padding: 14px 24px;
+                background: var(--success);
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 16px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            ">
+                <i class='bx bx-lock-open'></i> Débloquer pour {{ niveau.points_deblocage }} points
+            </button>
+        </form>
+        {% else %}
+        <div style="padding: 16px; background: var(--light-danger); border-radius: 8px; margin-top: 24px;">
+            <p style="margin: 0; color: var(--danger); font-weight: 600;">
+                <i class='bx bx-error-circle'></i> Points insuffisants
+            </p>
+            <p style="margin: 8px 0 0 0; color: var(--dark-grey); font-size: 14px;">
+                Il vous manque {{ niveau.points_deblocage|add:"-"|add:total_points }} points. Complétez des tâches pour gagner des points !
+            </p>
+        </div>
+        {% endif %}
+        
+        <a href="{% url 'liste_niveaux_snake' piece.id %}" style="
+            display: block;
+            margin-top: 16px;
+            padding: 12px 24px;
+            background: var(--grey);
+            color: var(--dark);
+            border-radius: 8px;
+            text-decoration: none;
+            text-align: center;
+            font-weight: 500;
+        ">
+            <i class='bx bx-arrow-back'></i> Retour
+        </a>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,110 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Assistant IA{% endblock %}
+{% block page_title %}Assistant IA{% endblock %}
+{% block page_heading %}Assistant IA{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Assistant IA</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="border-left: 4px solid var(--info); margin-bottom: 24px;">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-bot' style="color: var(--info);"></i>Assistant IA
+    </h3>
+    <p style="color: var(--dark-grey); margin: 0;">
+        Posez-moi des questions sur vos tâches, votre foyer, vos statistiques ou demandez-moi de l'aide !
+    </p>
+</div>
+
+<!-- Formulaire de commande -->
+<div class="card-dashboard" style="margin-bottom: 24px;">
+    <h4 style="font-size: 18px; font-weight: 600; color: var(--dark); margin-bottom: 16px;">Nouvelle interaction</h4>
+    
+    <form method="post" style="display: flex; flex-direction: column; gap: 16px;">
+        {% csrf_token %}
+        
+        <div>
+            <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">
+                <i class='bx bx-message'></i> Votre question ou commande
+            </label>
+            <textarea name="commande" rows="3" required placeholder="Ex: Combien de tâches ai-je en cours ?" 
+                      style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;"></textarea>
+        </div>
+        
+        {% if taches %}
+        <div>
+            <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">
+                <i class='bx bx-task'></i> Lier à une tâche (optionnel)
+            </label>
+            <select name="tache_id" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                <option value="">— Aucune tâche —</option>
+                {% for tache in taches %}
+                <option value="{{ tache.id }}">{{ tache.titre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <button type="submit" style="padding: 12px 24px; background: var(--info); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+            <i class='bx bx-send'></i>Envoyer
+        </button>
+    </form>
+</div>
+
+<!-- Historique des interactions -->
+<div class="card-dashboard">
+    <h4 style="font-size: 18px; font-weight: 600; color: var(--dark); margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-history' style="color: var(--primary);"></i>Historique des interactions
+    </h4>
+    
+    {% if interactions %}
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for interaction in interactions %}
+        <div style="border-left: 3px solid var(--info); padding-left: 16px; background: var(--light); padding: 16px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="flex: 1;">
+                    <p style="margin: 0; color: var(--dark); font-weight: 500;">
+                        <i class='bx bx-user' style="color: var(--primary);"></i> Vous
+                    </p>
+                    <p style="margin: 8px 0 0 0; color: var(--dark);">{{ interaction.commande }}</p>
+                </div>
+                <span style="color: var(--dark-grey); font-size: 12px; white-space: nowrap;">
+                    {{ interaction.date_interaction|date:"d/m/Y H:i" }}
+                </span>
+            </div>
+            
+            {% if interaction.reponse %}
+            <div style="background: var(--light-primary); padding: 12px; border-radius: 8px; margin-top: 8px;">
+                <p style="margin: 0 0 8px 0; color: var(--dark); font-weight: 500;">
+                    <i class='bx bx-bot' style="color: var(--info);"></i> Assistant IA
+                </p>
+                <p style="margin: 0; color: var(--dark); white-space: pre-wrap;">{{ interaction.reponse }}</p>
+            </div>
+            {% endif %}
+            
+            {% if interaction.id_tache %}
+            <div style="margin-top: 8px;">
+                <a href="{% url 'detail_tache' interaction.id_tache.id %}" style="color: var(--primary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-link'></i>Tâche liée : {{ interaction.id_tache.titre }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 48px; color: var(--dark-grey);">
+        <i class='bx bx-message-square-dots' style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <p>Aucune interaction pour le moment.</p>
+        <p style="font-size: 14px; margin-top: 8px;">Commencez par poser une question ci-dessus !</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

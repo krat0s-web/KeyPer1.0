@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="fr">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyPer - Organisez votre maison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* Style 1 - Nuit (par défaut) */
+            --bg-rectangle: #504E76;
+            --bg-panel: #FDF8E2;
+            --text-main: #FDF8E2;
+            --text-nav: #504E76;
+            --bar-nav: #C4C3E3;
+            --bar-nav-active: #A3A1C7;
+            --btn-commencer: #541f1e;
+            --btn-commencer-hover: #421918;
+            --bottom-bar: #8c956e;
+            --bottom-bar-hover: #8c956e;
+            --transition-speed: 0.8s;
+        }
+        
+        body.theme-day {
+            /* Style 2 - Jour */
+            --bg-rectangle: #FDF8E2;
+            --bg-panel: #FDF8E2;
+            --text-main: #504E76;
+            --text-nav: #504E76;
+            --bar-nav: #FCDD9D;
+            --bar-nav-active: #F9C97A;
+            --btn-commencer: #981715;
+            --btn-commencer-hover: #770c0a;
+            --btn-commencer-text: #FDF8E2;
+            --bottom-bar: #A3B565;
+            --bottom-bar-hover: #8FA04D;
+        }
+        
+        :root {
+            --btn-commencer-text: white;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: #ffffff;
+            padding: 40px;
+            transition: background var(--transition-speed) ease;
+        }
+        
+        /* Grand rectangle principal */
+        .blue-rectangle {
+            width: 95vw;
+            height: 95vh;
+            background: var(--bg-rectangle);
+            margin: 0 auto;
+            border-radius: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            padding: 40px;
+            transition: background var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+        }
+        
+        /* Logo en haut à gauche */
+        .logo {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo img {
+            height: 70px;
+            width: auto;
+            display: block;
+            object-fit: contain;
+            opacity: 1;
+            transition: opacity var(--transition-speed) ease;
+        }
+        
+        .logo img.fade-out {
+            opacity: 0;
+        }
+        
+        /* Barre décorative en haut à droite */
+        .top-bar {
+            position: absolute;
+            top: 40px;
+            left: 300px;
+            height: 50px;
+            width: 630px;
+            background: var(--bar-nav);
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            padding: 0 20px;
+            transition: background var(--transition-speed) ease;
+        }
+        
+        /* Boutons dans la barre */
+        .nav-button {
+            background: transparent;
+            border: none;
+            color: var(--text-nav);
+            font-size: 16px;
+            font-weight: 500;
+            padding: 10px 25px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.3s ease, color var(--transition-speed) ease;
+            font-family: sans-serif;
+        }
+        
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .nav-button.active {
+            background: var(--bar-nav-active);
+            color: var(--text-nav);
+            transition: background var(--transition-speed) ease;
+        }
+        
+        /* Bouton Connexion à droite */
+        .login-button {
+            position: absolute;
+            top: 40px;
+            right: 60px;
+            background: #C0392B;
+            color: white;
+            border: none;
+            padding: 12px 40px 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: sans-serif;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            z-index: 100;
+        }
+        
+        .login-button:hover {
+            background: #A93226;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(192, 57, 43, 0.4);
+            padding-right: 50px;
+        }
+        
+        .login-button .arrow {
+            font-size: 18px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: inline-block;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .login-button span {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .login-button:hover .arrow {
+            transform: translateX(10px) scale(1.2);
+        }
+        
+        .login-button::before {
+            content: '';
+            position: absolute;
+            left: -100%;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .login-button:hover::before {
+            left: 100%;
+        }
+        
+        /* Bouton Commencer avec animation */
+        .commencer-button {
+            position: absolute;
+            bottom: 200px;
+            left: 40px;
+            background: var(--btn-commencer);
+            color: var(--btn-commencer-text, white);
+            border: none;
+            padding: 15px 50px 15px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease, background var(--transition-speed) ease, color var(--transition-speed) ease;
+            font-family: sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            overflow: hidden;
+            text-decoration: none;
+        }
+        
+        .commencer-button:hover {
+            background: var(--btn-commencer-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            padding-right: 60px;
+        }
+        
+        .commencer-button .arrow {
+            font-size: 20px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: inline-block;
+        }
+        
+        .commencer-button:hover .arrow {
+            transform: translateX(10px) scale(1.2);
+        }
+        
+        .commencer-button::before {
+            content: '';
+            position: absolute;
+            left: -100%;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .commencer-button:hover::before {
+            left: 100%;
+        }
+        
+        /* Texte principal en bas à gauche */
+        .main-text {
+            position: absolute;
+            bottom: 300px;
+            left: 40px;
+            color: var(--text-main);
+            font-size: 55px;
+            font-style: italic;
+            font-family: sans-serif;
+            line-height: 1.4;
+            max-width: 600px;
+            transition: color var(--transition-speed) ease;
+        }
+        
+        /* Image dessin accueil à droite */
+        .accueil-image {
+            position: absolute;
+            right: 60px;
+            top: 40%;
+            transform: translateY(-50%);
+            max-width: 500px;
+            max-height: 90vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            opacity: 1;
+            transition: opacity var(--transition-speed) ease, top var(--transition-speed) ease, transform var(--transition-speed) ease;
+        }
+        
+        /* Position de l'image pour le thème jour */
+        body.theme-day .accueil-image {
+            top: 50%;
+        }
+        
+        .accueil-image.fade-out {
+            opacity: 0;
+        }
+        
+        /* Barre en bas */
+        .bottom-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 760px;
+            height: 100px;
+            background: var(--bottom-bar);
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 40px;
+            transition: background var(--transition-speed) ease;
+        }
+        
+        /* Boutons dans la barre du bas */
+        .bottom-bar-button {
+            flex: 1;
+            max-width: 200px;
+            height: 60px;
+            background: var(--bottom-bar);
+            border: 2px solid white;
+            border-radius: 15px;
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease, background var(--transition-speed) ease;
+            font-family: sans-serif;
+        }
+        
+        .bottom-bar-button:hover {
+            background: var(--bottom-bar-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Ampoule interactive - Remplace le bouton toggle thème */
+        .light-container {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            z-index: 1000;
+            width: 80px; /* Plus petite que l'original (150px) */
+            height: 160px; /* Plus petite que l'original (300px) */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        /* Le fil qui relie l'ampoule à la corde */
+        .pull-cord::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateX(1px);
+            width: 2px;
+            height: 0px;
+            background-color: transparent;
+            z-index: 1;
+        }
+        
+        /* La Corde */
+        .pull-cord {
+            position: absolute;
+            top: 108px; /* Ajusté pour la taille réduite */
+            left: 50%;
+            transform: translateX(-50%) translateX(1px);
+            width: 2px; /* Fil plus fin */
+            height: 50px; /* Plus court */
+            background-color: #3e2723; /* Marron foncé */
+            cursor: pointer;
+            border-radius: 0 0 2px 2px;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 10;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Effet de tirage de la corde */
+        .pull-cord:active,
+        .pull-cord.is-pulled {
+            transform: translateX(-50%) translateX(1px) translateY(25px);
+        }
+        
+        /* Effet de rebond */
+        .pull-cord.is-pulled {
+            animation: pullBounce 0.3s ease-out;
+        }
+        
+        @keyframes pullBounce {
+            0% {
+                transform: translateX(-50%) translateX(1px) translateY(25px);
+            }
+            50% {
+                transform: translateX(-50%) translateX(1px) translateY(20px);
+            }
+            100% {
+                transform: translateX(-50%) translateX(1px) translateY(0);
+            }
+        }
+        
+        /* L'AMPOULE */
+        .light-bulb {
+            position: relative;
+            width: 38px; /* Réduit de 60px */
+            height: 63px; /* Réduit de 100px */
+            margin-top: 33px; /* Réduit de 50px */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Fil collé à la base */
+        .light-bulb::after {
+            content: '';
+            position: absolute;
+            bottom: -16px; /* Ajusté */
+            left: 50%;
+            transform: translateX(-50%) translateX(1px);
+            width: 2px;
+            height: 16px; /* Réduit */
+            background-color: #3e2723;
+            z-index: 1;
+            border-radius: 1px;
+        }
+        
+        /* Base/Culot de l'ampoule */
+        .bulb-base {
+            width: 16px; /* Réduit de 25px */
+            height: 13px; /* Réduit de 20px */
+            background: linear-gradient(to bottom, #9e9e9e 0%, #616161 50%, #424242 100%);
+            border-radius: 3px 3px 2px 2px;
+            z-index: 5;
+            position: relative;
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Verre de l'ampoule */
+        .bulb-glass {
+            width: 38px; /* Réduit de 60px */
+            height: 50px; /* Réduit de 80px */
+            background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.9) 0%, #fff9c4 40%, #fff8a0 100%);
+            border-radius: 50% / 60% 60% 40% 40%;
+            margin-top: -6px; /* Ajusté */
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 
+                0 0 5px rgba(0, 0, 0, 0.15),
+                inset -10px -10px 20px rgba(255, 255, 255, 0.3),
+                inset 10px 10px 20px rgba(0, 0, 0, 0.05);
+            transition: background 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* La Lueur (cachée par défaut) */
+        .light-glow {
+            position: absolute;
+            top: 35px; /* Ajusté */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px; /* Réduit de 80px */
+            height: 50px; /* Réduit de 80px */
+            background: radial-gradient(circle, #ffeb3b 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(12px); /* Réduit de 20px */
+            opacity: 0;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* ÉTAT ALLUMÉ (Mode nuit) - ampoule allumée */
+        .light-container.on .light-glow {
+            opacity: 1;
+            transform: translateX(-50%) scale(1.2);
+        }
+        
+        .light-container.on .bulb-glass {
+            background: radial-gradient(ellipse at 30% 30%, rgba(255, 255, 255, 0.95) 0%, #ffeb3b 40%, #ffd54f 100%);
+            box-shadow: 
+                0 0 20px #ffeb3b, 
+                inset -10px -10px 20px rgba(255, 255, 255, 0.4),
+                inset 10px 10px 20px rgba(255, 235, 59, 0.3);
+            border-color: rgba(255, 235, 59, 0.6);
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="blue-rectangle">
+        <!-- Ampoule interactive - Remplace le bouton toggle thème -->
+        <div class="light-container" id="lightContainer">
+            <div class="pull-cord" id="pullCord"></div>
+            
+            <div class="light-bulb">
+                <div class="bulb-base"></div>
+                <div class="bulb-glass"></div>
+                <div class="light-glow"></div>
+            </div>
+        </div>
+        
+        <!-- Logo en haut à gauche -->
+        <div class="logo">
+            <img id="logoImage" src="{% static 'images/logo_keyper_nuit.png' %}" alt="KeyPer Logo">
+        </div>
+        
+        <!-- Barre décorative en haut à droite -->
+        <div class="top-bar">
+            <button class="nav-button active">Accueil</button>
+            <a href="{% url 'faq' %}" class="nav-button" style="text-decoration: none; color: inherit;">FAQ</a>
+            <button class="nav-button">Contact</button>
+        </div>
+        
+        <!-- Bouton Connexion à droite -->
+        <a href="{% url 'login' %}" class="login-button">
+            <span>Connexion</span>
+            <span class="arrow">→</span>
+        </a>
+        
+        <!-- Texte principal en bas à gauche -->
+        <div class="main-text">
+            Organisez votre maison,<br>
+            simplifiez votre<br>
+            quotidien, et profitez enfin de ce qui compte vraiment.
+        </div>
+        
+        <!-- Bouton Commencer -->
+        <a href="{% url 'inscription' %}" class="commencer-button">
+            <span>Commencer</span>
+            <span class="arrow">→</span>
+        </a>
+        
+        <!-- Image dessin accueil à droite -->
+        <img id="accueilImage" src="{% static 'images/dessin_accueil_nuit.png' %}" alt="Dessin accueil" class="accueil-image">
+        
+        <!-- Barre en bas avec boutons -->
+        <div class="bottom-bar">
+            <button class="bottom-bar-button">Partage</button>
+            <button class="bottom-bar-button">Harmonie</button>
+            <button class="bottom-bar-button">Simplicité</button>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration des thèmes - chemins statiques depuis Django
+        const themes = {
+            night: {
+                logo: "{% static 'images/logo_keyper_nuit.png' %}",
+                image: "{% static 'images/dessin_accueil_nuit.png' %}"
+            },
+            day: {
+                logo: "{% static 'images/keyper_logo_jour.svg' %}",
+                image: "{% static 'images/dessin_accueil_jour.png' %}"
+            }
+        };
+        
+        // Debug: afficher les chemins
+        console.log('Thèmes configurés:', themes);
+        
+        // Variable pour stocker l'intervalle automatique
+        let autoThemeInterval = null;
+        let userHasChosen = false;
+        
+        // Fonction pour changer de thème avec transition fluide
+        function toggleTheme(isManual = false) {
+            const body = document.body;
+            const logoImage = document.getElementById('logoImage');
+            const accueilImage = document.getElementById('accueilImage');
+            const isDay = body.classList.contains('theme-day');
+            
+            // Si c'est un choix manuel, arrêter l'automatique
+            if (isManual) {
+                if (autoThemeInterval) {
+                    clearInterval(autoThemeInterval);
+                    autoThemeInterval = null;
+                }
+                userHasChosen = true;
+                // Sauvegarder le choix de l'utilisateur
+                localStorage.setItem('userThemeChoice', isDay ? 'night' : 'day');
+                localStorage.setItem('userHasChosen', 'true');
+            }
+            
+            // Animation de fade pour les images
+            logoImage.classList.add('fade-out');
+            accueilImage.classList.add('fade-out');
+            
+            setTimeout(() => {
+                // Changer le thème
+                if (isDay) {
+                    body.classList.remove('theme-day');
+                    logoImage.src = themes.night.logo;
+                    accueilImage.src = themes.night.image;
+                } else {
+                    body.classList.add('theme-day');
+                    logoImage.src = themes.day.logo;
+                    accueilImage.src = themes.day.image;
+                }
+                
+                // Retirer le fade-out après un court délai
+                setTimeout(() => {
+                    logoImage.classList.remove('fade-out');
+                    accueilImage.classList.remove('fade-out');
+                }, 50);
+                
+                // Mettre à jour l'état de l'ampoule après le changement de thème
+                updateLightBulbState();
+            }, 400); // La moitié du temps de transition
+        }
+        
+        // Initialiser le thème au chargement
+        function initTheme() {
+            const savedChoice = localStorage.getItem('userHasChosen');
+            const savedTheme = localStorage.getItem('userThemeChoice');
+            
+            // Si l'utilisateur a déjà fait un choix, l'utiliser
+            if (savedChoice === 'true' && savedTheme) {
+                userHasChosen = true;
+                if (savedTheme === 'day') {
+                    document.body.classList.add('theme-day');
+                    document.getElementById('logoImage').src = themes.day.logo;
+                    document.getElementById('accueilImage').src = themes.day.image;
+                } else {
+                    document.body.classList.remove('theme-day');
+                    document.getElementById('logoImage').src = themes.night.logo;
+                    document.getElementById('accueilImage').src = themes.night.image;
+                }
+            } else {
+                // Sinon, utiliser l'heure pour déterminer le thème initial
+                const hour = new Date().getHours();
+                let theme = hour >= 6 && hour < 20 ? 'day' : 'night';
+                
+                if (theme === 'day') {
+                    document.body.classList.add('theme-day');
+                    document.getElementById('logoImage').src = themes.day.logo;
+                    document.getElementById('accueilImage').src = themes.day.image;
+                } else {
+                    document.body.classList.remove('theme-day');
+                    document.getElementById('logoImage').src = themes.night.logo;
+                    document.getElementById('accueilImage').src = themes.night.image;
+                }
+            }
+            
+            // Mettre à jour l'état de l'ampoule après l'initialisation du thème
+            updateLightBulbState();
+        }
+        
+        // Démarrer la transition automatique
+        function startAutoTheme() {
+            if (!userHasChosen && !autoThemeInterval) {
+                autoThemeInterval = setInterval(() => {
+                    toggleTheme(false);
+                }, 7000);
+            }
+        }
+        
+        // Fonction pour mettre à jour l'état de l'ampoule selon le thème
+        function updateLightBulbState() {
+            const lightContainer = document.getElementById('lightContainer');
+            if (!lightContainer) return; // Vérifier que l'élément existe
+            
+            const body = document.body;
+            const isDay = body.classList.contains('theme-day');
+            
+            // Mode nuit = ampoule allumée, Mode jour = ampoule éteinte
+            if (isDay) {
+                lightContainer.classList.remove('on');
+            } else {
+                lightContainer.classList.add('on');
+            }
+        }
+        
+        // Gestion de l'ampoule interactive
+        function initLightBulb() {
+            const pullCord = document.getElementById('pullCord');
+            const lightContainer = document.getElementById('lightContainer');
+            let isPulling = false;
+            
+            // Fonction pour gérer le tirage de la corde
+            function handlePull() {
+                if (isPulling) return;
+                isPulling = true;
+                
+                // Basculer le thème (qui mettra à jour l'état de l'ampoule)
+                toggleTheme(true); // true = choix manuel
+                
+                // Ajouter la classe pour l'animation de tirage
+                pullCord.classList.add('is-pulled');
+                
+                // Retirer la classe 'is-pulled' après l'animation
+                setTimeout(() => {
+                    pullCord.classList.remove('is-pulled');
+                    isPulling = false;
+                }, 300);
+            }
+            
+            // Gestion du clic sur la corde (on empêche la propagation pour éviter le double déclenchement)
+            pullCord.addEventListener('click', function(e) {
+                e.stopPropagation();
+                handlePull();
+            });
+            
+            // Gestion du clic sur l'ampoule (mais pas sur la corde qui a déjà son propre gestionnaire)
+            lightContainer.addEventListener('click', function(e) {
+                if (e.target !== pullCord && !pullCord.contains(e.target)) {
+                    handlePull();
+                }
+            });
+            
+            // Gestion du clic maintenu (pour un effet plus réaliste)
+            pullCord.addEventListener('mousedown', () => {
+                pullCord.style.transform = 'translateX(-50%) translateX(1px) translateY(25px)';
+            });
+            
+            pullCord.addEventListener('mouseup', () => {
+                pullCord.style.transform = '';
+            });
+            
+            pullCord.addEventListener('mouseleave', () => {
+                pullCord.style.transform = '';
+            });
+            
+            // Gestion tactile pour les appareils mobiles
+            pullCord.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                pullCord.style.transform = 'translateX(-50%) translateX(1px) translateY(25px)';
+            });
+            
+            pullCord.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                pullCord.style.transform = '';
+                handlePull();
+            });
+            
+            // Gestion de la touche pour l'accessibilité
+            lightContainer.setAttribute('tabindex', '0');
+            lightContainer.setAttribute('role', 'button');
+            lightContainer.setAttribute('aria-label', 'Tirer sur la corde pour changer de thème');
+            
+            lightContainer.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handlePull();
+                }
+            });
+        }
+        
+        // Initialiser au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            
+            // Mettre à jour l'état initial de l'ampoule
+            updateLightBulbState();
+            
+            // Observer les changements de classe sur body pour mettre à jour l'ampoule
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        updateLightBulbState();
+                    }
+                });
+            });
+            
+            observer.observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+            
+            // Démarrer la transition automatique seulement si l'utilisateur n'a pas choisi
+            if (!userHasChosen) {
+                startAutoTheme();
+            }
+            
+            // Initialiser l'ampoule interactive
+            initLightBulb();
+        });
+    </script>
+</body>
+</html>

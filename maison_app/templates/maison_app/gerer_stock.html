@@ -1,0 +1,208 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Stock - {{ piece.nom }}{% endblock %}
+{% block page_title %}Stock - {{ piece.nom }}{% endblock %}
+{% block page_heading %}Gérer le Stock{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_foyers' %}">Foyers</a></li>
+    /
+    <li><a href="{% url 'detail_foyer' piece.id_foyer.id %}">{{ piece.id_foyer.nom }}</a></li>
+    /
+    <li><a href="{% url 'cuisine_view' piece.id %}">Cuisine</a></li>
+    /
+    <li><a href="#" class="active">Stock</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-package' style="font-size: 28px; color: var(--primary);"></i> Stock de la pièce : {{ piece.nom }}
+        </h3>
+        <div style="display: flex; gap: 8px;">
+            <a href="{% url 'cuisine_view' piece.id %}" style="padding: 8px 16px; background: var(--grey); color: var(--dark); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-arrow-back'></i> Retour cuisine
+            </a>
+            <a href="{% url 'liste_courses_cuisine' piece.id %}" style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-cart'></i> Aller aux courses
+            </a>
+        </div>
+    </div>
+    
+    <div style="background: var(--light-warning); color: var(--dark); padding: 16px; border-radius: 8px; margin-bottom: 24px; text-align: center; border-left: 4px solid var(--warning);">
+        <i class='bx bx-info-circle' style="font-size: 20px; margin-right: 8px;"></i> Les articles sont ajoutés au stock automatiquement après avoir été achetés via le Module Courses, ou vous pouvez les ajouter manuellement ci-dessous.
+    </div>
+    
+    <!-- Ajouter un article manuellement -->
+    {% if user.role != 'observateur' %}
+    <div class="card-dashboard" style="margin-bottom: 24px; border-left: 4px solid var(--success);">
+        <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-plus-circle' style="color: var(--success);"></i>Ajouter un article au stock
+        </h5>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="ajouter_article">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Nom de l'article <span style="color: var(--danger);">*</span></label>
+                    <input type="text" name="nom_article" placeholder="Ex: Tomates, Lait, etc." required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Quantité <span style="color: var(--danger);">*</span></label>
+                    <input type="number" name="quantite" placeholder="1" step="0.01" min="0" value="1" required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Unité</label>
+                    <input type="text" name="unite" placeholder="kg, L, pièce, etc." 
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Type <span style="color: var(--danger);">*</span></label>
+                    <select name="type_article" required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="aliment">Aliment</option>
+                        <option value="hygiene">Hygiène & Entretien</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="submit" style="padding: 12px 24px; background: var(--success); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                    <i class='bx bx-plus'></i>Ajouter au stock
+                </button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div style="background: var(--light-warning); color: var(--dark); padding: 16px; border-radius: 8px; margin-bottom: 24px; text-align: center; border-left: 4px solid var(--warning);">
+        <i class='bx bx-info-circle' style="font-size: 20px; margin-right: 8px;"></i> Mode observateur : Accès en lecture seule. Vous ne pouvez pas modifier le stock.
+    </div>
+    {% endif %}
+    
+    <h4 style="margin-top: 24px; margin-bottom: 16px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+        <i class='bx bx-list-ul'></i> Inventaire actuel ({{ inventaire|length }} articles disponibles)
+    </h4>
+            
+    {% if inventaire %}
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for article in inventaire %}
+            <div style="background: var(--light); padding: 20px; border-radius: 12px; border-left: 4px solid {% if article.type_article == 'aliment' %}var(--success){% elif article.type_article == 'hygiene' %}var(--primary){% else %}var(--dark-grey){% endif %}; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; transition: all 0.3s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+                <div style="display: flex; align-items: center; flex-grow: 1; gap: 16px;">
+                    <i class='bx bx-package' style="font-size: 2rem; color: {% if article.type_article == 'aliment' %}var(--success){% elif article.type_article == 'hygiene' %}var(--primary){% else %}var(--dark-grey){% endif %};"></i>
+                    <div>
+                        <h5 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            {{ article.nom }} 
+                            {% if article.etat == 'a_court' %}
+                                <span style="padding: 4px 12px; background: var(--danger); color: var(--light); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Déclaré manquant">
+                                    <i class='bx bx-bell'></i> À Court
+                                </span>
+                            {% elif article.est_en_alerte %} 
+                                <span style="padding: 4px 12px; background: var(--warning); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Quantité faible (seuil: {{ article.quantite_alerte_min }})">
+                                    <i class='bx bx-error-circle'></i> Basse
+                                </span>
+                            {% endif %}
+                        </h5>
+                        <small style="color: var(--dark-grey);">
+                            Quantité : <strong>{{ article.quantite|floatformat:2 }}{% if article.unite %} {{ article.unite }}{% endif %}</strong> | 
+                            Type : <em>{{ article.get_type_article_display }}</em>
+                        </small>
+                    </div>
+                </div>
+                
+                {% if user.role != 'observateur' %}
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <!-- Modifier la quantité -->
+                    <form method="post" action="{% url 'gerer_stock' piece.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="article_id" value="{{ article.id }}">
+                        <input type="hidden" name="action" value="modifier_quantite">
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="padding: 6px 8px; background: var(--grey); border-radius: 8px 0 0 8px; font-size: 12px; color: var(--dark);" title="Quantité actuelle">Qté</span>
+                            <input type="number" 
+                                name="nouvelle_quantite" 
+                                style="width: 80px; padding: 6px; border: 1px solid var(--grey); border-radius: 0 8px 8px 0; background: var(--light); color: var(--dark); outline: none;"
+                                value="{{ article.quantite|floatformat:2 }}" 
+                                min="0"
+                                step="0.01"
+                                onchange="this.form.submit()"
+                                title="Modifier la quantité">
+                        </div>
+                    </form>
+                    <!-- Modifier le seuil d'alerte -->
+                    <form method="post" action="{% url 'gerer_stock' piece.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="article_id" value="{{ article.id }}">
+                        <input type="hidden" name="action" value="modifier_seuil">
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="padding: 6px 8px; background: var(--grey); border-radius: 8px 0 0 8px; font-size: 12px; color: var(--dark);" title="Seuil d'alerte minimum">Seuil</span>
+                            <input type="number" 
+                                name="quantite_alerte_min" 
+                                style="width: 80px; padding: 6px; border: 1px solid var(--grey); border-radius: 0 8px 8px 0; background: var(--light); color: var(--dark); outline: none;"
+                                value="{{ article.quantite_alerte_min|floatformat:0|default:'1' }}" 
+                                min="0"
+                                step="1"
+                                onchange="this.form.submit()"
+                                title="Quantité minimum avant alerte">
+                        </div>
+                    </form>
+                    {% if article.type_article == 'aliment' %}
+                    <form method="post" action="{% url 'gerer_stock' piece.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="article_id" value="{{ article.id }}">
+                        <input type="hidden" name="action" value="consommer">
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <input type="number" 
+                                name="quantite_consommee" 
+                                style="width: 80px; padding: 6px; border: 1px solid var(--grey); border-radius: 8px 0 0 8px; background: var(--light); color: var(--dark); outline: none; text-align: right;"
+                                value="1" 
+                                min="1"
+                                max="{{ article.quantite|floatformat:0|default:'1' }}" 
+                                step="1"
+                                required>
+                            <button type="submit" style="padding: 6px 12px; background: var(--success); color: var(--light); border: none; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; gap: 4px;"
+                                    onclick="return confirm('Consommer la quantité indiquée ?');"
+                                    title="Consommer du stock">
+                                <i class='bx bx-basket'></i> Utiliser
+                            </button>
+                        </div>
+                    </form>
+                    {% elif article.type_article in 'hygiene,autre' %}
+                    <form method="post" action="{% url 'gerer_stock' piece.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="article_id" value="{{ article.id }}">
+                        <input type="hidden" name="action" value="a_court">
+                        <button type="submit" style="padding: 6px 12px; background: var(--warning); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px;"
+                                onclick="return confirm('Déclarer cet article comme étant à court ?');"
+                                title="Déclarer à court">
+                            <i class='bx bx-error-circle'></i> À Court
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{% url 'gerer_stock' piece.id %}" onsubmit="return confirm('Êtes-vous sûr de vouloir retirer cet article ?');" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="article_id" value="{{ article.id }}">
+                        <input type="hidden" name="action" value="retirer">
+                        <button type="submit" style="padding: 6px 12px; background: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; cursor: pointer;" title="Retirer complètement">
+                            <i class='bx bx-trash'></i>
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="background: var(--light-primary); color: var(--primary); padding: 32px; border-radius: 12px; text-align: center; margin-top: 24px;">
+            <i class='bx bx-info-circle' style="font-size: 2rem; margin-bottom: 12px; display: block;"></i>
+            Votre stock est vide pour le moment.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

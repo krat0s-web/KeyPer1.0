@@ -1,0 +1,99 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Statistiques - {{ membre.nom|default:membre.email }}{% endblock %}
+{% block page_title %}Statistiques - {{ membre.nom|default:membre.email }}{% endblock %}
+{% block page_heading %}Statistiques Membre{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'statistiques_foyer' foyer.id %}">Statistiques Foyer</a></li>
+    /
+    <li><a href="#" class="active">Statistiques Membre</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-user' style="font-size: 28px; color: var(--primary);"></i>Statistiques - {{ membre.nom|default:membre.email }}
+        </h3>
+        <a href="{% url 'statistiques_foyer' foyer.id %}" style="padding: 8px 16px; background: var(--grey); color: var(--dark); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+            <i class='bx bx-arrow-back'></i>Retour
+        </a>
+    </div>
+
+    <!-- Statistiques générales -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
+        <div class="card-dashboard" style="border-left: 4px solid var(--primary); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Tâches Total</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">{{ taches_total }}</div>
+        </div>
+        <div class="card-dashboard" style="border-left: 4px solid var(--success); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Tâches Terminées</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--success);">{{ taches_terminees }}</div>
+        </div>
+        <div class="card-dashboard" style="border-left: 4px solid var(--warning); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Taux de Complétion</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--warning);">{{ taux_completion }}%</div>
+        </div>
+        <div class="card-dashboard" style="border-left: 4px solid var(--danger); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Points Gagnés</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--danger);">{{ total_points }}</div>
+        </div>
+        <div class="card-dashboard" style="border-left: 4px solid var(--primary); text-align: center;">
+            <h4 style="color: var(--dark-grey); margin: 0 0 8px 0; font-size: 14px;">Trophées</h4>
+            <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">{{ trophees }}</div>
+        </div>
+    </div>
+
+    <!-- Statistiques par priorité -->
+    <div class="card-dashboard" style="margin-bottom: 32px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-list-check' style="color: var(--primary);"></i>Tâches par Priorité
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div style="text-align: center; padding: 20px; background: var(--light-danger); border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--danger);">{{ taches_haute }}</div>
+                <div style="color: var(--dark); font-weight: 600;">Haute</div>
+            </div>
+            <div style="text-align: center; padding: 20px; background: var(--light-warning); border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ taches_moyenne }}</div>
+                <div style="color: var(--dark); font-weight: 600;">Moyenne</div>
+            </div>
+            <div style="text-align: center; padding: 20px; background: var(--light-success); border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ taches_basse }}</div>
+                <div style="color: var(--dark); font-weight: 600;">Basse</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Évolution des tâches complétées -->
+    {% if taches_par_mois %}
+    <div class="card-dashboard">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-line-chart' style="color: var(--primary);"></i>Évolution (6 derniers mois)
+        </h4>
+        <div style="display: flex; align-items: end; gap: 12px; height: 200px; padding: 20px; background: var(--grey); border-radius: 8px;">
+            {% for mois in taches_par_mois %}
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="width: 100%; background: var(--primary); border-radius: 8px 8px 0 0; min-height: 20px; height: {% widthratio mois.count 10 180 %}px; max-height: 180px; transition: all 0.3s ease;" title="{{ mois.nom_mois }}: {{ mois.count }} tâches"></div>
+                <small style="color: var(--dark-grey); font-size: 11px; writing-mode: vertical-rl; text-orientation: mixed;">{{ mois.mois }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+

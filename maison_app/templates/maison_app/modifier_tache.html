@@ -1,0 +1,131 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block page_title %}Modifier une Tâche{% endblock %}
+{% block page_heading %}Modifier une Tâche{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_taches' %}">Tâches</a></li>
+    /
+    <li><a href="#" class="active">Modifier</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 800px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: var(--light); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-edit' style="font-size: 28px;"></i>Modifier la Tâche
+        </h3>
+    </div>
+    
+    <div style="padding: 24px;">
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: grid; gap: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Titre <span style="color: var(--danger);">*</span></label>
+                    <input type="text" name="titre" value="{{ tache.titre }}" required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Description</label>
+                    <textarea name="description" rows="3"
+                              style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;">{{ tache.description }}</textarea>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-calendar-check'></i>Date limite
+                    </label>
+                    <input type="date" name="date_limite" id="date_limite" 
+                           value="{% if tache.date_limite %}{{ tache.date_limite|date:'Y-m-d' }}{% endif %}" 
+                           min="" max=""
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <small style="color: var(--dark-grey); font-size: 12px;">Date entre aujourd'hui et 2 ans maximum (optionnel)</small>
+                </div>
+                
+                <script>
+                    const today = new Date();
+                    const maxDate = new Date();
+                    maxDate.setFullYear(today.getFullYear() + 2);
+                    const dateInput = document.getElementById('date_limite');
+                    dateInput.min = today.toISOString().split('T')[0];
+                    dateInput.max = maxDate.toISOString().split('T')[0];
+                </script>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Priorité</label>
+                    <select name="priorite" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">—</option>
+                        <option value="Haute" {% if tache.priorite == 'Haute' %}selected{% endif %}>🔴 Haute</option>
+                        <option value="Moyenne" {% if tache.priorite == 'Moyenne' %}selected{% endif %}>🟡 Moyenne</option>
+                        <option value="Basse" {% if tache.priorite == 'Basse' %}selected{% endif %}>🟢 Basse</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Statut</label>
+                    <select name="id_statut" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        {% for statut in statuts %}
+                        <option value="{{ statut.id }}" {% if tache.id_statut.id == statut.id %}selected{% endif %}>
+                            {{ statut.libelle }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Pièce</label>
+                    <select name="id_piece" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">— Aucune pièce —</option>
+                        {% for piece in pieces %}
+                        <option value="{{ piece.id }}" {% if tache.id_piece and tache.id_piece.id == piece.id %}selected{% endif %}>
+                            {{ piece.nom }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">Animal (optionnel)</label>
+                    <select name="id_animal" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">— Aucun animal —</option>
+                        {% for animal in animaux %}
+                        <option value="{{ animal.id }}" {% if tache.id_animal and tache.id_animal.id == animal.id %}selected{% endif %}>
+                            {{ animal.nom }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-user-check'></i>👤 Assigner à (optionnel)
+                    </label>
+                    <select name="assignees" multiple size="5" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        {% for membre in membres %}
+                        <option value="{{ membre.id }}" {% if membre.id in assignees_actuels %}selected{% endif %}>
+                            {% if membre.nom %}{{ membre.nom }}{% else %}{{ membre.email }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small style="color: var(--dark-grey); font-size: 12px;">Maintenez Ctrl/Cmd pour sélectionner plusieurs membres</small>
+                </div>
+                
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="submit" style="flex: 1; min-width: 200px; padding: 12px 24px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                        <i class='bx bx-check-circle'></i>Enregistrer les modifications
+                    </button>
+                    <a href="{% url 'liste_taches' %}" style="flex: 1; min-width: 150px; padding: 12px 24px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                        <i class='bx bx-x-circle'></i>Annuler
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

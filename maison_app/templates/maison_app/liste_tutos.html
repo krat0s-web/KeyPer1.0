@@ -1,0 +1,100 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Tutoriels{% endblock %}
+{% block page_title %}Tutoriels{% endblock %}
+{% block page_heading %}Tutoriels{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'detail_foyer' foyer.id %}">Foyer</a></li>
+    /
+    <li><a href="#" class="active">Tutoriels</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+{% if user.role == 'admin' %}
+<div class="card-dashboard mb-4" style="border-left: 4px solid var(--success);">
+    <h3 style="font-size: 20px; font-weight: 600; color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-plus-circle' style="color: var(--success);"></i>Créer un nouveau tutoriel
+    </h3>
+    
+    <form method="post" style="display: flex; flex-direction: column; gap: 16px;">
+        {% csrf_token %}
+        
+        <div>
+            <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">
+                Titre <span style="color: var(--danger);">*</span>
+            </label>
+            <input type="text" name="titre" required maxlength="100" placeholder="Ex: Comment nettoyer la cuisine..."
+                   style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+        </div>
+        
+        <div>
+            <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">
+                Instructions <span style="color: var(--danger);">*</span>
+            </label>
+            <textarea name="instructions" required rows="5" placeholder="Décrivez les étapes du tutoriel..."
+                      style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;"></textarea>
+        </div>
+        
+        {% if taches %}
+        <div>
+            <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500;">
+                Lier à une tâche (optionnel)
+            </label>
+            <select name="id_tache" style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                <option value="">— Aucune tâche —</option>
+                {% for tache in taches %}
+                <option value="{{ tache.id }}">{{ tache.titre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <button type="submit" style="padding: 12px 24px; background: var(--success); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-check'></i>Créer le tutoriel
+        </button>
+    </form>
+</div>
+{% endif %}
+
+<div class="card-dashboard">
+    <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+        <i class='bx bx-book' style="font-size: 28px; color: var(--primary);"></i>Tutoriels disponibles
+    </h3>
+    
+    {% if tutos %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        {% for tuto in tutos %}
+        <div class="card-dashboard" style="border-left: 4px solid var(--info);">
+            <h4 style="margin: 0 0 12px 0; color: var(--dark); font-size: 18px; font-weight: 600;">
+                {{ tuto.titre }}
+            </h4>
+            <p style="margin: 0 0 12px 0; color: var(--dark-grey); font-size: 14px; white-space: pre-wrap; max-height: 150px; overflow-y: auto;">
+                {{ tuto.instructions|truncatewords:30 }}
+            </p>
+            {% if tuto.id_tache %}
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--grey);">
+                <a href="{% url 'detail_tache' tuto.id_tache.id %}" style="color: var(--primary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-link'></i>Tâche liée : {{ tuto.id_tache.titre }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 48px; color: var(--dark-grey);">
+        <i class='bx bx-book' style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <p>Aucun tutoriel disponible pour le moment.</p>
+        {% if user.role == 'admin' %}
+        <p style="font-size: 14px; margin-top: 8px;">Créez votre premier tutoriel ci-dessus !</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

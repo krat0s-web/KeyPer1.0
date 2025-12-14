@@ -1,0 +1,77 @@
+{% extends "maison_app/base.html" %}
+{% block title %}Acheter des pièces de puzzle{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-cart-plus me-2"></i>Acheter des pièces de puzzle
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <h5>{{ puzzle.nom }}</h5>
+                        <p class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Prix : <strong>{{ prix_piece }} points</strong> par pièce
+                        </p>
+                        <p class="text-muted">
+                            <i class="bi bi-wallet me-1"></i>
+                            Vos points disponibles : <strong class="text-success">{{ total_points }} points</strong>
+                        </p>
+                    </div>
+                    
+                    {% if total_points < prix_piece %}
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle me-2"></i>Points insuffisants</h6>
+                        <p class="mb-2">Vous n'avez pas assez de points pour acheter une pièce.</p>
+                        <p class="mb-0">
+                            <strong>Solution :</strong> Complétez des tâches pour gagner des points ! 
+                            <a href="{% url 'liste_taches' %}" class="btn btn-success btn-sm ms-2">
+                                <i class="bi bi-list-check me-1"></i>Voir les tâches
+                            </a>
+                        </p>
+                    </div>
+                    {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de pièces à acheter</label>
+                            <input type="number" name="nombre_pieces" class="form-control" min="1" max="{% widthratio total_points prix_piece 1 %}" value="1" required>
+                            <small class="text-muted">
+                                Vous pouvez acheter jusqu'à {% widthratio total_points prix_piece 1 %} pièce(s) avec vos {{ total_points }} points.
+                            </small>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>Coût total :</strong> <span id="cout_total">{{ prix_piece }}</span> points
+                        </div>
+                        
+                        <script>
+                            document.querySelector('input[name="nombre_pieces"]').addEventListener('input', function() {
+                                const nombre = parseInt(this.value) || 0;
+                                const prix = {{ prix_piece }};
+                                document.getElementById('cout_total').textContent = nombre * prix;
+                            });
+                        </script>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="bi bi-cart-check me-1"></i>Acheter
+                            </button>
+                            <a href="{% url 'jouer_puzzle' piece.id %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Annuler
+                            </a>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

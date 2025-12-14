@@ -1,158 +1,132 @@
-{% extends "maison_app/base.html" %}
+{% extends "maison_app/dashboard_base.html" %}
 {% load static %}
+{% load piece_tags %}
 {% block title %}{{ foyer.nom }}{% endblock %}
+{% block page_title %}{{ foyer.nom }}{% endblock %}
+{% block page_heading %}{{ foyer.nom }}{% endblock %}
 
-{% block content %}
-<div class="container mt-5">
-    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-        <!-- En-tête -->
-        <div class="card-header bg-gradient text-white p-4" style="background: linear-gradient(135deg, #0d6efd, #0dcaf0);">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1 class="mb-0 fw-bold">{{ foyer.nom }}</h1>
-                <div>
-                    <span class="badge bg-light text-primary fs-6 px-3 py-2 me-3">
-                        {{ foyer.pieces.count }} pièce{{ foyer.pieces.count|pluralize }}
-                    </span>
-                    {% if user.role == 'admin' %}
-                    <a href="{% url 'supprimer_foyer' foyer.id %}" 
-                       class="btn btn-danger btn-sm"
-                       onclick="return confirm('Supprimer le foyer {{ foyer.nom }} et tout son contenu ?')">
-                        Supprimer le foyer
-                    </a>
-                    {% endif %}
-                </div>
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_foyers' %}">Foyers</a></li>
+    /
+    <li><a href="#" class="active">{{ foyer.nom }}</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="padding: 0; overflow: hidden;">
+    <!-- En-tête -->
+    <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: #FFFFFF; padding: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="margin: 0 0 8px 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <i class='bx bx-home' style="font-size: 28px; color: #FFFFFF;"></i>{{ foyer.nom }}
+            </h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span style="padding: 6px 12px; background: rgba(255,255,255,0.3); color: #FFFFFF; border-radius: 12px; font-size: 14px; font-weight: 500;">
+                    {{ foyer.pieces.count }} pièce{{ foyer.pieces.count|pluralize }}
+                </span>
+                <a href="{% url 'statistiques_foyer' foyer.id %}" style="padding: 6px 12px; background: rgba(255,255,255,0.2); color: #FFFFFF; border-radius: 12px; font-size: 14px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 4px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <i class='bx bx-bar-chart-alt-2'></i>Statistiques
+                </a>
             </div>
         </div>
-
-        <div class="card-body p-5">
-            <!-- Description -->
-            <p class="lead">{{ foyer.description|default:"Aucune description" }}</p>
-
-            <!-- Ajouter pièce (admin) -->
-            {% if user.role == 'admin' %}
-            <a href="{% url 'ajouter_piece' %}" class="btn btn-outline-primary mb-4">
-                + Ajouter une pièce
-            </a>
+        {% if from_profil %}
+            {% if user.role == 'admin' or user.is_staff %}
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="{% url 'modifier_foyer' foyer.id %}" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                    <i class='bx bx-edit'></i>Modifier
+                </a>
+                <a href="{% url 'supprimer_foyer' foyer.id %}" 
+                   style="padding: 10px 20px; background: var(--danger); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;"
+                   onclick="return confirm('Supprimer le foyer {{ foyer.nom }} et tout son contenu ?')">
+                    <i class='bx bx-trash'></i>Supprimer
+                </a>
+            </div>
             {% endif %}
+        {% endif %}
+    </div>
 
-            <!-- Pièces avec icônes et couleurs (comme l'image) -->
-            <h4 class="mb-3">Pièces ({{ foyer.pieces.count }})</h4>
+    <div style="padding: 24px;">
+        <!-- Description -->
+        <div style="margin-bottom: 24px; padding: 16px; background: var(--grey); border-radius: 12px;">
+            <p style="margin: 0; color: var(--dark); font-size: 16px;">{{ foyer.description|default:"Aucune description" }}</p>
+        </div>
+
+        <!-- Section Pièces -->
+        <div style="margin-bottom: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <h4 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                    <i class='bx bx-door-open' style="color: var(--primary);"></i>Pièces ({{ foyer.pieces.count }})
+                </h4>
+                {% if user.role == 'admin' %}
+                <a href="{% url 'ajouter_piece' %}" style="padding: 10px 20px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                    <i class='bx bx-plus'></i>Ajouter une pièce
+                </a>
+                {% endif %}
+            </div>
+            
             {% if foyer.pieces.all %}
-            <div class="row g-4 mb-5">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
                 {% for piece in foyer.pieces.all %}
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm hover-shadow">
-                        <!-- Image ou icône -->
-                        {% if piece.photo %}
-                        <img src="{{ piece.photo.url }}" alt="{{ piece.nom }}" style="height: 200px; object-fit: cover; border-top-left-radius: 16px; border-top-right-radius: 16px;">
-                        {% else %}
-                        <div class="position-relative" style="height: 200px; background: linear-gradient(135deg, #0d6efd, #0dcaf0); display: flex; align-items: center; justify-content: center;">
-                            <div class="bg-warning text-dark rounded-circle p-3" style="width: 80px; height: 80px;">
-                                <i class="bi bi-door-closed" style="font-size: 2rem;"></i>
-                            </div>
-                        </div>
-                        {% endif %}
-                        <div class="card-body text-center">
-                            <h5 class="fw-bold text-primary">{{ piece.nom }}</h5>
-                            <span class="badge bg-info">
-                                {{ piece.tache_set.count }} tâche{{ piece.tache_set.count|pluralize }}
-                            </span>
-                            {% if request.user.role == 'admin' %}
-                            <div class="mt-2">
-                                <a href="{% url 'supprimer_piece' piece.id %}" class="btn btn-danger btn-sm" 
-                                   onclick="return confirm('Supprimer cette pièce ?')">
-                                    Supprimer
-                                </a>
-                            </div>
+                <div class="card-dashboard" style="padding: 0; overflow: hidden; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                    <!-- Image ou icône -->
+                    {% if piece.photo %}
+                    <img src="{{ piece.photo.url }}" alt="{{ piece.nom }}" style="width: 100%; height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div style="height: 200px; background: linear-gradient(135deg, var(--primary), var(--light-primary)); display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 80px; height: 80px; background: var(--warning); color: var(--dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                            {% if piece.type_piece == 'cuisine' %}
+                                <i class='bx bx-dish'></i>
+                            {% elif piece.type_piece == 'chambre' %}
+                                <i class='bx bx-bed'></i>
+                            {% elif piece.type_piece == 'toilettes' %}
+                                <i class='bx bx-toilet'></i>
+                            {% elif piece.type_piece == 'salle_de_bain' %}
+                                <i class='bx bx-shower'></i>
+                            {% elif piece.type_piece == 'salle_de_jeux' %}
+                                <i class='bx bx-game'></i>
+                            {% elif piece.type_piece == 'salon' %}
+                                <i class='bx bx-couch'></i>
+                            {% elif piece.type_piece == 'buanderie' %}
+                                <i class='bx bx-washing-machine'></i>
+                            {% elif piece.type_piece == 'garage' %}
+                                <i class='bx bx-car'></i>
+                            {% elif piece.type_piece == 'jardin' %}
+                                <i class='bx bx-tree'></i>
+                            {% elif piece.type_piece == 'salle_a_manger' %}
+                                <i class='bx bx-dining-table'></i>
+                            {% elif piece.type_piece == 'bureau' %}
+                                <i class='bx bx-desktop'></i>
+                            {% else %}
+                                <i class='bx bx-door-open'></i>
                             {% endif %}
                         </div>
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-center py-5 bg-light rounded-3 text-muted">Aucune pièce ajoutée</p>
-            {% endif %}
-
-            <!-- Ajouter animal (admin) -->
-            {% if user.role == 'admin' %}
-            <a href="{% url 'ajouter_animal' %}" class="btn btn-outline-success mb-4">
-                + Ajouter un animal
-            </a>
-            {% endif %}
-
-            <!-- Animaux avec icônes et couleurs -->
-            <h4 class="mb-3">Animaux</h4>
-            {% if foyer.animaux.all %}
-            <div class="row g-4 mb-5">
-                {% for animal in foyer.animaux.all %}
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm hover-shadow">
-                        <!-- Image ou icône -->
-                        {% if animal.photo %}
-                        <img src="{{ animal.photo.url }}" alt="{{ animal.nom }}" style="height: 200px; object-fit: cover; border-top-left-radius: 16px; border-top-right-radius: 16px;">
-                        {% else %}
-                        <div class="position-relative" style="height: 200px; background: linear-gradient(135deg, #198754, #20c997); display: flex; align-items: center; justify-content: center;">
-                            <div class="bg-success text-white rounded-circle p-3" style="width: 80px; height: 80px;">
-                                <i class="bi bi-paw-fill" style="font-size: 2rem;"></i>
-                            </div>
-                        </div>
+                    {% endif %}
+                    <div style="padding: 20px; text-align: center;">
+                        <h5 style="margin: 0 0 8px 0; color: var(--dark); font-weight: 600;">{{ piece.nom }}</h5>
+                        {% if piece.description %}
+                        <p style="margin: 0 0 12px 0; color: var(--dark-grey); font-size: 14px;">{{ piece.description|truncatewords:10 }}</p>
                         {% endif %}
-                        <div class="card-body text-center">
-                            <h5 class="fw-bold text-primary">{{ animal.nom }}</h5>
-                            {% if animal.id_piece %}
-                            <small class="text-muted">Pièce : {{ animal.id_piece.nom }}</small>
-                            {% endif %}
-                            <span class="badge bg-info mt-2">
-                                {{ animal.tache_set.count }} tâche{{ animal.tache_set.count|pluralize }}
+                        <p style="margin: 0 0 12px 0; color: var(--dark-grey); font-size: 12px;">Type : <strong>{{ piece.get_type_display_name }}</strong></p>
+                        <span style="padding: 4px 12px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 12px; display: inline-block; margin-bottom: 12px;">
+                            {{ piece.tache_set.count }} tâche{{ piece.tache_set.count|pluralize }}
+                        </span>
+                        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                            {% if piece|peut_acceder:user %}
+                            <a href="{% url 'detail_piece' piece.id %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; transition: all 0.3s ease;">
+                                <i class='bx bx-right-arrow-alt'></i>Accéder
+                            </a>
+                            {% else %}
+                            <span style="padding: 8px 16px; background: var(--warning); color: var(--dark); border-radius: 8px; font-size: 14px;">
+                                Accès restreint
                             </span>
-                            {% if request.user.role == 'admin' %}
-                            <div class="mt-2">
-                                <a href="{% url 'supprimer_animal' animal.id %}" class="btn btn-danger btn-sm"
-                                   onclick="return confirm('Supprimer cet animal ?')">
-                                    Supprimer
-                                </a>
-                            </div>
                             {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-center py-5 bg-light rounded-3 text-muted">Aucun animal ajouté</p>
-            {% endif %}
-
-            <!-- Inviter membre (admin) -->
-            {% if user.role == 'admin' %}
-            <a href="{% url 'generer_invitation' foyer.id %}" class="btn btn-outline-info mb-4">
-                + Inviter un membre
-            </a>
-            {% endif %}
-
-            <!-- Membres avec icônes et couleurs -->
-            <h4 class="mb-3">Membres</h4>
-            {% if foyer.utilisateurs.all %}
-            <div class="row g-4">
-                {% for membre in foyer.utilisateurs.all %}
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm hover-shadow">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <div class="me-3">
-                                    <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center"
-                                         style="width: 60px; height: 60px; font-size: 1.8rem;">
-                                        {{ membre.email|first|upper }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1 fw-bold">{{ membre.nom|default:membre.email }}</h6>
-                                    <span class="badge bg-secondary">{{ membre.get_role_display }}</span>
-                                </div>
-                            </div>
-                            {% if request.user.role == 'admin' and membre != request.user %}
-                            <a href="{% url 'supprimer_membre' membre.id %}" class="btn btn-danger btn-sm">
-                                Supprimer
+                            {% if user.role == 'admin' %}
+                            <a href="{% url 'modifier_foyer' piece.id_foyer.id %}#piece-{{ piece.id }}" style="padding: 8px 16px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; transition: all 0.3s ease;">
+                                <i class='bx bx-edit'></i>Modifier
                             </a>
                             {% endif %}
                         </div>
@@ -161,24 +135,102 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-center py-5 bg-light rounded-3 text-muted">Aucun membre</p>
+            <div style="background: var(--grey); color: var(--dark-grey); padding: 48px; border-radius: 12px; text-align: center;">
+                <i class='bx bx-door-open' style="font-size: 4rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+                <p style="margin: 0; color: var(--dark);">Aucune pièce ajoutée</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Section Animaux -->
+        <div style="margin-bottom: 32px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <h4 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                    <i class='bx bx-heart' style="color: var(--success);"></i>Animaux
+                </h4>
+                {% if user.role == 'admin' %}
+                <a href="{% url 'ajouter_animal' %}" style="padding: 10px 20px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                    <i class='bx bx-plus'></i>Ajouter un animal
+                </a>
+                {% endif %}
+            </div>
+            
+            {% if foyer.animaux.all %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                {% for animal in foyer.animaux.all %}
+                <div class="card-dashboard" style="padding: 0; overflow: hidden; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                    <!-- Image ou icône -->
+                    {% if animal.photo %}
+                    <img src="{{ animal.photo.url }}" alt="{{ animal.nom }}" style="width: 100%; height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div style="height: 200px; background: linear-gradient(135deg, var(--success), var(--light-success)); display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 80px; height: 80px; background: var(--success); color: var(--light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                            <i class='bx bx-heart'></i>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div style="padding: 20px; text-align: center;">
+                        <h5 style="margin: 0 0 8px 0; color: var(--dark); font-weight: 600;">{{ animal.nom }}</h5>
+                        {% if animal.id_piece %}
+                        <p style="margin: 0 0 12px 0; color: var(--dark-grey); font-size: 14px;">
+                            <i class='bx bx-home' style="margin-right: 4px;"></i>Pièce : {{ animal.id_piece.nom }}
+                        </p>
+                        {% endif %}
+                        <span style="padding: 4px 12px; background: var(--light-success); color: var(--success); border-radius: 12px; font-size: 12px; display: inline-block; margin-bottom: 12px;">
+                            {{ animal.tache_set.count }} tâche{{ animal.tache_set.count|pluralize }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="background: var(--grey); color: var(--dark-grey); padding: 48px; border-radius: 12px; text-align: center;">
+                <i class='bx bx-heart' style="font-size: 4rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+                <p style="margin: 0; color: var(--dark);">Aucun animal ajouté</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Section Membres -->
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <h4 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                    <i class='bx bx-group' style="color: var(--primary);"></i>Membres
+                </h4>
+                {% if user.role == 'admin' %}
+                <a href="{% url 'generer_invitation' foyer.id %}" style="padding: 10px 20px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+                    <i class='bx bx-user-plus'></i>Inviter un membre
+                </a>
+                {% endif %}
+            </div>
+            
+            {% if foyer.utilisateurs.all %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                {% for membre in foyer.utilisateurs.all %}
+                <div class="card-dashboard" style="padding: 20px; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 60px; height: 60px; background: var(--primary); color: var(--light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 600;">
+                                {{ membre.email|first|upper }}
+                            </div>
+                            <div>
+                                <h6 style="margin: 0 0 4px 0; color: var(--dark); font-weight: 600;">{{ membre.nom|default:membre.email }}</h6>
+                                <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 12px;">
+                                    {{ membre.get_role_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="background: var(--grey); color: var(--dark-grey); padding: 48px; border-radius: 12px; text-align: center;">
+                <i class='bx bx-group' style="font-size: 4rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+                <p style="margin: 0; color: var(--dark);">Aucun membre</p>
+            </div>
             {% endif %}
         </div>
     </div>
 </div>
-
-<style>
-    .hover-shadow:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
-        transition: all 0.3s ease;
-    }
-    .card-img-top {
-        border-top-left-radius: 16px;
-        border-top-right-radius: 16px;
-    }
-    .position-absolute {
-        z-index: 2;
-    }
-</style>
 {% endblock %}

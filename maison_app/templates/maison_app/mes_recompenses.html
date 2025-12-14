@@ -1,143 +1,256 @@
-{% extends 'maison_app/base.html' %}
+{% extends "maison_app/dashboard_base.html" %}
 {% load static %}
-
 {% block title %}Mes Récompenses et Trophées{% endblock %}
+{% block page_title %}Mes Récompenses et Trophées{% endblock %}
+{% block page_heading %}Récompenses{% endblock %}
 
-{% block content %}
-<div class="container-fluid pt-4">
-    <!-- HEADER - POINTS TOTAUX -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card bg-dark text-white border-warning">
-                <div class="card-body text-center py-4">
-                    <h1 class="display-3 text-warning mb-2">
-                        <i class="bi bi-star-fill"></i> {{ total_points }} points
-                    </h1>
-                    <p class="lead text-muted">Points accumulés en accomplissant des tâches</p>
-                </div>
+{% block breadcrumb %}
+                    <ul class="breadcrumb">
+                        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        /
+                        <li><a href="#" class="active">Récompenses</a></li>
+                    </ul>
+{% endblock %}
+
+{% block page_content %}
+            <!-- Points Header -->
+<div class="card-dashboard" style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); border: 2px solid var(--warning); text-align: center; padding: 48px; margin-bottom: 24px;">
+    <h1 style="margin: 0 0 16px 0; font-size: 48px; display: flex; align-items: center; justify-content: center; gap: 16px;">
+        <i class='bx bx-star' style="color: var(--warning);"></i><span style="color: var(--light) !important;">{{ total_points }} points</span>
+                </h1>
+    <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 18px;">Points accumulés en accomplissant des tâches</p>
             </div>
-        </div>
-    </div>
 
-    <!-- TROPHÉES DÉBLOQUÉS -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-3">
-                <i class="bi bi-trophy text-warning"></i> Trophées Débloqués ({{ trophees.count }})
-            </h2>
-            {% if trophees %}
-                <div class="row">
+            <!-- Trophées Débloqués -->
+<div style="margin-bottom: 32px;">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-trophy' style="color: var(--warning);"></i>Trophées Débloqués ({{ trophees.count }})
+    </h3>
+                {% if trophees %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 24px;">
                     {% for trophee in trophees %}
-                        <div class="col-md-4 col-lg-3 mb-3">
-                            <div class="card bg-dark border-warning h-100 text-center">
-                                <div class="card-body">
-                                    <div style="font-size: 3rem; margin: 1rem 0;">
-                                        {% if trophee.type == 'premier' %}
-                                            🏅
-                                        {% elif trophee.type == '10' %}
-                                            🥈
-                                        {% elif trophee.type == '50' %}
-                                            🥇
-                                        {% elif trophee.type == '100' %}
-                                            👑
-                                        {% elif trophee.type == 'streak' %}
-                                            🔥
-                                        {% elif trophee.type == 'rapide' %}
-                                            ⚡
-                                        {% elif trophee.type == 'social' %}
-                                            🤝
-                                        {% else %}
-                                            ⭐
-                                        {% endif %}
-                                    </div>
-                                    <h5 class="card-title text-warning">{{ trophee.nom }}</h5>
-                                    <p class="card-text text-muted small">{{ trophee.description }}</p>
-                                    <small class="text-secondary">
-                                        <i class="bi bi-calendar"></i> {{ trophee.date_obtention|date:"d/m/Y" }}
-                                    </small>
-                                </div>
-                            </div>
+        <div class="card-dashboard" style="text-align: center; border: 2px solid var(--warning); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 16px rgba(255, 193, 7, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+            <div style="font-size: 4rem; margin-bottom: 16px;">
+                            {% if trophee.type == 'premier' %}
+                                🏅
+                            {% elif trophee.type == '10' %}
+                                🥈
+                            {% elif trophee.type == '50' %}
+                                🥇
+                            {% elif trophee.type == '100' %}
+                                👑
+                            {% elif trophee.type == 'streak' %}
+                                🔥
+                            {% elif trophee.type == 'rapide' %}
+                                ⚡
+                            {% elif trophee.type == 'social' %}
+                                🤝
+                            {% else %}
+                                ⭐
+                            {% endif %}
                         </div>
+            <h5 style="font-size: 20px; font-weight: 600; color: var(--warning); margin-bottom: 12px;">{{ trophee.nom }}</h5>
+            <p style="color: var(--dark-grey); font-size: 14px; margin-bottom: 12px;">{{ trophee.description }}</p>
+            <small style="color: var(--dark-grey); font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                <i class='bx bx-calendar'></i>{{ trophee.date_obtention|date:"d/m/Y" }}
+                        </small>
+                    </div>
                     {% endfor %}
                 </div>
-            {% else %}
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> Complétez des tâches pour débloquer vos premiers trophées!
+                {% else %}
+    <div class="card-dashboard" style="text-align: center; padding: 48px;">
+        <i class='bx bx-info-circle' style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--dark-grey);"></i>
+        <p style="margin: 0; color: var(--dark-grey);">Complétez des tâches pour débloquer vos premiers trophées !</p>
                 </div>
-            {% endif %}
-        </div>
-    </div>
+                {% endif %}
+            </div>
 
-    <!-- RÉCOMPENSES RÉCENTES -->
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-3">
-                <i class="bi bi-gift text-success"></i> Récompenses Récentes
-            </h2>
-            {% if recompenses %}
-                <div class="table-responsive">
-                    <table class="table table-dark table-hover">
-                        <thead class="table-warning">
-                            <tr>
-                                <th>Récompense</th>
-                                <th>Points</th>
-                                <th>Type</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if recompenses %}
-                                {% for recompense in recompenses|dictsort:"-date_obtention" %}
-                                    <tr>
-                                        <td>
-                                            <i class="bi bi-{{ recompense.icone }}"></i>
-                                            {{ recompense.nom }}
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-success">+{{ recompense.points }} pts</span>
-                                        </td>
-                                        <td>
-                                            {% if recompense.type == 'points' %}
-                                                <span class="badge bg-info">Points</span>
-                                            {% elif recompense.type == 'badge' %}
-                                                <span class="badge bg-secondary">Badge</span>
-                                            {% elif recompense.type == 'trophy' %}
-                                                <span class="badge bg-warning text-dark">Trophée</span>
-                                            {% else %}
-                                                <span class="badge bg-muted">Récompense</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <small class="text-muted">{{ recompense.date_obtention|date:"d/m/Y H:i" }}</small>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
+            <!-- Trophées Non Débloqués -->
+            {% if trophees_non_debloques %}
+            <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                    <i class='bx bx-lock' style="color: var(--dark-grey);"></i>Trophées à Débloquer ({{ trophees_non_debloques|length }})
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;">
+                    {% for trophee in trophees_non_debloques %}
+                    <div class="card-dashboard" style="
+                        text-align: center; 
+                        border: 2px solid var(--dark-grey); 
+                        opacity: 0.6; 
+                        filter: grayscale(100%);
+                        position: relative;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                        <div style="position: absolute; top: 12px; right: 12px; background: var(--danger); color: #FFFFFF; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            🔒 Verrouillé
+                        </div>
+                        <div style="font-size: 4rem; margin-bottom: 16px; margin-top: 16px;">
+                            {% if trophee.type == 'premier' %}
+                                🏅
+                            {% elif trophee.type == '10' %}
+                                🥈
+                            {% elif trophee.type == '50' %}
+                                🥇
+                            {% elif trophee.type == '100' %}
+                                👑
+                            {% elif trophee.type == '200' %}
+                                💎
+                            {% elif trophee.type == '500' %}
+                                🌟
+                            {% elif trophee.type == '1000' %}
+                                🏆
+                            {% elif trophee.type == 'streak' or trophee.type == 'streak_30' or trophee.type == 'streak_100' %}
+                                🔥
+                            {% elif trophee.type == 'rapide' or trophee.type == 'efficace' %}
+                                ⚡
+                            {% elif trophee.type == 'social' or trophee.type == 'collaborateur' %}
+                                🤝
+                            {% elif trophee.type == 'organise' %}
+                                📋
+                            {% elif trophee.type == 'punctuel' %}
+                                ⏰
+                            {% elif trophee.type == 'budget_master' %}
+                                💰
+                            {% elif trophee.type == 'animal_lover' %}
+                                🐾
+                            {% elif trophee.type == 'note_taker' %}
+                                📝
+                            {% elif trophee.type == 'event_planner' %}
+                                📅
+                            {% elif trophee.type == 'explorateur' %}
+                                🗺️
                             {% else %}
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-3">
-                                        Aucune récompense pour le moment
-                                    </td>
-                                </tr>
+                                ⭐
                             {% endif %}
-                        </tbody>
-                    </table>
+                        </div>
+                        <h5 style="font-size: 20px; font-weight: 600; color: var(--dark-grey); margin-bottom: 12px;">{{ trophee.nom }}</h5>
+                        <p style="color: var(--dark-grey); font-size: 14px; margin-bottom: 12px;">{{ trophee.description }}</p>
+                        <small style="color: var(--dark-grey); font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <i class='bx bx-lock'></i>Non débloqué
+                        </small>
+                    </div>
+                    {% endfor %}
                 </div>
-            {% else %}
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i> Aucune récompense pour le moment. Complétez une tâche pour en gagner!
-                </div>
+            </div>
             {% endif %}
-        </div>
+
+            <!-- Récompenses Récentes -->
+<div class="card-dashboard" style="border-left: 4px solid var(--success);">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-gift' style="color: var(--success);"></i>Récompenses Récentes
+    </h3>
+                {% if recompenses %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                <tr style="background: var(--grey); border-bottom: 2px solid var(--grey);">
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Récompense</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Points</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Type</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: var(--dark);">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for recompense in recompenses|dictsort:"-date_obtention" %}
+                <tr style="border-bottom: 1px solid var(--grey); transition: all 0.3s ease;" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 16px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                        <i class='bx bx-{{ recompense.icone }}' style="font-size: 20px; color: var(--primary);"></i>
+                                {{ recompense.nom }}
+                            </td>
+                    <td style="padding: 16px;">
+                        <span style="padding: 6px 12px; border-radius: 20px; font-weight: 500; font-size: 12px; background: var(--success); color: var(--light);">
+                            +{{ recompense.points }} pts
+                        </span>
+                            </td>
+                    <td style="padding: 16px;">
+                                {% if recompense.type == 'points' %}
+                            <span style="padding: 6px 12px; border-radius: 20px; font-weight: 500; font-size: 12px; background: var(--primary); color: var(--light);">Points</span>
+                                {% elif recompense.type == 'badge' %}
+                            <span style="padding: 6px 12px; border-radius: 20px; font-weight: 500; font-size: 12px; background: var(--dark-grey); color: var(--light);">Badge</span>
+                                {% elif recompense.type == 'trophy' %}
+                            <span style="padding: 6px 12px; border-radius: 20px; font-weight: 500; font-size: 12px; background: var(--warning); color: var(--dark);">Trophée</span>
+                                {% else %}
+                            <span style="padding: 6px 12px; border-radius: 20px; font-weight: 500; font-size: 12px; background: var(--dark-grey); color: var(--light);">Récompense</span>
+                                {% endif %}
+                            </td>
+                    <td style="padding: 16px; color: var(--dark-grey);">
+                        <small>{{ recompense.date_obtention|date:"d/m/Y H:i" }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
     </div>
+                {% else %}
+    <div style="text-align: center; padding: 48px;">
+        <i class='bx bx-exclamation-triangle' style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--dark-grey);"></i>
+        <p style="margin: 0; color: var(--dark-grey);">Aucune récompense pour le moment. Complétez une tâche pour en gagner !</p>
+    </div>
+    {% endif %}
 </div>
 
-<style>
-    .card {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 16px rgba(255, 193, 7, 0.3);
-    }
-</style>
+<!-- Historique détaillé des points -->
+<div class="card-dashboard" style="margin-top: 32px; border-left: 4px solid var(--warning);">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-history' style="color: var(--warning);"></i>Historique des Points (12 derniers mois)
+    </h3>
+    {% if historique_points %}
+    <div style="display: flex; align-items: end; gap: 12px; height: 250px; padding: 20px; background: var(--grey); border-radius: 8px; margin-bottom: 24px;">
+        {% for mois in historique_points %}
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <div style="width: 100%; background: linear-gradient(to top, var(--warning), var(--success)); border-radius: 8px 8px 0 0; min-height: 20px; height: {% widthratio mois.points 100 200 %}px; max-height: 200px; transition: all 0.3s ease; position: relative;" title="{{ mois.nom_mois }}: {{ mois.points }} points ({{ mois.count }} récompense{{ mois.count|pluralize }})">
+                {% if mois.points > 0 %}
+                <div style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: var(--dark); color: var(--light); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                    {{ mois.points }} pts
+                </div>
+                {% endif %}
+            </div>
+            <small style="color: var(--dark-grey); font-size: 11px; writing-mode: vertical-rl; text-orientation: mixed;">{{ mois.mois }}</small>
+        </div>
+        {% endfor %}
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        {% for mois in historique_points %}
+        {% if mois.points > 0 %}
+        <div style="padding: 12px; background: var(--light-warning); border-radius: 8px;">
+            <div style="font-weight: 600; color: var(--dark); margin-bottom: 4px;">{{ mois.nom_mois }}</div>
+            <div style="color: var(--dark-grey); font-size: 14px;">{{ mois.points }} points</div>
+            <div style="color: var(--dark-grey); font-size: 12px;">{{ mois.count }} récompense{{ mois.count|pluralize }}</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 48px;">
+        <i class='bx bx-info-circle' style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--dark-grey);"></i>
+        <p style="margin: 0; color: var(--dark-grey);">Aucun historique disponible</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tâches avec récompenses -->
+{% if recompenses_avec_taches %}
+<div class="card-dashboard" style="margin-top: 32px; border-left: 4px solid var(--success);">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-check-circle' style="color: var(--success);"></i>Tâches Complétées avec Récompenses
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for recompense in recompenses_avec_taches %}
+        {% if recompense.id_tache %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--light-success); border-radius: 8px;">
+            <div>
+                <strong style="color: var(--dark);">{{ recompense.id_tache.titre }}</strong>
+                <div style="color: var(--dark-grey); font-size: 14px; margin-top: 4px;">
+                    Complétée le {{ recompense.date_obtention|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+            <div style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 20px; font-weight: 600;">
+                +{{ recompense.points }} pts
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}

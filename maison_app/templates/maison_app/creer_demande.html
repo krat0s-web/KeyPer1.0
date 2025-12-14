@@ -1,0 +1,121 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block page_title %}Créer une demande{% endblock %}
+{% block page_heading %}Créer une demande{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'mes_demandes' %}">Mes demandes</a></li>
+    /
+    <li><a href="#" class="active">Créer une demande</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard" style="max-width: 700px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, var(--warning), #ffc107); color: var(--dark); padding: 24px; border-radius: 12px 12px 0 0;">
+        <h3 style="margin: 0; color: var(--dark); display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <i class='bx bx-message-square-add' style="font-size: 28px; color: var(--dark);"></i>Créer une demande
+        </h3>
+        <p style="margin: 8px 0 0 0; color: var(--dark); font-size: 14px;">Foyer: <strong>{{ foyer.nom }}</strong></p>
+    </div>
+    
+    <div style="padding: 24px;">
+        <!-- Messages Django -->
+        {% if messages %}
+            {% for message in messages %}
+                <div style="background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% else %}var(--light-primary){% endif %}; color: {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% else %}var(--primary){% endif %}; padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% else %}var(--primary){% endif %};">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div style="display: grid; gap: 20px;">
+                <div>
+                    <label for="type_demande" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-category'></i>Type de demande <span style="color: var(--danger);">*</span>
+                    </label>
+                    <select id="type_demande" name="type_demande" required
+                            style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                        <option value="">-- Sélectionner un type de demande --</option>
+                        <option value="budget">💰 Demande de budget</option>
+                        <option value="depense">💳 Demande de dépense</option>
+                        <option value="acces_page">🔐 Demande d'accès à une page</option>
+                        <option value="acces_fonctionnalite">⚙️ Demande d'accès à une fonctionnalité</option>
+                    </select>
+                    <small style="color: var(--dark-grey); font-size: 12px;">Choisissez le type de demande que vous souhaitez faire</small>
+                </div>
+
+                <div>
+                    <label for="titre" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-text'></i>Titre de la demande <span style="color: var(--danger);">*</span>
+                    </label>
+                    <input type="text" id="titre" name="titre" 
+                           placeholder="Ex: Demande de budget pour les courses" required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    <small style="color: var(--dark-grey); font-size: 12px;">Donnez un titre clair et descriptif à votre demande</small>
+                </div>
+
+                <div>
+                    <label for="description" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class='bx bx-detail'></i>Description <span style="color: var(--danger);">*</span>
+                    </label>
+                    <textarea id="description" name="description" rows="6" required
+                              placeholder="Décrivez votre demande en détail. Expliquez pourquoi vous avez besoin de cette autorisation ou de ce budget..."
+                              style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical; font-family: inherit;"></textarea>
+                    <small style="color: var(--dark-grey); font-size: 12px;">Plus votre description est détaillée, plus les administrateurs pourront traiter rapidement votre demande</small>
+                </div>
+
+                <div class="card-dashboard" style="background: var(--light-primary); padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary);">
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <i class='bx bx-info-circle' style="color: var(--primary); font-size: 24px; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="color: var(--dark); display: block; margin-bottom: 8px;">💡 Information importante :</strong>
+                            <p style="margin: 0; color: var(--dark); font-size: 14px; line-height: 1.6;">
+                                Votre demande sera envoyée à tous les administrateurs du foyer. Ils recevront une notification et pourront traiter votre demande dans l'espace "Gérer les demandes". 
+                                Vous serez notifié une fois que votre demande aura été traitée.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="submit" style="flex: 1; min-width: 200px; padding: 12px 24px; background: var(--warning); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                        <i class='bx bx-send'></i>Envoyer la demande
+                    </button>
+                    <a href="{% url 'mes_demandes' %}" style="flex: 1; min-width: 150px; padding: 12px 24px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; font-weight: 500;">
+                        <i class='bx bx-x-circle'></i>Annuler
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Validation du formulaire
+document.querySelector('form').addEventListener('submit', function(e) {
+    const typeDemande = document.getElementById('type_demande').value;
+    const titre = document.getElementById('titre').value.trim();
+    const description = document.getElementById('description').value.trim();
+    
+    if (!typeDemande || !titre || !description) {
+        e.preventDefault();
+        alert('Veuillez remplir tous les champs obligatoires.');
+        return false;
+    }
+    
+    if (description.length < 10) {
+        e.preventDefault();
+        alert('La description doit contenir au moins 10 caractères.');
+        return false;
+    }
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,130 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Suggestions de Tâches{% endblock %}
+{% block page_title %}Suggestions de Tâches{% endblock %}
+{% block page_heading %}Suggestions de Tâches{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="#" class="active">Suggestions</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+{% if not foyer %}
+<div class="card-dashboard" style="text-align: center; padding: 48px;">
+    <i class='bx bx-home' style="font-size: 5rem; color: var(--dark-grey); margin-bottom: 24px; display: block;"></i>
+    <h3 style="color: var(--dark); margin-bottom: 16px;">Aucun foyer sélectionné</h3>
+    <p style="color: var(--dark-grey); margin-bottom: 32px;">Pour voir les suggestions, vous devez sélectionner un foyer.</p>
+    <a href="{% url 'mon_profil' %}" style="padding: 12px 24px; border-radius: 36px; background: var(--primary); color: var(--light); display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500; text-decoration: none; transition: all 0.3s ease;">
+        <i class='bx bx-user'></i>
+        <span>Aller au profil</span>
+    </a>
+</div>
+{% else %}
+
+<!-- En-tête avec bouton -->
+<div class="card-dashboard" style="margin-bottom: 24px; border-left: 4px solid var(--primary);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <h3 style="color: var(--dark); margin: 0; display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-bulb' style="font-size: 28px; color: var(--primary);"></i>Suggestions de Tâches
+        </h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{% url 'proposer_suggestion' %}" style="padding: 10px 20px; background: var(--success); color: var(--light); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+                <i class='bx bx-plus-circle'></i>Proposer une suggestion
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="card-dashboard" style="margin-bottom: 24px; border-left: 4px solid var(--warning);">
+    <h5 style="color: var(--dark); margin-bottom: 16px; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <i class='bx bx-filter' style="color: var(--warning);"></i>Filtrer par statut
+    </h5>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{% url 'suggestions_taches' %}" style="padding: 8px 16px; border-radius: 8px; background: {% if not request.GET.statut %}var(--primary){% else %}var(--grey){% endif %}; color: {% if not request.GET.statut %}var(--light){% else %}var(--dark){% endif %}; text-decoration: none; font-size: 14px; transition: all 0.3s ease;">
+            Toutes
+        </a>
+        <a href="{% url 'suggestions_taches' %}?statut=proposee" style="padding: 8px 16px; border-radius: 8px; background: {% if request.GET.statut == 'proposee' %}var(--primary){% else %}var(--grey){% endif %}; color: {% if request.GET.statut == 'proposee' %}var(--light){% else %}var(--dark){% endif %}; text-decoration: none; font-size: 14px; transition: all 0.3s ease;">
+            Proposées
+        </a>
+        <a href="{% url 'suggestions_taches' %}?statut=acceptee" style="padding: 8px 16px; border-radius: 8px; background: {% if request.GET.statut == 'acceptee' %}var(--primary){% else %}var(--grey){% endif %}; color: {% if request.GET.statut == 'acceptee' %}var(--light){% else %}var(--dark){% endif %}; text-decoration: none; font-size: 14px; transition: all 0.3s ease;">
+            Acceptées
+        </a>
+        <a href="{% url 'suggestions_taches' %}?statut=rejetee" style="padding: 8px 16px; border-radius: 8px; background: {% if request.GET.statut == 'rejetee' %}var(--primary){% else %}var(--grey){% endif %}; color: {% if request.GET.statut == 'rejetee' %}var(--light){% else %}var(--dark){% endif %}; text-decoration: none; font-size: 14px; transition: all 0.3s ease;">
+            Rejetées
+        </a>
+    </div>
+</div>
+
+<!-- Liste des suggestions -->
+<div class="card-dashboard" style="border-left: 4px solid var(--success);">
+    <h3 style="font-size: 24px; font-weight: 600; color: var(--dark); margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <i class='bx bx-list-ul' style="color: var(--success);"></i>Liste des Suggestions
+    </h3>
+    
+    {% if suggestions %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 16px;">
+        {% for suggestion in suggestions %}
+        <div class="card-dashboard" style="border-left: 4px solid {% if suggestion.statut == 'acceptee' %}var(--success){% elif suggestion.statut == 'rejetee' %}var(--danger){% else %}var(--warning){% endif %}; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+            <div style="background: {% if suggestion.statut == 'acceptee' %}var(--success){% elif suggestion.statut == 'rejetee' %}var(--danger){% else %}var(--warning){% endif %}; color: {% if suggestion.statut == 'rejetee' %}var(--light){% elif suggestion.statut == 'acceptee' %}var(--light){% else %}var(--dark){% endif %}; padding: 12px 16px; border-radius: 8px 8px 0 0; margin: -24px -24px 16px -24px; display: flex; justify-content: space-between; align-items: center;">
+                <h6 style="margin: 0; font-weight: 600;">{{ suggestion.titre }}</h6>
+                <span style="padding: 4px 12px; background: {% if suggestion.statut == 'acceptee' %}var(--light-success){% elif suggestion.statut == 'rejetee' %}rgba(255,255,255,0.3){% else %}var(--light-warning){% endif %}; color: {% if suggestion.statut == 'acceptee' %}var(--success){% elif suggestion.statut == 'rejetee' %}var(--light){% else %}var(--dark){% endif %}; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: capitalize;">
+                    {% if suggestion.statut == 'proposee' %}Proposée
+                    {% elif suggestion.statut == 'acceptee' %}Acceptée
+                    {% else %}Rejetée
+                    {% endif %}
+                </span>
+            </div>
+            
+            {% if suggestion.description %}
+            <p style="color: var(--dark-grey); font-size: 14px; margin-bottom: 12px;">{{ suggestion.description|truncatewords:20 }}</p>
+            {% endif %}
+            
+            <div style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
+                {% if suggestion.priorite %}
+                <span style="padding: 4px 8px; background: {% if suggestion.priorite == 'Haute' %}var(--danger){% elif suggestion.priorite == 'Moyenne' %}var(--warning){% else %}var(--primary){% endif %}; color: {% if suggestion.priorite == 'Moyenne' %}var(--dark){% else %}var(--light){% endif %}; border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-star'></i>{{ suggestion.priorite }}
+                </span>
+                {% endif %}
+                <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-calendar'></i>{{ suggestion.date_suggestion|date:"d/m/Y" }}
+                </span>
+            </div>
+            
+            {% if user.role == 'admin' and suggestion.statut == 'proposee' %}
+            <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <form method="post" action="{% url 'gerer_suggestion' suggestion.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="accepter">
+                    <button type="submit" style="padding: 6px 12px; background: var(--success); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s ease;">
+                        <i class='bx bx-check-circle'></i>Accepter
+                    </button>
+                </form>
+                <form method="post" action="{% url 'gerer_suggestion' suggestion.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="rejeter">
+                    <button type="submit" style="padding: 6px 12px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s ease;">
+                        <i class='bx bx-x-circle'></i>Rejeter
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card-dashboard" style="text-align: center; padding: 48px;">
+        <i class='bx bx-info-circle' style="font-size: 3rem; margin-bottom: 16px; display: block; color: var(--dark-grey);"></i>
+        <p style="margin: 0; color: var(--dark-grey);">Aucune suggestion pour le moment.</p>
+        <p style="margin: 8px 0 0 0; color: var(--dark-grey);">Proposez une nouvelle tâche pour améliorer votre foyer !</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}
+

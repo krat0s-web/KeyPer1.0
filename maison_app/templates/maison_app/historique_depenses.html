@@ -1,0 +1,257 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Historique des Dépenses{% endblock %}
+{% block page_title %}Historique des Dépenses{% endblock %}
+{% block page_heading %}Historique{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'budget_foyer' %}">Budget</a></li>
+    /
+    <li><a href="#" class="active">Historique</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <i class='bx bx-history' style="font-size: 28px; color: var(--primary);"></i>Historique Détaillé des Dépenses
+            </h3>
+            <p style="color: var(--dark-grey); margin: 0;">Foyer: <strong style="color: var(--dark);">{{ foyer.nom }}</strong></p>
+        </div>
+        <a href="{% url 'budget_foyer' %}" style="padding: 10px 20px; background: var(--grey); color: var(--dark); border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+            <i class='bx bx-arrow-back'></i>Retour au Budget
+        </a>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card-dashboard" style="margin-bottom: 24px; padding: 20px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-filter' style="color: var(--primary);"></i>Filtres
+        </h4>
+        <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark-grey); font-weight: 600;">Période</label>
+                <select name="periode" style="width: 100%; padding: 10px; border: 2px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark);" onchange="this.form.submit()">
+                    <option value="semaine" {% if periode == 'semaine' %}selected{% endif %}>Cette semaine</option>
+                    <option value="mois" {% if periode == 'mois' %}selected{% endif %}>Ce mois</option>
+                    <option value="trimestre" {% if periode == 'trimestre' %}selected{% endif %}>Ce trimestre</option>
+                    <option value="annee" {% if periode == 'annee' %}selected{% endif %}>Cette année</option>
+                    <option value="tout" {% if periode == 'tout' %}selected{% endif %}>Toutes les dépenses</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark-grey); font-weight: 600;">Catégorie</label>
+                <select name="categorie" style="width: 100%; padding: 10px; border: 2px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark);" onchange="this.form.submit()">
+                    <option value="">Toutes les catégories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if categorie_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark-grey); font-weight: 600;">Date début</label>
+                <input type="date" name="date_debut" value="{{ date_debut }}" style="width: 100%; padding: 10px; border: 2px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark);" onchange="this.form.submit()">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: var(--dark-grey); font-weight: 600;">Date fin</label>
+                <input type="date" name="date_fin" value="{{ date_fin }}" style="width: 100%; padding: 10px; border: 2px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark);" onchange="this.form.submit()">
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistiques -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card-dashboard" style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); border: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="margin: 0 0 8px 0; opacity: 0.9;">Total</p>
+                    <h3 style="margin: 0; color: var(--light); font-size: 28px;">{{ total|floatformat:2 }}€</h3>
+                </div>
+                <i class='bx bx-wallet' style="font-size: 3rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+        <div class="card-dashboard" style="background: linear-gradient(135deg, var(--success), #28a745); color: var(--light); border: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="margin: 0 0 8px 0; opacity: 0.9;">Nombre</p>
+                    <h3 style="margin: 0; color: var(--light); font-size: 28px;">{{ nombre_depenses }}</h3>
+                </div>
+                <i class='bx bx-list-ul' style="font-size: 3rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+        <div class="card-dashboard" style="background: linear-gradient(135deg, var(--warning), #ffc107); color: var(--dark); border: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="margin: 0 0 8px 0; opacity: 0.9;">Moyenne</p>
+                    <h3 style="margin: 0; color: var(--dark); font-size: 28px;">{{ moyenne|floatformat:2 }}€</h3>
+                </div>
+                <i class='bx bx-calculator' style="font-size: 3rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+        <div class="card-dashboard" style="background: linear-gradient(135deg, var(--card-purple), #6f42c1); color: var(--light); border: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="margin: 0 0 8px 0; opacity: 0.9;">Période</p>
+                    <h3 style="margin: 0; color: var(--light); font-size: 18px; font-weight: 600;">{{ periode_label }}</h3>
+                </div>
+                <i class='bx bx-calendar' style="font-size: 3rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dépenses par catégorie -->
+    {% if depenses_par_categorie %}
+    <div class="card-dashboard" style="margin-bottom: 24px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-pie-chart-alt-2' style="color: var(--primary);"></i>Répartition par Catégorie
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+            {% for item in depenses_par_categorie %}
+            <div style="padding: 16px; background: var(--light-primary); border-radius: 8px; border-left: 4px solid {{ item.categorie__couleur|default:'#007bff' }};">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 600; color: var(--dark);">{{ item.categorie__nom }}</span>
+                    <span style="color: var(--dark-grey); font-size: 12px;">{{ item.nombre }} dépense{{ item.nombre|pluralize }}</span>
+                </div>
+                <div style="font-size: 20px; font-weight: 700; color: var(--primary);">{{ item.total|floatformat:2 }}€</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Dépenses par utilisateur -->
+    {% if depenses_par_utilisateur %}
+    <div class="card-dashboard" style="margin-bottom: 24px;">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-user' style="color: var(--primary);"></i>Répartition par Utilisateur
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+            {% for item in depenses_par_utilisateur %}
+            <div style="padding: 16px; background: var(--light-primary); border-radius: 8px; border-left: 4px solid var(--primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 600; color: var(--dark);">{{ item.id_user__nom|default:item.id_user__email }}</span>
+                    <span style="color: var(--dark-grey); font-size: 12px;">{{ item.nombre }} dépense{{ item.nombre|pluralize }}</span>
+                </div>
+                <div style="font-size: 20px; font-weight: 700; color: var(--primary);">{{ item.total|floatformat:2 }}€</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Liste des dépenses -->
+    <div class="card-dashboard">
+        <h4 style="color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <i class='bx bx-list-ul' style="color: var(--primary);"></i>Liste des Dépenses
+        </h4>
+        {% if depenses %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: var(--dark); color: var(--light);">
+                        <th style="padding: 12px; text-align: left; color: var(--light);">Date</th>
+                        <th style="padding: 12px; text-align: left; color: var(--light);">Description</th>
+                        <th style="padding: 12px; text-align: left; color: var(--light);">Catégorie</th>
+                        <th style="padding: 12px; text-align: left; color: var(--light);">Montant</th>
+                        <th style="padding: 12px; text-align: left; color: var(--light);">Responsable</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for depense in depenses %}
+                    <tr style="border-bottom: 1px solid var(--grey);" onmouseover="this.style.background='var(--grey)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 12px; color: var(--dark);">{{ depense.date_depense|date:"d/m/Y" }}</td>
+                        <td style="padding: 12px; color: var(--dark);">{{ depense.description }}</td>
+                        <td style="padding: 12px;">
+                            <span class="category-badge" data-color="{{ depense.categorie.couleur }}" style="padding: 6px 12px; background: {{ depense.categorie.couleur }}; color: #FFFFFF; border-radius: 12px; font-size: 11px; font-weight: 500; display: inline-block; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                                {{ depense.categorie.nom }}
+                            </span>
+                        </td>
+                        <td style="padding: 12px; color: var(--dark); font-weight: 600;">{{ depense.montant|floatformat:2 }}€</td>
+                        <td style="padding: 12px; color: var(--dark);">{{ depense.id_user.nom|default:depense.id_user.email }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if depenses.has_other_pages %}
+        <div style="margin-top: 24px; display: flex; justify-content: center; gap: 8px;">
+            {% if depenses.has_previous %}
+            <a href="?page={{ depenses.previous_page_number }}{% if periode %}&periode={{ periode }}{% endif %}{% if categorie_id %}&categorie={{ categorie_id }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}" 
+               style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none;">
+                <i class='bx bx-chevron-left'></i> Précédent
+            </a>
+            {% endif %}
+            
+            <span style="padding: 8px 16px; background: var(--grey); color: var(--dark); border-radius: 8px;">
+                Page {{ depenses.number }} sur {{ depenses.paginator.num_pages }}
+            </span>
+            
+            {% if depenses.has_next %}
+            <a href="?page={{ depenses.next_page_number }}{% if periode %}&periode={{ periode }}{% endif %}{% if categorie_id %}&categorie={{ categorie_id }}{% endif %}{% if date_debut %}&date_debut={{ date_debut }}{% endif %}{% if date_fin %}&date_fin={{ date_fin }}{% endif %}" 
+               style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none;">
+                Suivant <i class='bx bx-chevron-right'></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div style="background: var(--light-primary); color: var(--primary); padding: 32px; border-radius: 12px; text-align: center;">
+            <i class='bx bx-inbox' style="font-size: 3rem; margin-bottom: 12px; display: block; opacity: 0.5;"></i>
+            <p style="margin: 0 0 8px 0; color: var(--dark);">Aucune dépense trouvée pour cette période.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Fonction pour calculer la luminosité d'une couleur hex
+function getLuminance(hex) {
+    // Supprimer le # si présent
+    hex = hex.replace('#', '');
+    
+    // Convertir en RGB
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculer la luminosité relative selon la formule WCAG
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance;
+}
+
+// Fonction pour déterminer la couleur de texte optimale
+function getTextColor(bgColor) {
+    const luminance = getLuminance(bgColor);
+    // Si la luminosité est supérieure à 0.5, utiliser du texte noir, sinon du blanc
+    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+}
+
+// Appliquer les couleurs optimales aux badges de catégories
+document.addEventListener('DOMContentLoaded', function() {
+    const badges = document.querySelectorAll('.category-badge');
+    badges.forEach(function(badge) {
+        const bgColor = badge.getAttribute('data-color');
+        if (bgColor) {
+            const textColor = getTextColor(bgColor);
+            badge.style.color = textColor;
+            // Améliorer le contraste avec une ombre portée si nécessaire
+            if (textColor === '#FFFFFF') {
+                badge.style.textShadow = '0 1px 2px rgba(0,0,0,0.3)';
+            } else {
+                badge.style.textShadow = '0 1px 2px rgba(255,255,255,0.3)';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+

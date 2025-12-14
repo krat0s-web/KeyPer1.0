@@ -1,0 +1,92 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% block title %}Gérer les Demandes de Modification{% endblock %}
+{% block page_title %}Demandes de Modification{% endblock %}
+{% block page_heading %}Demandes de Modification{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    /
+    <li><a href="{% url 'liste_taches' %}">Tâches</a></li>
+    /
+    <li><a href="#" class="active">Demandes de Modification</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="color: var(--dark); display: flex; align-items: center; gap: 12px;">
+            <i class='bx bx-calendar-check' style="font-size: 28px; color: var(--warning);"></i>Demandes de Modification
+        </h3>
+        <a href="{% url 'liste_taches' %}" style="padding: 8px 16px; background: var(--grey); color: var(--dark); border-radius: 8px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;">
+            <i class='bx bx-arrow-back'></i>Retour aux tâches
+        </a>
+    </div>
+    
+    {% if demandes %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 16px;">
+        {% for demande in demandes %}
+        <div class="card-dashboard" style="border-left: 4px solid var(--warning); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+            <div style="background: var(--warning); color: var(--dark); padding: 12px 16px; border-radius: 8px 8px 0 0; margin: -24px -24px 16px -24px; display: flex; justify-content: space-between; align-items: center;">
+                <h5 style="margin: 0; color: var(--dark); font-weight: 600;">{{ demande.id_tache.titre }}</h5>
+                <span style="padding: 4px 8px; background: var(--light); color: var(--dark); border-radius: 12px; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                    <i class='bx bx-time-five'></i>En attente
+                </span>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <p style="margin: 0 0 8px 0; color: var(--dark);">
+                    <strong>Demandé par :</strong> {{ demande.id_user.nom|default:demande.id_user.email }}
+                </p>
+                <p style="margin: 0 0 8px 0; color: var(--dark);">
+                    <strong>Date actuelle :</strong> 
+                    {% if demande.id_tache.date_limite %}
+                        {{ demande.id_tache.date_limite|date:"d/m/Y" }}
+                    {% else %}
+                        <span style="color: var(--dark-grey);">Aucune date</span>
+                    {% endif %}
+                </p>
+                <p style="margin: 0 0 8px 0; color: var(--dark);">
+                    <strong>Nouvelle date demandée :</strong> 
+                    <span style="padding: 4px 8px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 12px;">{{ demande.nouvelle_date|date:"d/m/Y" }}</span>
+                </p>
+                <p style="margin: 0; color: var(--dark-grey); font-size: 12px;">
+                    <i class='bx bx-time'></i>Demandé le {{ demande.date_creation|date:"d/m/Y à H:i" }}
+                </p>
+            </div>
+            
+            {% if demande.message %}
+            <div style="background: var(--grey); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                <strong style="color: var(--dark);">Message :</strong>
+                <p style="margin: 8px 0 0 0; color: var(--dark);">{{ demande.message }}</p>
+            </div>
+            {% endif %}
+            
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="{% url 'traiter_demande_modification' demande.id 'accepter' %}" 
+                   style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s ease;"
+                   onclick="return confirm('Êtes-vous sûr de vouloir accepter cette demande ?')">
+                    <i class='bx bx-check-circle'></i>Accepter
+                </a>
+                <a href="{% url 'traiter_demande_modification' demande.id 'refuser' %}" 
+                   style="padding: 8px 16px; background: var(--danger); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s ease;"
+                   onclick="return confirm('Êtes-vous sûr de vouloir refuser cette demande ?')">
+                    <i class='bx bx-x-circle'></i>Refuser
+                </a>
+                <a href="{% url 'detail_tache' demande.id_tache.id %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s ease;">
+                    <i class='bx bx-show'></i>Voir la tâche
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="background: var(--light-primary); color: var(--primary); padding: 48px; border-radius: 12px; text-align: center;">
+        <i class='bx bx-inbox' style="font-size: 4rem; margin-bottom: 16px; display: block; opacity: 0.5;"></i>
+        <h5 style="margin: 0 0 8px 0; color: var(--dark);">Aucune demande en attente</h5>
+        <p style="margin: 0; color: var(--dark-grey);">Toutes les demandes ont été traitées ou il n'y a pas de nouvelles demandes.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

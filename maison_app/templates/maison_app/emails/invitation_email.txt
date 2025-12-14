@@ -1,0 +1,33 @@
+🎉 INVITATION À REJOINDRE LE FOYER {{ foyer_nom }} - KeyPer
+
+Bonjour,
+
+{{ admin_nom }} vous invite à rejoindre le foyer {{ foyer_nom }} sur KeyPer !
+
+DÉTAILS DE L'INVITATION
+-----------------------
+Nom de l'invitation : {{ nom_invitation }}
+Rôle attribué : {{ role_display }}
+Foyer : {{ foyer_nom }}
+
+CODE D'INVITATION
+------------------
+{{ code_invitation }}
+
+LIEN DIRECT
+-----------
+{{ lien_invitation }}
+
+COMMENT UTILISER CETTE INVITATION
+----------------------------------
+1. Cliquez sur le lien ci-dessus, ou
+2. Copiez le code d'invitation et utilisez-le sur la page de connexion
+3. Le code est valide pendant 7 jours
+4. Le code ne peut être utilisé qu'une seule fois
+
+Si vous n'avez pas demandé cette invitation, vous pouvez ignorer cet email.
+
+---
+Cet email a été envoyé automatiquement par KeyPer.
+© 2025 KeyPer - Gestion de foyer intelligente
+
