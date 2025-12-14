@@ -10,3 +10,10 @@ def can(user, permission):
         return False
     return has_permission(user, permission)
 
+@register.filter
+def get_item(dictionary, key):
+    """Récupère un élément d'un dictionnaire par sa clé."""
+    if dictionary is None:
+        return None
+    return dictionary.get(key)
+

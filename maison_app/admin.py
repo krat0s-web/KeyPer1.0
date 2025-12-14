@@ -10,7 +10,7 @@ from .models import (
     SuggestionTache, PreferenceUtilisateur, InteractionIa, Invitation,
     Note, Notification, CategorieDepense, Depense, Budget, Trophee,
     DemandeModificationDate, Ingredient, MenuHebdomadaire, Repas,
-    NiveauSnake, NiveauDebloque
+    NiveauSnake, NiveauDebloque, PermissionFoyer
 )
 
 # === UTILISATEUR (personnalisé) ===
@@ -265,6 +265,7 @@ admin.site.register(Dispositif)
 admin.site.register(ActionDispositif)
 admin.site.register(SuggestionTache)
 admin.site.register(PreferenceUtilisateur)
+admin.site.register(PermissionFoyer)
 admin.site.register(InteractionIa)
 admin.site.register(Invitation)
 admin.site.register(Note)

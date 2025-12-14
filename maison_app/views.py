@@ -240,26 +240,20 @@ def verifier_et_debloquer_trophees(utilisateur, type_verification, request=None)
 # === FONCTION HELPER POUR RÉCUPÉRER ET VALIDER UNE PIÈCE ===
 def get_piece_or_redirect(request, piece_id):
     """
-    Récupère une pièce et vérifie qu'elle appartient à un foyer de l'utilisateur.
-    Définit automatiquement le foyer actif si nécessaire.
+    Récupère une pièce et vérifie qu'elle appartient au foyer actif de l'utilisateur.
     Retourne (piece, None) si tout est OK, ou (None, HttpResponseRedirect) en cas d'erreur.
     """
+    # Vérifier que l'utilisateur a un foyer actif
+    if not request.user.foyer_actif:
+        messages.error(request, "Aucun foyer actif sélectionné.")
+        return None, redirect('liste_foyers')
+    
+    # Récupérer la pièce en vérifiant qu'elle appartient au foyer actif
     try:
-        piece = Piece.objects.get(id=piece_id)
+        piece = Piece.objects.get(id=piece_id, id_foyer=request.user.foyer_actif)
     except Piece.DoesNotExist:
-        messages.error(request, "Cette pièce n'existe pas.")
-        return None, redirect('liste_foyers')
-    
-    # Vérifier que la pièce appartient au moins à un foyer de l'utilisateur
-    foyer = piece.id_foyer
-    if foyer not in request.user.foyers.all() and request.user.role != 'admin':
-        messages.error(request, "Vous n'avez pas accès à cette pièce.")
-        return None, redirect('liste_foyers')
-    
-    # Définir le foyer actif si ce n'est pas déjà le cas
-    if request.user.foyer_actif != foyer:
-        request.user.foyer_actif = foyer
-        request.user.save()
+        messages.error(request, "Cette pièce n'existe pas ou n'appartient pas à votre foyer actif.")
+        return None, redirect('detail_foyer', foyer_id=request.user.foyer_actif.id)
     
     # Vérifier les restrictions d'accès (si l'admin a restreint l'accès à cette pièce)
     if piece.utilisateurs_autorises.exists():
@@ -268,7 +262,7 @@ def get_piece_or_redirect(request, piece_id):
             from .permissions import has_permission
             if not has_permission(request.user, 'can_manage_foyer'):
                 messages.error(request, "Vous n'avez pas accès à cette pièce.")
-                return None, redirect('detail_foyer', foyer_id=foyer.id)
+                return None, redirect('detail_foyer', foyer_id=request.user.foyer_actif.id)
     
     return piece, None
 
@@ -500,15 +494,32 @@ def ajouter_tache(request):
                     'piece_nom': piece_nom
                 })
     
-    # Récupérer les préférences des membres
+    # Récupérer les préférences des membres (aime et desapprouve) avec disponibilités
     from .models import PreferenceUtilisateur
     preferences_membres = {}
+    preferences_negatives = {}  # Utilisateurs qui n'aiment pas certains types
+    disponibilites_membres = {}  # Disponibilités par type de tâche
+    
     for membre in membres:
-        prefs = PreferenceUtilisateur.objects.filter(
+        prefs_aime = PreferenceUtilisateur.objects.filter(
             id_user=membre,
             preference='aime'
-        ).values_list('type_tache', flat=True)
-        preferences_membres[membre.id] = list(prefs)
+        )
+        prefs_desapprouve = PreferenceUtilisateur.objects.filter(
+            id_user=membre,
+            preference='desapprouve'
+        )
+        
+        # Types de tâches aimés
+        preferences_membres[membre.id] = list(prefs_aime.values_list('type_tache', flat=True))
+        
+        # Types de tâches désapprouvés
+        preferences_negatives[membre.id] = list(prefs_desapprouve.values_list('type_tache', flat=True))
+        
+        # Disponibilités par type de tâche
+        disponibilites_membres[membre.id] = {}
+        for pref in prefs_aime:
+            disponibilites_membres[membre.id][pref.type_tache] = pref.disponibilite
     
     # Générer les suggestions pour chaque tâche prédéfinie
     suggestions_predefinies = {}
@@ -531,11 +542,16 @@ def ajouter_tache(request):
         elif any(mot in texte for mot in mots_cles_entretien):
             type_tache = 'entretien'
         
-        # Trouver les utilisateurs qui aiment ce type de tâche
+        # Trouver les utilisateurs qui aiment ce type de tâche (et exclure ceux qui ne l'aiment pas)
         suggestions = []
         if type_tache:
             for membre in membres:
-                if membre.id in preferences_membres and type_tache in preferences_membres[membre.id]:
+                # Vérifier que l'utilisateur aime ce type de tâche
+                aime_type = membre.id in preferences_membres and type_tache in preferences_membres[membre.id]
+                # Vérifier que l'utilisateur ne désapprouve pas ce type de tâche
+                desapprouve_type = membre.id in preferences_negatives and type_tache in preferences_negatives[membre.id]
+                
+                if aime_type and not desapprouve_type:
                     suggestions.append(membre.id)
         
         suggestions_predefinies[index] = suggestions
@@ -548,6 +564,8 @@ def ajouter_tache(request):
         'taches_predefinies': taches_predefinies,
         'suggestions_predefinies': suggestions_predefinies,
         'preferences_membres': preferences_membres,
+        'preferences_negatives': preferences_negatives,
+        'disponibilites_membres': disponibilites_membres,
     })
 
 @login_required
@@ -815,9 +833,41 @@ def modifier_foyer(request, foyer_id):
                             else:
                                 membre.foyer_actif = None
                             membre.save()
+                        # Supprimer les permissions personnalisées pour ce foyer
+                        from .models import PermissionFoyer
+                        PermissionFoyer.objects.filter(id_user=membre, id_foyer=foyer).delete()
                         messages.success(request, f"{membre.email} a été retiré du foyer.")
                     else:
                         messages.error(request, "Vous ne pouvez pas vous retirer vous-même du foyer.")
+                except Utilisateur.DoesNotExist:
+                    messages.error(request, "Membre introuvable.")
+            return redirect('modifier_foyer', foyer_id=foyer.id)
+        
+        elif action == 'modifier_permissions_budget':
+            # Modifier les permissions budget d'un membre
+            membre_id = request.POST.get('membre_id')
+            can_access_budget = request.POST.get('can_access_budget') == 'on'
+            
+            if membre_id:
+                try:
+                    membre = Utilisateur.objects.get(id=membre_id)
+                    if membre in foyer.utilisateurs.all():
+                        from .models import PermissionFoyer
+                        perm, created = PermissionFoyer.objects.get_or_create(
+                            id_user=membre,
+                            id_foyer=foyer,
+                            defaults={'can_access_budget': can_access_budget}
+                        )
+                        if not created:
+                            perm.can_access_budget = can_access_budget
+                            perm.save()  # Le save() mettra automatiquement les autres permissions à True
+                        
+                        if can_access_budget:
+                            messages.success(request, f"✅ Accès complet au budget accordé à {membre.email} pour ce foyer.")
+                        else:
+                            messages.success(request, f"❌ Accès au budget retiré à {membre.email} pour ce foyer.")
+                    else:
+                        messages.error(request, "Membre introuvable dans ce foyer.")
                 except Utilisateur.DoesNotExist:
                     messages.error(request, "Membre introuvable.")
             return redirect('modifier_foyer', foyer_id=foyer.id)
@@ -870,41 +920,34 @@ def modifier_foyer(request, foyer_id):
         elif action == 'ajouter_piece':
             # Ajouter une pièce
             nom = request.POST.get('nom_piece', '').strip()
-            # Prendre la valeur du select principal (type_piece)
-            type_piece = (request.POST.get('type_piece', '') or '').strip()
+            type_piece = request.POST.get('type_piece', 'personnalise')
             description = request.POST.get('description_piece', '').strip()
             photo = request.FILES.get('photo_piece')
             
-            # Si type_piece est vide, utiliser la valeur par défaut
-            if not type_piece:
-                type_piece = 'personnalise'
-            
-            if not nom:
-                messages.error(request, "❌ Le nom de la pièce est obligatoire.")
-            elif len(nom) > 100:
-                messages.error(request, "❌ Le nom est trop long (max 100 caractères).")
+            if nom:
+                from .models import TYPE_PIECE_CHOICES
+                type_dict = dict(TYPE_PIECE_CHOICES)
+                if type_piece != 'personnalise' and not nom:
+                    nom = type_dict.get(type_piece, type_piece)
+                
+                piece = Piece(
+                    nom=nom,
+                    id_foyer=foyer,
+                    type_piece=type_piece if type_piece != 'personnalise' else 'personnalise',
+                    description=description
+                )
+                if photo:
+                    piece.photo = photo
+                piece.save()
+                
+                # Gérer les permissions
+                utilisateurs_autorises = request.POST.getlist('utilisateurs_autorises_piece')
+                if utilisateurs_autorises:
+                    piece.utilisateurs_autorises.set(utilisateurs_autorises)
+                
+                messages.success(request, f"Pièce '{nom}' ajoutée avec succès !")
             else:
-                try:
-                    # Créer la pièce avec le type sélectionné
-                    piece = Piece(
-                        nom=nom,
-                        id_foyer=foyer,
-                        type_piece=type_piece,
-                        description=description
-                    )
-                    if photo:
-                        piece.photo = photo
-                    piece.save()
-                    
-                    # Gérer les permissions
-                    utilisateurs_autorises = request.POST.getlist('utilisateurs_autorises_piece')
-                    if utilisateurs_autorises:
-                        piece.utilisateurs_autorises.set(utilisateurs_autorises)
-                    
-                    messages.success(request, f"✅ Pièce '{nom}' ajoutée avec succès !")
-                except Exception as e:
-                    messages.error(request, f"❌ Erreur lors de l'ajout de la pièce : {str(e)}")
-            
+                messages.error(request, "Le nom de la pièce est obligatoire.")
             return redirect('modifier_foyer', foyer_id=foyer.id)
         
         elif action == 'modifier_piece':
@@ -916,19 +959,11 @@ def modifier_foyer(request, foyer_id):
             photo = request.FILES.get('photo_piece')
             supprimer_photo = request.POST.get('supprimer_photo_piece') == 'on'
             
-            if not piece_id:
-                messages.error(request, "❌ Pièce non identifiée.")
-            elif not nom:
-                messages.error(request, "❌ Le nom de la pièce est obligatoire.")
-            elif len(nom) > 100:
-                messages.error(request, "❌ Le nom est trop long (max 100 caractères).")
-            else:
+            if piece_id and nom:
                 try:
                     piece = Piece.objects.get(id=piece_id, id_foyer=foyer)
-                    ancien_nom = piece.nom
-                    
                     piece.nom = nom
-                    piece.type_piece = type_piece
+                    piece.type_piece = type_piece if type_piece != 'personnalise' else 'personnalise'
                     piece.description = description
                     
                     if supprimer_photo:
@@ -936,18 +971,14 @@ def modifier_foyer(request, foyer_id):
                     elif photo:
                         piece.photo = photo
                     
-                    piece.save()
-                    
                     # Gérer les permissions
                     utilisateurs_autorises = request.POST.getlist('utilisateurs_autorises_piece')
                     piece.utilisateurs_autorises.set(utilisateurs_autorises)
                     
-                    messages.success(request, f"✅ Pièce '{ancien_nom}' → '{nom}' modifiée avec succès !")
+                    piece.save()
+                    messages.success(request, f"Pièce '{nom}' modifiée avec succès !")
                 except Piece.DoesNotExist:
-                    messages.error(request, "❌ Pièce introuvable ou vous n'avez pas les permissions.")
-                except Exception as e:
-                    messages.error(request, f"❌ Erreur lors de la modification : {str(e)}")
-            
+                    messages.error(request, "Pièce introuvable.")
             return redirect('modifier_foyer', foyer_id=foyer.id)
         
         elif action == 'supprimer_piece':
@@ -986,6 +1017,16 @@ def modifier_foyer(request, foyer_id):
     # Récupérer tous les membres du foyer
     membres_foyer = foyer.utilisateurs.all()
     
+    # Récupérer les permissions budget pour chaque membre
+    from .models import PermissionFoyer
+    permissions_budget = {}
+    for membre in membres_foyer:
+        try:
+            perm = PermissionFoyer.objects.get(id_user=membre, id_foyer=foyer)
+            permissions_budget[membre.id] = perm.can_access_budget
+        except PermissionFoyer.DoesNotExist:
+            permissions_budget[membre.id] = False
+    
     # Récupérer tous les animaux du foyer
     animaux_foyer = Animal.objects.filter(id_foyer=foyer)
     
@@ -995,6 +1036,7 @@ def modifier_foyer(request, foyer_id):
     return render(request, 'maison_app/modifier_foyer.html', {
         'foyer': foyer,
         'membres_foyer': membres_foyer,
+        'permissions_budget': permissions_budget,
         'animaux_foyer': animaux_foyer,
         'pieces_foyer': pieces_foyer
     })
@@ -1017,25 +1059,12 @@ def ajouter_piece(request):
         type_piece = request.POST.get('type_piece', 'personnalise')
         description = request.POST.get('description', '')
         
-        # Traiter les valeurs vides comme personnalise
-        if not type_piece or type_piece == '':
-            type_piece = 'personnalise'
-        
         # Si type prédéfini, utiliser le nom du type si le nom n'est pas fourni
         if type_piece != 'personnalise':
             from .models import TYPE_PIECE_CHOICES
             type_dict = dict(TYPE_PIECE_CHOICES)
             if not nom or nom.strip() == '':
                 nom = type_dict.get(type_piece, type_piece)
-        
-        # Détecter automatiquement le type basé sur le nom si c'est personnalise
-        if type_piece == 'personnalise' and nom:
-            from .models import TYPE_PIECE_CHOICES
-            nom_lower = nom.lower().strip()
-            for value, label in TYPE_PIECE_CHOICES:
-                if value != 'personnalise' and (nom_lower == label.lower() or nom_lower == value or nom_lower in label.lower()):
-                    type_piece = value
-                    break
         
         # Gérer les permissions
         utilisateurs_autorises = request.POST.getlist('utilisateurs_autorises')
@@ -1937,11 +1966,6 @@ def inscription(request):
         password = request.POST['password']
         password2 = request.POST['password2']
 
-        # Validation de l'email : doit contenir @
-        if '@' not in email:
-            messages.error(request, "L'adresse email doit être valide et contenir un '@'.")
-            return render(request, 'registration/inscription.html')
-
         if password != password2:
             messages.error(request, "Les mots de passe ne correspondent pas.")
             return render(request, 'registration/inscription.html')
@@ -2261,8 +2285,8 @@ def budget_foyer(request):
         messages.error(request, "Accès refusé.")
         return redirect('liste_foyers')
     
-    # Vérifier la permission d'accès au budget
-    if not has_permission(request.user, 'can_access_budget'):
+    # Vérifier la permission d'accès au budget (avec le foyer pour les permissions personnalisées)
+    if not has_permission(request.user, 'can_access_budget', foyer=foyer):
         messages.error(request, "Vous n'avez pas accès à cette page.")
         return redirect('dashboard')
     
@@ -2277,13 +2301,40 @@ def budget_foyer(request):
     
     # Données pour les budgets
     budgets_data = []
+    alertes_budget = []
+    
     for budget in budgets:
+        montant_utilise = float(budget.montant_utilise())
+        montant_limite = float(budget.montant_limite)
+        pourcentage = budget.pourcentage_utilise()
+        alerte = budget.alerte()
+        reste = montant_limite - montant_utilise
+        depassement = montant_utilise - montant_limite if montant_utilise > montant_limite else 0
+        
         budgets_data.append({
             'budget': budget,
-            'montant_utilise': budget.montant_utilise(),
-            'pourcentage': budget.pourcentage_utilise(),
-            'alerte': budget.alerte(),
+            'montant_utilise': montant_utilise,
+            'pourcentage': pourcentage,
+            'alerte': alerte,
+            'reste': reste,
+            'depassement': depassement,
         })
+        
+        # Créer des alertes pour les budgets problématiques
+        if pourcentage >= 100:
+            alertes_budget.append({
+                'type': 'danger',
+                'categorie': budget.categorie.nom,
+                'message': f'Budget dépassé ! Vous avez dépensé {montant_utilise:.2f}€ sur un budget de {montant_limite:.2f}€.',
+                'montant_depasse': depassement,
+            })
+        elif pourcentage >= 80:
+            alertes_budget.append({
+                'type': 'warning',
+                'categorie': budget.categorie.nom,
+                'message': f'Attention ! Vous avez utilisé {pourcentage:.1f}% de votre budget ({montant_utilise:.2f}€ / {montant_limite:.2f}€).',
+                'reste': reste,
+            })
     
     # === DONNÉES POUR LES GRAPHIQUES ===
     from datetime import timedelta
@@ -2381,8 +2432,9 @@ def budget_foyer(request):
     ).aggregate(total=Sum('montant'))['total'] or 0
     
     # 5. Calcul du dépassement global
-    budget_depasse = total_depenses > total_budget
+    budget_depasse = total_depenses > total_budget if total_budget > 0 else False
     montant_depasse_global = total_depenses - total_budget if budget_depasse else 0
+    reste_disponible = total_budget - total_depenses if not budget_depasse else 0
     
     return render(request, 'maison_app/budget_foyer.html', {
         'foyer': foyer,
@@ -2399,6 +2451,8 @@ def budget_foyer(request):
         'depenses_annee': float(depenses_annee),
         'budget_depasse': budget_depasse,
         'montant_depasse_global': montant_depasse_global,
+        'reste_disponible': reste_disponible,
+        'alertes_budget': alertes_budget,
     })
 
 @login_required
@@ -2415,8 +2469,8 @@ def ajouter_depense(request):
         messages.error(request, "Accès refusé.")
         return redirect('liste_foyers')
     
-    # Vérifier les permissions
-    if not has_permission(request.user, 'can_create_depense'):
+    # Vérifier les permissions (avec le foyer pour les permissions personnalisées)
+    if not has_permission(request.user, 'can_create_depense', foyer=foyer):
         messages.info(request, "Vous devez faire une demande pour créer une dépense.")
         return redirect('creer_demande')
     
@@ -2472,7 +2526,7 @@ def ajouter_depense(request):
         except Exception as e:
             messages.error(request, f"Erreur: {str(e)}")
     
-    categories_principales = CategorieDepense.objects.filter(est_categorie_principale=True)
+    categories_principales = CategorieDepense.objects.filter(est_categorie_principale=True, parent=None).order_by('ordre', 'nom')
     return render(request, 'maison_app/ajouter_depense.html', {
         'foyer': foyer,
         'categories_principales': categories_principales,
@@ -2598,15 +2652,203 @@ def historique_depenses(request):
 # === FONCTIONS STUB POUR LES FONCTIONNALITÉS NON ENCORE IMPLÉMENTÉES ===
 @login_required
 def export_budget_pdf(request):
-    """Export du budget en PDF - À implémenter"""
-    messages.info(request, "Fonctionnalité d'export PDF en cours de développement.")
-    return redirect('budget_foyer')
+    """Export du budget en PDF"""
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from datetime import datetime
+    
+    foyer = request.user.foyer_actif
+    if not foyer:
+        messages.error(request, "Aucun foyer actif.")
+        return redirect('budget_foyer')
+    
+    # Créer la réponse PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="budget_{foyer.nom}_{datetime.now().strftime("%d_%m_%Y")}.pdf"'
+    
+    # Créer le PDF
+    doc = SimpleDocTemplate(response, pagesize=A4)
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    # Titre
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=24, textColor=colors.HexColor('#2c3e50'), spaceAfter=30)
+    elements.append(Paragraph(f'Budget - {foyer.nom}', title_style))
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Récupérer les données
+    budgets = Budget.objects.filter(id_foyer=foyer, actif=True)
+    depenses = Depense.objects.filter(id_foyer=foyer)
+    
+    total_budget = budgets.aggregate(total=Sum('montant_limite'))['total'] or 0
+    total_depenses = depenses.aggregate(total=Sum('montant'))['total'] or 0
+    
+    # Tableau de résumé
+    summary_data = [
+        ['Description', 'Montant (€)'],
+        ['Budget Total', f'{float(total_budget):.2f}'],
+        ['Dépenses Totales', f'{float(total_depenses):.2f}'],
+        ['Reste', f'{float(total_budget - total_depenses):.2f}'],
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(summary_table)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Tableau budgets par catégorie
+    elements.append(Paragraph('Budgets par Catégorie', styles['Heading2']))
+    budget_data = [['Catégorie', 'Budget (€)', 'Dépenses (€)', 'Pourcentage', 'État']]
+    
+    for budget in budgets:
+        montant_utilise = float(budget.montant_utilise())
+        montant_limite = float(budget.montant_limite)
+        pourcentage = budget.pourcentage_utilise()
+        
+        status = '✓ OK' if pourcentage < 80 else ('⚠ Attention' if pourcentage < 100 else '✗ Dépassé')
+        budget_data.append([
+            budget.categorie.nom,
+            f'{montant_limite:.2f}',
+            f'{montant_utilise:.2f}',
+            f'{pourcentage:.1f}%',
+            status
+        ])
+    
+    budget_table = Table(budget_data, colWidths=[2*inch, 1.2*inch, 1.2*inch, 1*inch, 1*inch])
+    budget_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#27ae60')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(budget_table)
+    
+    # Générer le PDF
+    doc.build(elements)
+    return response
 
 @login_required
 def export_budget_excel(request):
-    """Export du budget en Excel - À implémenter"""
-    messages.info(request, "Fonctionnalité d'export Excel en cours de développement.")
-    return redirect('budget_foyer')
+    """Export du budget en Excel"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from django.http import HttpResponse
+    from datetime import datetime
+    
+    foyer = request.user.foyer_actif
+    if not foyer:
+        messages.error(request, "Aucun foyer actif.")
+        return redirect('budget_foyer')
+    
+    # Créer le workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Budget"
+    
+    # Styles
+    header_fill = PatternFill(start_color="3498db", end_color="3498db", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    
+    # Titre
+    ws['A1'] = f"Budget - {foyer.nom}"
+    ws['A1'].font = Font(bold=True, size=14)
+    ws.merge_cells('A1:E1')
+    
+    # Résumé
+    ws['A3'] = "RÉSUMÉ"
+    ws['A3'].font = Font(bold=True, size=11)
+    
+    budgets = Budget.objects.filter(id_foyer=foyer, actif=True)
+    depenses = Depense.objects.filter(id_foyer=foyer)
+    total_budget = float(budgets.aggregate(total=Sum('montant_limite'))['total'] or 0)
+    total_depenses = float(depenses.aggregate(total=Sum('montant'))['total'] or 0)
+    
+    row = 4
+    ws[f'A{row}'] = "Budget Total"
+    ws[f'B{row}'] = total_budget
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].number_format = '0.00'
+    
+    row += 1
+    ws[f'A{row}'] = "Dépenses Totales"
+    ws[f'B{row}'] = total_depenses
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].number_format = '0.00'
+    
+    row += 1
+    ws[f'A{row}'] = "Reste"
+    ws[f'B{row}'] = total_budget - total_depenses
+    ws[f'A{row}'].font = Font(bold=True)
+    ws[f'B{row}'].number_format = '0.00'
+    
+    # Budgets par catégorie
+    row += 3
+    ws[f'A{row}'] = "BUDGETS PAR CATÉGORIE"
+    ws[f'A{row}'].font = Font(bold=True, size=11)
+    
+    row += 1
+    headers = ["Catégorie", "Budget (€)", "Dépenses (€)", "Pourcentage", "État"]
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=row, column=col)
+        cell.value = header
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        cell.border = border
+    
+    row += 1
+    for budget in budgets:
+        montant_utilise = float(budget.montant_utilise())
+        montant_limite = float(budget.montant_limite)
+        pourcentage = budget.pourcentage_utilise()
+        status = 'OK' if pourcentage < 80 else ('Attention' if pourcentage < 100 else 'Dépassé')
+        
+        ws.cell(row=row, column=1).value = budget.categorie.nom
+        ws.cell(row=row, column=2).value = montant_limite
+        ws.cell(row=row, column=3).value = montant_utilise
+        ws.cell(row=row, column=4).value = pourcentage / 100
+        ws.cell(row=row, column=5).value = status
+        
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = border
+            if col in [2, 3]:
+                ws.cell(row=row, column=col).number_format = '0.00'
+            elif col == 4:
+                ws.cell(row=row, column=col).number_format = '0%'
+        
+        row += 1
+    
+    # Définir les largeurs de colonnes
+    ws.column_dimensions['A'].width = 20
+    ws.column_dimensions['B'].width = 15
+    ws.column_dimensions['C'].width = 15
+    ws.column_dimensions['D'].width = 15
+    ws.column_dimensions['E'].width = 15
+    
+    # Créer la réponse
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="budget_{foyer.nom}_{datetime.now().strftime("%d_%m_%Y")}.xlsx"'
+    wb.save(response)
+    
+    return response
 
 @login_required
 def api_demandes_count(request):
@@ -2983,29 +3225,11 @@ def cuisine_view(request, piece_id):
     except Exception as e:
         pass
     
-    # Récupérer le nombre d'articles en stock
-    inventaire_count = 0
-    try:
-        from .models import Inventaire
-        inventaire_count = Inventaire.objects.filter(id_piece=piece).count()
-    except:
-        pass
-    
-    # Récupérer le nombre de recettes générées
-    recettes_count = 0
-    try:
-        from .models import RecetteGeneree
-        recettes_count = RecetteGeneree.objects.filter(id_piece=piece).count()
-    except:
-        pass
-    
     return render(request, 'maison_app/cuisine.html', {
         'piece': piece,
         'foyer': foyer,
         'listes_courses': listes_courses,
-        'menu_semaine_actuel': menu_semaine_actuel,
-        'inventaire_count': inventaire_count,
-        'recettes_count': recettes_count
+        'menu_semaine_actuel': menu_semaine_actuel
     })
 
 @login_required
@@ -4158,22 +4382,23 @@ def mes_statistiques(request):
     debut_semaine = timezone.now() - timedelta(days=timezone.now().weekday())
     taches_semaine = HistoriqueTache.objects.filter(
         id_user=user,
-        date_completion__gte=debut_semaine
+        date_execution__gte=debut_semaine
     ).count()
     
     # Tâches ce mois
     debut_mois = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     taches_mois = HistoriqueTache.objects.filter(
         id_user=user,
-        date_completion__gte=debut_mois
+        date_execution__gte=debut_mois
     ).count()
     
-    # Calcul du temps total (en secondes)
-    historique_taches = HistoriqueTache.objects.filter(id_user=user)
+    # Calcul du temps total (en minutes)
+    historique_taches = HistoriqueTache.objects.filter(id_user=user).select_related('id_tache')
     total_temps = timedelta()
     for hist in historique_taches:
-        if hist.tache and hist.tache.duree_estimee:
-            total_temps += hist.tache.duree_estimee
+        if hist.id_tache and hist.id_tache.temps_estime:
+            # temps_estime est en minutes, convertir en timedelta
+            total_temps += timedelta(minutes=hist.id_tache.temps_estime)
     
     # Points et récompenses
     total_points = Recompense.objects.filter(id_user=user, type='points').aggregate(
@@ -4190,9 +4415,9 @@ def mes_statistiques(request):
     
     stats_par_jour = HistoriqueTache.objects.filter(
         id_user=user,
-        date_completion__gte=timezone.now() - timedelta(days=30)
+        date_execution__gte=timezone.now() - timedelta(days=30)
     ).annotate(
-        date_stat=TruncDate('date_completion')
+        date_stat=TruncDate('date_execution')
     ).values('date_stat').annotate(
         nb_taches_done=Count('id')
     ).order_by('date_stat')
@@ -4366,8 +4591,8 @@ def ajouter_budget(request):
         messages.error(request, "Accès refusé.")
         return redirect('liste_foyers')
     
-    # Vérifier les permissions
-    if not has_permission(request.user, 'can_create_budget'):
+    # Vérifier les permissions (avec le foyer pour les permissions personnalisées)
+    if not has_permission(request.user, 'can_create_budget', foyer=foyer):
         messages.info(request, "Vous devez faire une demande pour créer un budget.")
         return redirect('creer_demande')
     
@@ -4392,7 +4617,7 @@ def ajouter_budget(request):
         except Exception as e:
             messages.error(request, f"Erreur: {str(e)}")
     
-    categories_principales = CategorieDepense.objects.filter(est_categorie_principale=True)
+    categories_principales = CategorieDepense.objects.filter(est_categorie_principale=True, parent=None).order_by('ordre', 'nom')
     return render(request, 'maison_app/ajouter_budget.html', {
         'foyer': foyer,
         'categories_principales': categories_principales,

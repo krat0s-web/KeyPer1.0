@@ -37,20 +37,31 @@ SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'False').lower() == 
 
 # === BASE DE DONNÉES ===
 # Configuration pour PostgreSQL (recommandé en production)
-# Pour SQLite, commentez cette section et utilisez la configuration par défaut
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'keyper_db'),
-        'USER': os.environ.get('DB_USER', 'keyper_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-        'OPTIONS': {
-            'connect_timeout': 10,
+import dj_database_url
+
+# Essayer DATABASE_URL d'abord (Render, Heroku)
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600
+        )
+    }
+else:
+    # Sinon, utiliser les variables individuelles
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'keyper_db'),
+            'USER': os.environ.get('DB_USER', 'keyper_user'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': 10,
+            }
         }
     }
-}
 
 # === FICHIERS STATIQUES ET MÉDIAS ===
 # Les fichiers statiques doivent être collectés avec : python manage.py collectstatic

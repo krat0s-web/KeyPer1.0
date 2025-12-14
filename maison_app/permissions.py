@@ -275,9 +275,11 @@ PERMISSIONS = {
 }
 
 
-def has_permission(user, permission):
+def has_permission(user, permission, foyer=None):
     """
     Vérifie si un utilisateur a une permission donnée
+    Si foyer est fourni, vérifie aussi les permissions personnalisées pour ce foyer
+    Si foyer n'est pas fourni mais que l'utilisateur a un foyer_actif, l'utilise
     """
     if not user.is_authenticated:
         return False
@@ -285,6 +287,30 @@ def has_permission(user, permission):
     # Les superusers Django ont tous les droits
     if user.is_staff and user.is_superuser:
         return True
+    
+    # Si aucun foyer n'est fourni, essayer d'utiliser le foyer actif de l'utilisateur
+    if foyer is None and hasattr(user, 'foyer_actif') and user.foyer_actif:
+        foyer = user.foyer_actif
+    
+    # Vérifier les permissions personnalisées par foyer si un foyer est disponible
+    if foyer and hasattr(user, 'permissions_foyer'):
+        try:
+            from .models import PermissionFoyer
+            perm_foyer = PermissionFoyer.objects.get(id_user=user, id_foyer=foyer)
+            
+            # Permissions budget - si l'utilisateur a une permission personnalisée, l'utiliser
+            if permission == 'can_access_budget':
+                return perm_foyer.can_access_budget
+            elif permission == 'can_create_depense':
+                return perm_foyer.can_create_depense
+            elif permission == 'can_delete_depense':
+                return perm_foyer.can_delete_depense
+            elif permission == 'can_create_budget':
+                return perm_foyer.can_create_budget
+        except PermissionFoyer.DoesNotExist:
+            pass
+        except Exception:
+            pass
     
     # Récupérer les permissions du rôle
     role = user.role if hasattr(user, 'role') else 'membre'

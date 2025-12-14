@@ -735,14 +735,6 @@ body:not(.dark) textarea::placeholder {
                     <span>Récompenses</span>
                 </a>
             </li>
-            {% if user|can:"can_access_demandes" %}
-            <li {% if request.resolver_match.url_name == 'liste_demandes_foyer' or request.resolver_match.url_name == 'creer_demande' or request.resolver_match.url_name == 'mes_demandes' %}class="active"{% endif %}>
-                <a href="{% url 'liste_demandes_foyer' %}">
-                    <i class='bx bx-message-square-detail'></i>
-                    <span>Demandes</span>
-                </a>
-            </li>
-            {% endif %}
             <li {% if request.resolver_match.url_name == 'mes_notifications' %}class="active"{% endif %}>
                 <a href="{% url 'mes_notifications' %}" style="position: relative;">
                     <i class='bx bx-bell' style="position: relative;">
@@ -759,14 +751,6 @@ body:not(.dark) textarea::placeholder {
                     <span>Calendrier</span>
                 </a>
             </li>
-            {% if user.role == 'admin' or user.is_staff %}
-            <li {% if request.resolver_match.url_name == 'gerer_demandes_modification' %}class="active"{% endif %}>
-                <a href="{% url 'gerer_demandes_modification' %}">
-                    <i class='bx bx-calendar-check'></i>
-                    <span>Demandes</span>
-                </a>
-            </li>
-            {% endif %}
             {% if user.is_staff or user.is_superuser %}
             <li>
                 <a href="/admin/" target="_blank" class="admin-link">

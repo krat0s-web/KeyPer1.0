@@ -1,0 +1,100 @@
+{% extends "maison_app/dashboard_base.html" %}
+{% load static %}
+{% load permission_tags %}
+
+{% block title %}Budget & Dépenses{% endblock %}
+{% block page_title %}Budget & Dépenses{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="{% url 'dashboard' %}">Dashboard</a></li> / <li><a href="#" class="active">Budget</a></li>
+</ul>
+{% endblock %}
+
+{% block page_content %}
+<div class="card-dashboard mb-4">
+    <h3>Budget & Dépenses - {{ foyer.nom }}</h3>
+    <p><strong>Total Dépenses:</strong> {{ total_depenses|floatformat:2 }}€</p>
+    <p><strong>Total Budget:</strong> {{ total_budget|floatformat:2 }}€</p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
+        <div>
+            <h4>Répartition par Catégorie</h4>
+            <canvas id="chart1" width="400" height="250"></canvas>
+        </div>
+        <div>
+            <h4>Évolution (6 mois)</h4>
+            <canvas id="chart2" width="400" height="250"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+console.log('Script chargé');
+
+// Données brutes du serveur
+const depensesData = {{ depenses_par_categorie }};
+const evolutionData = {{ evolution_depenses }};
+
+console.log('depensesData:', depensesData);
+console.log('evolutionData:', evolutionData);
+
+// Attendre que Chart soit chargé
+setTimeout(function() {
+    console.log('Chart disponible:', typeof Chart !== 'undefined');
+    
+    if (depensesData && Object.keys(depensesData).length > 0) {
+        const labels1 = Object.keys(depensesData);
+        const values1 = Object.values(depensesData);
+        
+        console.log('Graphique 1 - Labels:', labels1);
+        console.log('Graphique 1 - Values:', values1);
+        
+        try {
+            new Chart(document.getElementById('chart1'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels1,
+                    datasets: [{
+                        data: values1,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                    }]
+                }
+            });
+            console.log('✅ Graphique 1 créé');
+        } catch (e) {
+            console.error('❌ Erreur graphique 1:', e);
+        }
+    }
+    
+    if (evolutionData && Object.keys(evolutionData).length > 0) {
+        const labels2 = Object.keys(evolutionData);
+        const values2 = Object.values(evolutionData);
+        
+        console.log('Graphique 2 - Labels:', labels2);
+        console.log('Graphique 2 - Values:', values2);
+        
+        try {
+            new Chart(document.getElementById('chart2'), {
+                type: 'line',
+                data: {
+                    labels: labels2,
+                    datasets: [{
+                        label: 'Dépenses (€)',
+                        data: values2,
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: true
+                    }]
+                }
+            });
+            console.log('✅ Graphique 2 créé');
+        } catch (e) {
+            console.error('❌ Erreur graphique 2:', e);
+        }
+    }
+}, 500);
+</script>
+
+{% endblock %}

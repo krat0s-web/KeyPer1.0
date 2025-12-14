@@ -110,7 +110,6 @@
                         {% if piece.description %}
                         <p style="margin: 0 0 12px 0; color: var(--dark-grey); font-size: 14px;">{{ piece.description|truncatewords:10 }}</p>
                         {% endif %}
-                        <p style="margin: 0 0 12px 0; color: var(--dark-grey); font-size: 12px;">Type : <strong>{{ piece.get_type_display_name }}</strong></p>
                         <span style="padding: 4px 12px; background: var(--light-primary); color: var(--primary); border-radius: 12px; font-size: 12px; display: inline-block; margin-bottom: 12px;">
                             {{ piece.tache_set.count }} tâche{{ piece.tache_set.count|pluralize }}
                         </span>
@@ -123,11 +122,6 @@
                             <span style="padding: 8px 16px; background: var(--warning); color: var(--dark); border-radius: 8px; font-size: 14px;">
                                 Accès restreint
                             </span>
-                            {% endif %}
-                            {% if user.role == 'admin' %}
-                            <a href="{% url 'modifier_foyer' piece.id_foyer.id %}#piece-{{ piece.id }}" style="padding: 8px 16px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; transition: all 0.3s ease;">
-                                <i class='bx bx-edit'></i>Modifier
-                            </a>
                             {% endif %}
                         </div>
                     </div>

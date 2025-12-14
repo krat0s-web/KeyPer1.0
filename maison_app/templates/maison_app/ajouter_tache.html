@@ -147,16 +147,19 @@
                     </label>
                     
                     <!-- Suggestions basées sur les préférences -->
-                    <div id="suggestions_preferences" style="display: none; background: var(--light-primary); padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid var(--success);">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div id="suggestions_preferences" style="display: none; background: var(--light-primary); padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid var(--success);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                             <i class='bx bx-star' style="color: var(--success); font-size: 18px;"></i>
                             <strong style="color: var(--dark); font-size: 14px;">Suggestions basées sur les préférences :</strong>
                         </div>
-                        <div id="suggestions_list" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <div id="suggestions_list" style="display: flex; flex-wrap: wrap; gap: 10px;">
                             <!-- Les suggestions seront ajoutées ici dynamiquement -->
                         </div>
-                        <small style="color: var(--dark-grey); font-size: 11px; display: block; margin-top: 8px;">
-                            <i class='bx bx-info-circle'></i> Ces utilisateurs aiment ce type de tâche. Cliquez pour les sélectionner automatiquement.
+                        <small style="color: var(--dark-grey); font-size: 11px; display: block; margin-top: 12px; line-height: 1.5;">
+                            <i class='bx bx-info-circle'></i> 
+                            <strong>Ces utilisateurs aiment ce type de tâche</strong> et ont indiqué leur disponibilité préférée. 
+                            Cliquez sur un badge pour les sélectionner automatiquement. 
+                            Les utilisateurs qui n'aiment pas ce type de tâche ne sont pas suggérés.
                         </small>
                     </div>
                     
@@ -220,11 +223,36 @@ const suggestionsPredefinies = {
     {% endfor %}
 };
 
-// Préférences des membres
+// Préférences des membres (types aimés)
 const preferencesMembres = {
     {% for membre_id, prefs in preferences_membres.items %}
     {{ membre_id }}: [{% for pref in prefs %}'{{ pref }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
     {% endfor %}
+};
+
+// Préférences négatives (types désapprouvés)
+const preferencesNegatives = {
+    {% for membre_id, prefs in preferences_negatives.items %}
+    {{ membre_id }}: [{% for pref in prefs %}'{{ pref }}'{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
+// Disponibilités par membre et type de tâche
+const disponibilitesMembres = {
+    {% for membre_id, dispo_dict in disponibilites_membres.items %}
+    {{ membre_id }}: {
+        {% for type_tache, disponibilite in dispo_dict.items %}
+        '{{ type_tache }}': '{{ disponibilite }}'{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
+// Mapping des disponibilités vers des heures de rappel suggérées
+const heuresRappelParDisponibilite = {
+    'matin': '08:00',
+    'jour': '14:00',
+    'soir': '19:00'
 };
 
 function mettreAJourSuggestions() {
@@ -263,24 +291,36 @@ function mettreAJourSuggestions() {
         return;
     }
     
-    // Trouver les utilisateurs qui aiment ce type de tâche
+    // Trouver les utilisateurs qui aiment ce type de tâche (et exclure ceux qui ne l'aiment pas)
     const suggestions = [];
     const assigneesSelect = document.getElementById('assignees');
     
     for (let option of assigneesSelect.options) {
         const membreId = parseInt(option.value);
-        if (preferencesMembres[membreId] && preferencesMembres[membreId].includes(type_tache)) {
+        
+        // Vérifier que l'utilisateur aime ce type de tâche
+        const aimeType = preferencesMembres[membreId] && Array.isArray(preferencesMembres[membreId]) && preferencesMembres[membreId].includes(type_tache);
+        
+        // Vérifier que l'utilisateur ne désapprouve pas ce type de tâche
+        const desapprouveType = preferencesNegatives[membreId] && Array.isArray(preferencesNegatives[membreId]) && preferencesNegatives[membreId].includes(type_tache);
+        
+        if (aimeType && !desapprouveType) {
+            const disponibilite = disponibilitesMembres[membreId] && disponibilitesMembres[membreId][type_tache] 
+                ? disponibilitesMembres[membreId][type_tache] 
+                : null;
+            
             suggestions.push({
                 id: membreId,
-                nom: option.getAttribute('data-nom') || option.text
+                nom: option.getAttribute('data-nom') || option.text,
+                disponibilite: disponibilite
             });
         }
     }
     
-    afficherSuggestions(suggestions);
+    afficherSuggestions(suggestions, type_tache);
 }
 
-function afficherSuggestions(suggestions) {
+function afficherSuggestions(suggestions, type_tache) {
     const container = document.getElementById('suggestions_preferences');
     const list = document.getElementById('suggestions_list');
     
@@ -292,17 +332,58 @@ function afficherSuggestions(suggestions) {
     container.style.display = 'block';
     list.innerHTML = '';
     
+    // Trier les suggestions : d'abord ceux avec disponibilité, puis les autres
+    suggestions.sort((a, b) => {
+        if (a.disponibilite && !b.disponibilite) return -1;
+        if (!a.disponibilite && b.disponibilite) return 1;
+        return 0;
+    });
+    
     suggestions.forEach(suggestion => {
         const badge = document.createElement('button');
         badge.type = 'button';
         badge.className = 'suggestion-badge';
-        badge.style.cssText = 'padding: 6px 12px; background: var(--success); color: var(--light); border: none; border-radius: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;';
-        badge.innerHTML = `<i class='bx bx-user'></i>${suggestion.nom}`;
-        badge.onclick = () => selectionnerUtilisateur(suggestion.id, badge);
-        badge.onmouseover = () => badge.style.transform = 'scale(1.05)';
-        badge.onmouseout = () => badge.style.transform = 'scale(1)';
+        badge.setAttribute('data-user-id', suggestion.id);
+        badge.setAttribute('data-user-nom', suggestion.nom);
+        if (suggestion.disponibilite) {
+            badge.setAttribute('data-disponibilite', suggestion.disponibilite);
+        }
+        badge.style.cssText = 'padding: 10px 16px; background: var(--success); color: var(--light); border: none; border-radius: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; flex-direction: column; min-width: 130px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+        
+        let badgeContent = `<div style="display: flex; align-items: center; gap: 6px;"><i class='bx bx-user'></i><span style="font-weight: 600;">${suggestion.nom}</span></div>`;
+        
+        if (suggestion.disponibilite) {
+            const iconeDispo = suggestion.disponibilite === 'matin' ? 'bx-sun' : 
+                              suggestion.disponibilite === 'soir' ? 'bx-moon' : 'bx-time';
+            const labelDispo = suggestion.disponibilite === 'matin' ? 'Matin' : 
+                              suggestion.disponibilite === 'soir' ? 'Soir' : 'Jour';
+            badgeContent += `<div style="font-size: 10px; opacity: 0.95; display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 500;"><i class='bx ${iconeDispo}' style="font-size: 14px;"></i>${labelDispo}</div>`;
+        }
+        
+        badge.innerHTML = badgeContent;
+        badge.onclick = () => {
+            selectionnerUtilisateur(suggestion.id, badge);
+            // Suggérer une heure de rappel si disponibilité disponible
+            if (suggestion.disponibilite && heuresRappelParDisponibilite[suggestion.disponibilite]) {
+                suggererHeureRappel(suggestion.disponibilite);
+            }
+        };
+        badge.onmouseover = () => {
+            badge.style.transform = 'scale(1.05)';
+            badge.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+        };
+        badge.onmouseout = () => {
+            badge.style.transform = 'scale(1)';
+            badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        };
         list.appendChild(badge);
     });
+}
+
+function suggererHeureRappel(disponibilite) {
+    // Cette fonction pourrait être étendue pour suggérer une date de rappel
+    // basée sur la disponibilité préférée de l'utilisateur
+    console.log(`Suggestion: rappel à ${heuresRappelParDisponibilite[disponibilite]} pour disponibilité ${disponibilite}`);
 }
 
 function selectionnerUtilisateur(membreId, badge) {
@@ -312,7 +393,19 @@ function selectionnerUtilisateur(membreId, badge) {
     if (option) {
         option.selected = true;
         badge.style.background = 'var(--primary)';
-        badge.innerHTML = `<i class='bx bx-check'></i>${badge.textContent.replace(/^\S+\s/, '')}`;
+        // Préserver le contenu original mais avec une icône de check pour l'utilisateur
+        const nom = badge.getAttribute('data-user-nom') || option.getAttribute('data-nom') || option.text;
+        const disponibilite = badge.getAttribute('data-disponibilite');
+        
+        let badgeContent = `<div style="display: flex; align-items: center; gap: 6px;"><i class='bx bx-check'></i><span style="font-weight: 600;">${nom}</span></div>`;
+        if (disponibilite) {
+            const iconeDispo = disponibilite === 'matin' ? 'bx-sun' : 
+                              disponibilite === 'soir' ? 'bx-moon' : 'bx-time';
+            const labelDispo = disponibilite === 'matin' ? 'Matin' : 
+                              disponibilite === 'soir' ? 'Soir' : 'Jour';
+            badgeContent += `<div style="font-size: 10px; opacity: 0.95; display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 500;"><i class='bx ${iconeDispo}' style="font-size: 14px;"></i>${labelDispo}</div>`;
+        }
+        badge.innerHTML = badgeContent;
         badge.onclick = () => deselectionnerUtilisateur(membreId, badge);
     }
 }
@@ -324,8 +417,19 @@ function deselectionnerUtilisateur(membreId, badge) {
     if (option) {
         option.selected = false;
         badge.style.background = 'var(--success)';
-        const nom = option.getAttribute('data-nom') || option.text;
-        badge.innerHTML = `<i class='bx bx-user'></i>${nom}`;
+        const nom = badge.getAttribute('data-user-nom') || option.getAttribute('data-nom') || option.text;
+        const disponibilite = badge.getAttribute('data-disponibilite');
+        
+        // Restaurer le contenu original avec disponibilité si disponible
+        let badgeContent = `<div style="display: flex; align-items: center; gap: 6px;"><i class='bx bx-user'></i><span style="font-weight: 600;">${nom}</span></div>`;
+        if (disponibilite) {
+            const iconeDispo = disponibilite === 'matin' ? 'bx-sun' : 
+                              disponibilite === 'soir' ? 'bx-moon' : 'bx-time';
+            const labelDispo = disponibilite === 'matin' ? 'Matin' : 
+                              disponibilite === 'soir' ? 'Soir' : 'Jour';
+            badgeContent += `<div style="font-size: 10px; opacity: 0.95; display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 500;"><i class='bx ${iconeDispo}' style="font-size: 14px;"></i>${labelDispo}</div>`;
+        }
+        badge.innerHTML = badgeContent;
         badge.onclick = () => selectionnerUtilisateur(membreId, badge);
     }
 }
@@ -378,14 +482,41 @@ function chargerTachePredefinie() {
     
     // Afficher les suggestions pour cette tâche prédéfinie
     if (suggestionsPredefinies[index] && suggestionsPredefinies[index].length > 0) {
+        // Déterminer le type de tâche pour cette tâche prédéfinie
+        const texte = (titre + ' ' + description).toLowerCase();
+        const mots_cles_nettoyage = ['nettoyer', 'nettoyage', 'aspirateur', 'aspirer', 'lessive', 'laver', 'ranger', 'propre', 'salle de bain', 'douche', 'wc', 'toilette', 'vitre', 'fenêtre', 'poubelle', 'sortir les poubelles', 'faire le lit', 'chambre'];
+        const mots_cles_cuisine = ['cuisine', 'cuisiner', 'repas', 'dîner', 'déjeuner', 'préparer', 'vaisselle', 'lave-vaisselle', 'cuire', 'four', 'plaque', 'manger'];
+        const mots_cles_courses = ['courses', 'acheter', 'magasin', 'supermarché', 'épicerie', 'produits', 'aliments', 'nourriture', 'faire les courses'];
+        const mots_cles_entretien = ['entretien', 'réparer', 'réparation', 'maintenance', 'jardin', 'plante', 'arroser', 'tondeuse', 'outil', 'jardinage'];
+        
+        let type_tache = null;
+        if (mots_cles_nettoyage.some(mot => texte.includes(mot))) type_tache = 'nettoyage';
+        else if (mots_cles_cuisine.some(mot => texte.includes(mot))) type_tache = 'cuisine';
+        else if (mots_cles_courses.some(mot => texte.includes(mot))) type_tache = 'courses';
+        else if (mots_cles_entretien.some(mot => texte.includes(mot))) type_tache = 'entretien';
+        
         const suggestions = suggestionsPredefinies[index].map(id => {
             const option = Array.from(assigneesSelect.options).find(opt => parseInt(opt.value) === id);
+            const membreId = parseInt(id);
+            const disponibilite = disponibilitesMembres[membreId] && type_tache && disponibilitesMembres[membreId][type_tache] 
+                ? disponibilitesMembres[membreId][type_tache] 
+                : null;
+            
             return {
-                id: id,
-                nom: option ? (option.getAttribute('data-nom') || option.text) : ''
+                id: membreId,
+                nom: option ? (option.getAttribute('data-nom') || option.text) : '',
+                disponibilite: disponibilite
             };
-        }).filter(s => s.nom);
-        afficherSuggestions(suggestions);
+        }).filter(s => {
+            if (!s.nom) return false;
+            // Exclure si l'utilisateur désapprouve ce type de tâche
+            if (preferencesNegatives[s.id] && Array.isArray(preferencesNegatives[s.id]) && preferencesNegatives[s.id].includes(type_tache)) {
+                return false;
+            }
+            return true;
+        });
+        
+        afficherSuggestions(suggestions, type_tache);
     } else {
         mettreAJourSuggestions();
     }

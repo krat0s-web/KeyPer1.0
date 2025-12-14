@@ -792,6 +792,33 @@ class PreferenceUtilisateur(models.Model):
     def __str__(self):
         return f"{self.id_user.email} - {self.type_tache}"
 
+# === PERMISSIONS PERSONNALISÉES PAR FOYER ===
+class PermissionFoyer(models.Model):
+    """Permissions personnalisées accordées par un admin à un utilisateur pour un foyer spécifique"""
+    id_user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='permissions_foyer')
+    id_foyer = models.ForeignKey(Foyer, on_delete=models.CASCADE, related_name='permissions_utilisateurs')
+    can_access_budget = models.BooleanField(default=False)
+    can_create_depense = models.BooleanField(default=False)
+    can_delete_depense = models.BooleanField(default=False)
+    can_create_budget = models.BooleanField(default=False)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'permission_foyer'
+        unique_together = ('id_user', 'id_foyer')
+    
+    def __str__(self):
+        return f"{self.id_user.email} - {self.id_foyer.nom} - Budget: {self.can_access_budget}"
+    
+    def save(self, *args, **kwargs):
+        # Si l'accès au budget est autorisé, donner tous les droits budget automatiquement
+        if self.can_access_budget:
+            self.can_create_depense = True
+            self.can_delete_depense = True
+            self.can_create_budget = True
+        super().save(*args, **kwargs)
+
 # === INTERACTION IA ===
 class InteractionIa(models.Model):
     id_user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)

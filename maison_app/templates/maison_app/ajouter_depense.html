@@ -92,11 +92,44 @@
                 </div>
 
                 <div>
-                    <label for="categorie_principale" style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                    <label style="display: block; margin-bottom: 12px; color: var(--dark); font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px;">
                         <i class='bx bx-tag'></i>🏷️ Catégorie Principale
                     </label>
-                    <select id="categorie_principale" name="categorie_principale" required onchange="loadSousCategories()" {% if depense_preview %}disabled{% endif %}
-                            style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                    
+                    {% if not depense_preview %}
+                    <!-- Grille de catégories visuelles -->
+                    <div id="categories_grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                        {% for cat in categories_principales %}
+                        <button type="button" class="categorie-card" 
+                                data-categorie-id="{{ cat.id }}"
+                                data-categorie-nom="{{ cat.nom }}"
+                                onclick="selectCategorie({{ cat.id }}, '{{ cat.nom }}', '{{ cat.icone }}', '{{ cat.couleur }}')"
+                                style="padding: 16px; border: 2px solid var(--grey); border-radius: 12px; background: var(--light); cursor: pointer; transition: all 0.3s ease; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 100px;">
+                            <div style="font-size: 32px; color: {{ cat.couleur }};">
+                                {% if cat.icone|slice:":2" == "bx" %}
+                                    <i class='{{ cat.icone }}'></i>
+                                {% else %}
+                                    <i class='bi {{ cat.icone }}'></i>
+                                {% endif %}
+                            </div>
+                            <div style="font-weight: 600; color: var(--dark); font-size: 13px; line-height: 1.3;">{{ cat.nom }}</div>
+                        </button>
+                        {% endfor %}
+                        <button type="button" class="categorie-card" 
+                                data-categorie-id="autre"
+                                data-categorie-nom="Autres"
+                                onclick="selectCategorie('autre', 'Autres', 'bx-category', 'var(--dark-grey)')"
+                                style="padding: 16px; border: 2px solid var(--grey); border-radius: 12px; background: var(--light); cursor: pointer; transition: all 0.3s ease; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 100px;">
+                            <div style="font-size: 32px; color: var(--dark-grey);">
+                                <i class='bx bx-category'></i>
+                            </div>
+                            <div style="font-weight: 600; color: var(--dark); font-size: 13px; line-height: 1.3;">Autres</div>
+                        </button>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Select caché pour la soumission du formulaire -->
+                    <select id="categorie_principale" name="categorie_principale" required onchange="loadSousCategories()" {% if depense_preview %}disabled{% endif %} style="{% if not depense_preview %}display: none;{% endif %}">
                         <option value="">-- Sélectionner une catégorie --</option>
                         {% for cat in categories_principales %}
                             <option value="{{ cat.id }}" data-icon="{{ cat.icone }}" {% if depense_preview and depense_preview.categorie_id == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.nom }}</option>
@@ -106,6 +139,37 @@
                     {% if depense_preview %}
                     <input type="hidden" name="categorie_principale" value="{{ depense_preview.categorie_id }}">
                     {% endif %}
+                    
+                    <!-- Affichage de la catégorie sélectionnée -->
+                    <div id="selected_categorie_display" style="{% if not depense_preview %}display: none;{% endif %} padding: 12px; background: var(--light-primary); border-radius: 8px; border-left: 4px solid var(--primary); margin-top: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="selected_categorie_icon" style="font-size: 20px;">
+                                {% if depense_preview %}
+                                    {% for cat in categories_principales %}
+                                        {% if depense_preview.categorie_id == cat.id|stringformat:"s" %}
+                                            {% if cat.icone|slice:":2" == "bx" %}
+                                                <i class='{{ cat.icone }}'></i>
+                                            {% else %}
+                                                <i class='bi {{ cat.icone }}'></i>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
+                            <span id="selected_categorie_nom" style="font-weight: 600; color: var(--dark);">
+                                {% if depense_preview %}
+                                    {% for cat in categories_principales %}
+                                        {% if depense_preview.categorie_id == cat.id|stringformat:"s" %}{{ cat.nom }}{% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
+                            {% if not depense_preview %}
+                            <button type="button" onclick="clearCategorieSelection()" style="margin-left: auto; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px;">
+                                <i class='bx bx-x'></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
 
                 <div id="sous_categorie_container" style="display: none;">
@@ -230,5 +294,74 @@
     if (!dateInput.value) {
         dateInput.valueAsDate = new Date();
     }
+
+    function selectCategorie(categorieId, categorieNom, categorieIcon, categorieCouleur) {
+        // Mettre à jour le select
+        const select = document.getElementById('categorie_principale');
+        select.value = categorieId;
+        
+        // Mettre à jour l'affichage
+        const display = document.getElementById('selected_categorie_display');
+        const iconSpan = document.getElementById('selected_categorie_icon');
+        const nomSpan = document.getElementById('selected_categorie_nom');
+        
+        // Déterminer l'icône
+        let iconClass = categorieIcon;
+        if (!iconClass.startsWith('bx') && !iconClass.startsWith('bi')) {
+            iconClass = 'bx-category';
+        }
+        
+        iconSpan.innerHTML = `<i class='${iconClass.startsWith("bx") ? iconClass : "bi " + iconClass}' style="color: ${categorieCouleur};"></i>`;
+        nomSpan.textContent = categorieNom;
+        display.style.display = 'block';
+        
+        // Mettre à jour les cartes visuelles
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            if (card.getAttribute('data-categorie-id') == categorieId) {
+                card.style.border = '3px solid var(--primary)';
+                card.style.background = 'var(--light-primary)';
+                card.style.transform = 'scale(1.05)';
+            } else {
+                card.style.border = '2px solid var(--grey)';
+                card.style.background = 'var(--light)';
+                card.style.transform = 'scale(1)';
+            }
+        });
+        
+        // Charger les sous-catégories
+        loadSousCategories();
+    }
+
+    function clearCategorieSelection() {
+        document.getElementById('categorie_principale').value = '';
+        document.getElementById('selected_categorie_display').style.display = 'none';
+        document.getElementById('sous_categorie_container').style.display = 'none';
+        document.getElementById('categorie').value = '';
+        
+        // Réinitialiser les cartes
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            card.style.border = '2px solid var(--grey)';
+            card.style.background = 'var(--light)';
+            card.style.transform = 'scale(1)';
+        });
+    }
+
+    // Ajouter les styles hover pour les cartes
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.categorie-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                if (this.style.border !== '3px solid var(--primary)') {
+                    this.style.border = '2px solid var(--primary)';
+                    this.style.transform = 'scale(1.02)';
+                }
+            });
+            card.addEventListener('mouseleave', function() {
+                if (this.style.border !== '3px solid var(--primary)') {
+                    this.style.border = '2px solid var(--grey)';
+                    this.style.transform = 'scale(1)';
+                }
+            });
+        });
+    });
 </script>
 {% endblock %}

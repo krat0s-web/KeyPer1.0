@@ -45,14 +45,7 @@
             <div style="font-size: 4rem; margin-bottom: 16px; color: #0dcaf0;">
                 <i class='bx bx-package'></i>
             </div>
-            <h4 style="margin-bottom: 12px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
-                Gérer le Stock
-                {% if not inventaire_count %}
-                <span style="background: var(--warning); color: var(--dark); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">À configurer</span>
-                {% else %}
-                <span style="background: var(--success); color: var(--light); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">{{ inventaire_count }} articles</span>
-                {% endif %}
-            </h4>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Gérer le Stock</h4>
             <p style="color: var(--dark-grey); margin-bottom: 20px;">Suivez vos produits et ingrédients disponibles</p>
             <a href="{% url 'gerer_stock' piece.id %}" style="display: inline-block; padding: 12px 24px; background: var(--primary); color: var(--light); border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 <i class='bx bx-right-arrow-alt'></i>Accéder
@@ -64,14 +57,7 @@
             <div style="font-size: 4rem; margin-bottom: 16px; color: var(--success);">
                 <i class='bx bx-cart'></i>
             </div>
-            <h4 style="margin-bottom: 12px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
-                Listes de Courses
-                {% if not listes_courses %}
-                <span style="background: var(--warning); color: var(--dark); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">À créer</span>
-                {% else %}
-                <span style="background: var(--success); color: var(--light); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">{{ listes_courses|length }} listes</span>
-                {% endif %}
-            </h4>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Listes de Courses</h4>
             <p style="color: var(--dark-grey); margin-bottom: 20px;">Créez et gérez vos listes de courses</p>
             <a href="{% url 'liste_courses_cuisine' piece.id %}" style="display: inline-block; padding: 12px 24px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
                 <i class='bx bx-cart-add'></i>Gérer les listes
@@ -98,14 +84,7 @@
             <div style="font-size: 4rem; margin-bottom: 16px; color: var(--warning);">
                 <i class='bx bx-calendar-week'></i>
             </div>
-            <h4 style="margin-bottom: 12px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
-                Menus de la Semaine
-                {% if not menu_semaine_actuel %}
-                <span style="background: var(--warning); color: var(--dark); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">À créer</span>
-                {% else %}
-                <span style="background: var(--success); color: var(--light); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">Actif</span>
-                {% endif %}
-            </h4>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Menus de la Semaine</h4>
             <p style="color: var(--dark-grey); margin-bottom: 20px;">Organisez vos repas de la semaine</p>
             <a href="{% url 'menus_semaine' piece.id %}" style="display: inline-block; padding: 12px 24px; background: var(--warning); color: var(--dark); border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
                 <i class='bx bx-calendar-event'></i>Organiser les menus
@@ -129,14 +108,7 @@
             <div style="font-size: 4rem; margin-bottom: 16px; color: var(--danger);">
                 <i class='bx bx-book'></i>
             </div>
-            <h4 style="margin-bottom: 12px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
-                Recettes de Cuisine
-                {% if not recettes_count %}
-                <span style="background: var(--warning); color: var(--dark); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">À générer</span>
-                {% else %}
-                <span style="background: var(--success); color: var(--light); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">{{ recettes_count }} recettes</span>
-                {% endif %}
-            </h4>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Recettes de Cuisine</h4>
             <p style="color: var(--dark-grey); margin-bottom: 20px;">Générez des recettes avec vos ingrédients</p>
             <a href="{% url 'generer_recettes' piece.id %}" style="display: inline-block; padding: 12px 24px; background: var(--danger); color: var(--light); border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                 <i class='bx bx-magic-wand'></i>Générer des recettes
@@ -146,14 +118,7 @@
             <div style="font-size: 4rem; margin-bottom: 16px; color: #6f42c1;">
                 <i class='bx bx-history'></i>
             </div>
-            <h4 style="margin-bottom: 12px; color: var(--dark); display: flex; align-items: center; gap: 8px;">
-                Historique des Recettes
-                {% if not recettes_count %}
-                <span style="background: var(--grey); color: var(--dark); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">Vide</span>
-                {% else %}
-                <span style="background: var(--info); color: var(--light); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">{{ recettes_count }} recettes</span>
-                {% endif %}
-            </h4>
+            <h4 style="margin-bottom: 12px; color: var(--dark);">Historique des Recettes</h4>
             <p style="color: var(--dark-grey); margin-bottom: 20px;">Consultez vos recettes générées précédemment</p>
             <a href="{% url 'historique_recettes' piece.id %}" style="display: inline-block; padding: 12px 24px; background: #6f42c1; color: white; border-radius: 8px; text-decoration: none; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                 <i class='bx bx-list-ul'></i>Voir l'historique

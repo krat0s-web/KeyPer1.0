@@ -1,5 +1,6 @@
 {% extends "maison_app/dashboard_base.html" %}
 {% load static %}
+{% load permission_tags %}
 {% block page_title %}Modifier le Foyer{% endblock %}
 {% block page_heading %}Modifier le Foyer{% endblock %}
 
@@ -79,109 +80,119 @@
 </div>
 
 <!-- Section Gestion des Membres -->
-<div class="card-dashboard" style="max-width: 100%; margin: 24px auto 0;">
+<div class="card-dashboard" style="max-width: 800px; margin: 24px auto 0;">
     <div style="background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: #FFFFFF; padding: 24px; border-radius: 12px 12px 0 0;">
         <h3 style="margin: 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 600;">
-            <i class='bx bx-group' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Membres ({{ membres_foyer|length }})
+            <i class='bx bx-group' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Membres
         </h3>
     </div>
     <div style="padding: 24px;">
-        <!-- Messages affichés ici -->
-        {% if messages %}
-        <div style="margin-bottom: 24px;">
-            {% for message in messages %}
-            <div style="padding: 12px 16px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% elif message.tags == 'warning' %}var(--warning){% else %}var(--primary){% endif %}; background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% elif message.tags == 'warning' %}var(--light-warning){% else %}var(--light-primary){% endif %}; color: var(--dark);">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- SECTION 1: Ajouter un membre -->
-        <div style="background: var(--light-primary); padding: 20px; border-radius: 12px; margin-bottom: 32px; border-left: 4px solid var(--primary);">
-            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
-                <i class='bx bx-user-plus' style="color: var(--primary);"></i>➕ Ajouter un nouveau membre
+        <!-- Ajouter un membre -->
+        <div style="margin-bottom: 32px;">
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-user-plus' style="color: var(--primary);"></i>Ajouter un membre
             </h5>
             <form method="post" style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end;">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="ajouter_membre">
                 <div>
-                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Email du membre <span style="color: var(--danger);">*</span></label>
-                    <input type="email" name="email_membre" placeholder="utilisateur@exemple.com" required
-                           style="width: 100%; padding: 12px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; transition: all 0.3s ease;"
-                           onmouseover="this.style.borderColor='var(--primary)'" 
-                           onmouseout="this.style.borderColor='var(--light-primary)'">
+                    <input type="email" name="email_membre" placeholder="Email du membre à ajouter" required
+                           style="width: 100%; padding: 12px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
                 </div>
-                <button type="submit" style="padding: 12px 24px; background: linear-gradient(135deg, var(--primary), var(--light-primary)); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 600; white-space: nowrap;"
-                        onmouseover="this.style.transform='scale(1.05)'" 
-                        onmouseout="this.style.transform='scale(1)'">
-                    <i class='bx bx-plus-circle'></i>Ajouter le membre
-                </button>
+                <div>
+                    <button type="submit" style="padding: 12px 24px; background: var(--primary); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; font-weight: 500; white-space: nowrap;">
+                        <i class='bx bx-plus-circle'></i>Ajouter
+                    </button>
+                </div>
             </form>
-            <small style="color: var(--dark-grey); font-size: 12px; display: flex; align-items: center; gap: 4px; margin-top: 12px;">
+            <small style="color: var(--dark-grey); font-size: 12px; display: flex; align-items: center; gap: 4px; margin-top: 8px;">
                 <i class='bx bx-info-circle'></i>
-                💡 L'utilisateur doit avoir un compte existant sur la plateforme KeyPer.
+                L'utilisateur doit avoir un compte existant sur la plateforme.
             </small>
         </div>
 
-        <hr style="border: none; border-top: 2px solid var(--grey); margin: 32px 0;">
+        <hr style="border: none; border-top: 1px solid var(--grey); margin: 24px 0;">
 
-        <!-- SECTION 2: Lister les membres -->
+        <!-- Liste des membres -->
         <div>
-            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
-                <i class='bx bx-group' style="color: var(--primary);"></i>👥 Membres du foyer ({{ membres_foyer|length }})
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-group' style="color: var(--primary);"></i>Membres du foyer ({{ membres_foyer|length }})
             </h5>
+            <div class="card-dashboard" style="background: var(--light-primary); padding: 12px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
+                <i class='bx bx-info-circle' style="color: var(--primary); margin-right: 8px;"></i>
+                <small style="color: var(--dark); font-size: 12px;">
+                    <strong>💡 Permissions Budget :</strong> Cochez la case pour autoriser l'accès complet au budget (création de budgets, dépenses, etc.) pour cet utilisateur dans ce foyer.
+                </small>
+            </div>
             {% if membres_foyer %}
-            <div style="display: grid; gap: 12px;">
-                {% for membre in membres_foyer %}
-                <div class="card-dashboard" style="padding: 16px; border-left: 4px solid var(--primary); background: var(--light-primary);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <!-- Infos membre -->
-                        <div style="flex: 1; min-width: 200px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 50px; height: 50px; background: var(--primary); color: var(--light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.2rem;">
-                                    {{ membre.email|first|upper }}
-                                </div>
-                                <div>
-                                    <h6 style="margin: 0 0 4px 0; color: var(--dark); font-weight: 600;">{{ membre.nom|default:membre.email }}</h6>
-                                    <p style="margin: 0 0 4px 0; color: var(--dark-grey); font-size: 13px;">{{ membre.email }}</p>
-                                    <span style="padding: 4px 12px; background: var(--primary); color: var(--light); border-radius: 12px; font-size: 12px; display: inline-block; font-weight: 600;">
-                                        {% if membre.get_role_display %}
-                                            🎯 {{ membre.get_role_display }}
-                                        {% else %}
-                                            👤 Membre
-                                        {% endif %}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div>
-                            {% if membre.id != user.id %}
-                            <form method="post" style="display: inline;" onsubmit="return confirm('⚠️ Êtes-vous SÛR de vouloir RETIRER {{ membre.email }} du foyer ?\n\nCette action ne peut pas être annulée.');"> 
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="supprimer_membre">
-                                <input type="hidden" name="membre_id" value="{{ membre.id }}">
-                                <button type="submit" style="padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
-                                    <i class='bx bx-trash'></i>Retirer
-                                </button>
-                            </form>
-                            {% else %}
-                            <span style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 8px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                                <i class='bx bx-check-circle'></i>C'est vous
-                            </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--grey);">
+                            <th style="padding: 12px; text-align: left; color: var(--dark); font-weight: 600;">Email</th>
+                            <th style="padding: 12px; text-align: left; color: var(--dark); font-weight: 600;">Nom</th>
+                            <th style="padding: 12px; text-align: left; color: var(--dark); font-weight: 600;">Rôle</th>
+                            <th style="padding: 12px; text-align: left; color: var(--dark); font-weight: 600;">💰 Accès Budget</th>
+                            <th style="padding: 12px; text-align: left; color: var(--dark); font-weight: 600;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for membre in membres_foyer %}
+                        <tr style="border-bottom: 1px solid var(--grey);">
+                            <td style="padding: 12px; color: var(--dark);">{{ membre.email }}</td>
+                            <td style="padding: 12px; color: var(--dark);">{{ membre.nom|default:"-" }}</td>
+                            <td style="padding: 12px;">
+                                <span style="padding: 4px 8px; background: var(--grey); color: var(--dark); border-radius: 12px; font-size: 12px;">{{ membre.get_role_display|default:"Membre" }}</span>
+                            </td>
+                            <td style="padding: 12px;">
+                                {% if membre.id != user.id %}
+                                <form method="post" id="form_permissions_{{ membre.id }}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="modifier_permissions_budget">
+                                    <input type="hidden" name="membre_id" value="{{ membre.id }}">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        {% with perm_value=permissions_budget|get_item:membre.id|default:False %}
+                                        <input type="checkbox" name="can_access_budget" 
+                                               {% if perm_value %}checked{% endif %}
+                                               onchange="document.getElementById('form_permissions_{{ membre.id }}').submit();"
+                                               style="width: 20px; height: 20px; cursor: pointer;">
+                                        <span style="color: var(--dark); font-size: 14px;" id="status_permissions_{{ membre.id }}">
+                                            {% if perm_value %}
+                                                <span style="color: var(--success); font-weight: 600;">✅ Autorisé</span>
+                                            {% else %}
+                                                <span style="color: var(--dark-grey);">❌ Non autorisé</span>
+                                            {% endif %}
+                                        </span>
+                                        {% endwith %}
+                                    </label>
+                                </form>
+                                {% else %}
+                                <span style="color: var(--dark-grey); font-size: 12px;">Admin</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 12px;">
+                                {% if membre.id != user.id %}
+                                <form method="post" style="display: inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir retirer {{ membre.email }} du foyer ?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="supprimer_membre">
+                                    <input type="hidden" name="membre_id" value="{{ membre.id }}">
+                                    <button type="submit" style="padding: 6px 12px; background: var(--danger); color: var(--light); border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; transition: all 0.3s ease;">
+                                        <i class='bx bx-trash'></i>Retirer
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span style="color: var(--dark-grey); font-size: 12px;">Vous</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
             {% else %}
             <div class="card-dashboard" style="background: var(--light-primary); padding: 24px; border-radius: 8px; text-align: center; border-left: 4px solid var(--primary);">
-                <i class='bx bx-group' style="color: var(--primary); font-size: 2rem; margin-bottom: 8px; display: block;"></i>
-                <p style="margin: 0 0 8px 0; color: var(--dark); font-size: 16px; font-weight: 600;">👥 Aucun membre dans ce foyer</p>
-                <p style="margin: 0; color: var(--dark-grey); font-size: 14px;">Utilisez le formulaire ci-dessus pour ajouter des membres ⬆️</p>
+                <i class='bx bx-info-circle' style="color: var(--primary); font-size: 2rem; margin-bottom: 8px; display: block;"></i>
+                <p style="margin: 0; color: var(--dark);">Aucun membre dans ce foyer pour le moment.</p>
             </div>
             {% endif %}
         </div>
@@ -189,33 +200,22 @@
 </div>
 
 <!-- Section Gestion des Animaux -->
-<div class="card-dashboard" style="max-width: 100%; margin: 24px auto 0;">
+<div class="card-dashboard" style="max-width: 800px; margin: 24px auto 0;">
     <div style="background: linear-gradient(135deg, var(--success), #4CAF50); color: #FFFFFF; padding: 24px; border-radius: 12px 12px 0 0;">
         <h3 style="margin: 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 600;">
-            <i class='bx bx-dog' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Animaux ({{ animaux_foyer|length }})
+            <i class='bx bx-dog' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Animaux
         </h3>
     </div>
     <div style="padding: 24px;">
-        <!-- Messages affichés ici -->
-        {% if messages %}
-        <div style="margin-bottom: 24px;">
-            {% for message in messages %}
-            <div style="padding: 12px 16px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% elif message.tags == 'warning' %}var(--warning){% else %}var(--primary){% endif %}; background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% elif message.tags == 'warning' %}var(--light-warning){% else %}var(--light-primary){% endif %}; color: var(--dark);">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Liste et gestion des animaux -->
+        <!-- Liste des animaux -->
         <div>
-            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
-                <i class='bx bx-dog' style="color: var(--success);"></i>🐾 Animaux du foyer ({{ animaux_foyer|length }})
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-dog' style="color: var(--success);"></i>Animaux du foyer ({{ animaux_foyer|length }})
             </h5>
             {% if animaux_foyer %}
             <div style="display: grid; gap: 16px;">
                 {% for animal in animaux_foyer %}
-                <div class="card-dashboard" style="padding: 16px; border-left: 4px solid var(--success); background: var(--light-success);">
+                <div class="card-dashboard" style="padding: 16px; border-left: 4px solid var(--success);">
                     <form method="post" enctype="multipart/form-data" id="form-animal-{{ animal.id }}">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="modifier_animal">
@@ -223,12 +223,12 @@
                         
                         <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: start;">
                             <!-- Photo de l'animal -->
-                            <div style="min-width: 110px;">
+                            <div style="min-width: 100px;">
                                 {% if animal.photo %}
-                                <img src="{{ animal.photo.url }}" alt="{{ animal.nom }}" style="width: 110px; height: 110px; object-fit: cover; border-radius: 8px; border: 3px solid var(--success); display: block;">
+                                <img src="{{ animal.photo.url }}" alt="{{ animal.nom }}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid var(--grey);">
                                 {% else %}
-                                <div style="width: 110px; height: 110px; background: var(--grey); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--grey);">
-                                    <i class='bx bx-dog' style="font-size: 2.5rem; color: var(--dark-grey);"></i>
+                                <div style="width: 100px; height: 100px; background: var(--grey); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <i class='bx bx-dog' style="font-size: 2rem; color: var(--dark-grey);"></i>
                                 </div>
                                 {% endif %}
                                 <div style="margin-top: 8px;">
@@ -236,7 +236,7 @@
                                     {% if animal.photo %}
                                     <div style="margin-top: 4px;">
                                         <input type="checkbox" name="supprimer_photo_animal" id="supprimer_photo_{{ animal.id }}" style="width: 14px; height: 14px;">
-                                        <label for="supprimer_photo_{{ animal.id }}" style="font-size: 11px; color: var(--dark-grey); cursor: pointer;">Supprimer la photo</label>
+                                        <label for="supprimer_photo_{{ animal.id }}" style="font-size: 11px; color: var(--dark-grey); cursor: pointer;">Supprimer</label>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -245,37 +245,37 @@
                             <!-- Informations de l'animal -->
                             <div style="flex: 1;">
                                 <div style="margin-bottom: 12px;">
-                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Nom de l'animal</label>
+                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 500; font-size: 14px;">Nom de l'animal</label>
                                     <input type="text" name="nom_animal" value="{{ animal.nom }}" required
                                            style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
                                 </div>
                                 
                                 <div style="margin-bottom: 12px;">
-                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Pièce / Localisation</label>
+                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 500; font-size: 14px;">Pièce</label>
                                     <select name="piece_id" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
-                                        <option value="">🏠 Aucune pièce spécifiée</option>
+                                        <option value="">Aucune pièce</option>
                                         {% for piece in pieces_foyer %}
-                                        <option value="{{ piece.id }}" {% if animal.id_piece and animal.id_piece.id == piece.id %}selected{% endif %}>📍 {{ piece.nom }}</option>
+                                        <option value="{{ piece.id }}" {% if animal.id_piece and animal.id_piece.id == piece.id %}selected{% endif %}>{{ piece.nom }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
                                 
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <button type="submit" style="padding: 8px 16px; background: var(--success); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
-                                        <i class='bx bx-save'></i>Enregistrer modifications
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="submit" style="padding: 8px 16px; background: var(--success); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; transition: all 0.3s ease;">
+                                        <i class='bx bx-save'></i>Enregistrer
                                     </button>
                                 </div>
                             </div>
                             
                             <!-- Bouton supprimer -->
                             <div>
-                                <form method="post" style="display: block;" onsubmit="return confirm('⚠️ Êtes-vous SÛR de vouloir SUPPRIMER l\'animal {{ animal.nom }} ?\n\nCette action ne peut pas être annulée.');"><div style="display: flex;">
+                                <form method="post" style="display: inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer l\'animal {{ animal.nom }} ?');">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="supprimer_animal">
                                     <input type="hidden" name="animal_id" value="{{ animal.id }}">
-                                    <button type="submit" style="padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease; white-space: nowrap;">
+                                    <button type="submit" style="padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; transition: all 0.3s ease;">
                                         <i class='bx bx-trash'></i>Supprimer
-                                    </button></div>
+                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -284,28 +284,20 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="card-dashboard" style="background: var(--light-success); padding: 24px; border-radius: 8px; text-align: center; border-left: 4px solid var(--success);">
+            <div class="card-dashboard" style="background: var(--light-primary); padding: 24px; border-radius: 8px; text-align: center; border-left: 4px solid var(--success);">
                 <i class='bx bx-dog' style="color: var(--success); font-size: 2rem; margin-bottom: 8px; display: block;"></i>
-                <p style="margin: 0 0 8px 0; color: var(--dark); font-size: 16px; font-weight: 600;">🐾 Aucun animal dans ce foyer</p>
-                <p style="margin: 0; color: var(--dark-grey); font-size: 14px;">Utilisez le lien ci-dessous pour ajouter votre premier animal ⬇️</p>
+                <p style="margin: 0; color: var(--dark);">Aucun animal dans ce foyer pour le moment.</p>
+                <a href="{% url 'ajouter_animal' %}" style="display: inline-block; margin-top: 12px; padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 6px; text-decoration: none; font-size: 14px;">
+                    <i class='bx bx-plus'></i>Ajouter un animal
+                </a>
             </div>
             {% endif %}
         </div>
         
         {% if animaux_foyer %}
         <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--grey);">
-            <a href="{% url 'ajouter_animal' %}" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;"
-               onmouseover="this.style.transform='scale(1.05)'" 
-               onmouseout="this.style.transform='scale(1)'">
-                <i class='bx bx-plus-circle'></i>➕ Ajouter un nouvel animal
-            </a>
-        </div>
-        {% else %}
-        <div style="margin-top: 24px;">
-            <a href="{% url 'ajouter_animal' %}" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; font-size: 16px;"
-               onmouseover="this.style.transform='scale(1.05)'" 
-               onmouseout="this.style.transform='scale(1)'">
-                <i class='bx bx-plus-circle'></i>➕ Ajouter un animal au foyer
+            <a href="{% url 'ajouter_animal' %}" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--success); color: var(--light); border-radius: 8px; text-decoration: none; font-weight: 500; transition: all 0.3s ease;">
+                <i class='bx bx-plus-circle'></i>Ajouter un nouvel animal
             </a>
         </div>
         {% endif %}
@@ -313,115 +305,90 @@
 </div>
 
 <!-- Section Gestion des Pièces -->
-<div class="card-dashboard" style="max-width: 100%; margin: 24px auto 0;">
+<div class="card-dashboard" style="max-width: 800px; margin: 24px auto 0;">
     <div style="background: linear-gradient(135deg, var(--warning), #ffc107); color: #FFFFFF; padding: 24px; border-radius: 12px 12px 0 0;">
         <h3 style="margin: 0; color: #FFFFFF !important; display: flex; align-items: center; gap: 12px; font-weight: 600;">
-            <i class='bx bx-door-open' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Pièces ({{ pieces_foyer|length }})
+            <i class='bx bx-door-open' style="font-size: 28px; color: #FFFFFF;"></i>Gestion des Pièces
         </h3>
     </div>
     <div style="padding: 24px;">
-        <!-- Messages d'erreur/succès affichés ici -->
-        {% if messages %}
-        <div style="margin-bottom: 24px;">
-            {% for message in messages %}
-            <div style="padding: 12px 16px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid {% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% elif message.tags == 'warning' %}var(--warning){% else %}var(--primary){% endif %}; background: {% if message.tags == 'error' %}var(--light-danger){% elif message.tags == 'success' %}var(--light-success){% elif message.tags == 'warning' %}var(--light-warning){% else %}var(--light-primary){% endif %}; color: var(--dark);">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- SECTION 1: Ajouter une pièce -->
-        <div style="background: var(--grey); padding: 20px; border-radius: 12px; margin-bottom: 32px;">
-            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
-                <i class='bx bx-plus-circle' style="color: var(--warning);"></i>➕ Ajouter une nouvelle pièce
+        <!-- Ajouter une pièce -->
+        <div style="margin-bottom: 32px;">
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-plus-circle' style="color: var(--warning);"></i>Ajouter une pièce
             </h5>
             <form method="post" enctype="multipart/form-data" style="display: grid; gap: 16px;">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="ajouter_piece">
-                <input type="hidden" name="type_piece" value="personnalise" id="hidden_type_piece">
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
-                        <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Nom de la pièce <span style="color: var(--danger);">*</span></label>
-                        <input type="text" name="nom_piece" placeholder="Ex: Cuisine, Chambre principale..." required
-                               style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; transition: all 0.3s ease;" 
-                               onmouseover="this.style.borderColor='var(--primary)'" 
-                               onmouseout="this.style.borderColor='var(--light-primary)'">
+                        <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Nom de la pièce <span style="color: var(--danger);">*</span></label>
+                        <input type="text" name="nom_piece" placeholder="Ex: Cuisine" required
+                               style="width: 100%; padding: 10px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
                     </div>
                     
                     <div>
-                        <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Type de pièce</label>
-                        <select name="type_piece_select" id="type_piece_select_add" style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; transition: all 0.3s ease;"
-                                onmouseover="this.style.borderColor='var(--primary)'" 
-                                onmouseout="this.style.borderColor='var(--light-primary)'"
-                                onchange="document.getElementById('hidden_type_piece').value = this.value">
-                            <option value="cuisine" selected>🍳 Cuisine</option>
-                            <option value="chambre">🛏️ Chambre</option>
-                            <option value="salon">🛋️ Salon</option>
-                            <option value="salle_de_bain">🚿 Salle de bain</option>
-                            <option value="toilettes">🚽 Toilettes</option>
-                            <option value="bureau">💼 Bureau</option>
-                            <option value="jardin">🌳 Jardin</option>
-                            <option value="garage">🚗 Garage</option>
-                            <option value="salle_de_jeux">🎮 Salle de jeux</option>
-                            <option value="buanderie">🧺 Buanderie</option>
-                            <option value="salle_a_manger">🍽️ Salle à manger</option>
+                        <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Type de pièce</label>
+                        <select name="type_piece" style="width: 100%; padding: 10px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
                             <option value="personnalise">Personnalisé</option>
+                            <option value="cuisine">Cuisine</option>
+                            <option value="chambre">Chambre</option>
+                            <option value="salon">Salon</option>
+                            <option value="salle_de_bain">Salle de bain</option>
+                            <option value="toilettes">Toilettes</option>
+                            <option value="bureau">Bureau</option>
+                            <option value="jardin">Jardin</option>
+                            <option value="garage">Garage</option>
+                            <option value="salle_de_jeux">Salle de jeux</option>
+                            <option value="buanderie">Buanderie</option>
+                            <option value="salle_a_manger">Salle à manger</option>
                         </select>
-                        <script>
-                        // Initialiser la valeur cachée au chargement de la page
-                        document.getElementById('hidden_type_piece').value = document.getElementById('type_piece_select_add').value;
-                        </script>
                     </div>
                 </div>
                 
                 <div>
-                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Description <small style="font-weight: normal; color: var(--dark-grey);">(optionnel)</small></label>
-                    <textarea name="description_piece" rows="2" placeholder="Décrivez la fonction de cette pièce..."
-                              style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical; transition: all 0.3s ease;"
-                              onmouseover="this.style.borderColor='var(--primary)'" 
-                              onmouseout="this.style.borderColor='var(--light-primary)'"></textarea>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Description</label>
+                    <textarea name="description_piece" rows="2" placeholder="Description de la pièce (optionnel)"
+                              style="width: 100%; padding: 10px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; resize: vertical;"></textarea>
                 </div>
                 
                 <div>
-                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Photo <small style="font-weight: normal; color: var(--dark-grey);">(optionnel)</small></label>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Photo (optionnel)</label>
                     <input type="file" name="photo_piece" accept="image/*"
-                           style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none; transition: all 0.3s ease;"
-                           onmouseover="this.style.borderColor='var(--primary)'" 
-                           onmouseout="this.style.borderColor='var(--light-primary)'">
+                           style="width: 100%; padding: 10px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
                 </div>
                 
                 <div>
-                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 14px;">Accès restreint <small style="font-weight: normal; color: var(--dark-grey);">(optionnel)</small></label>
+                    <label style="display: block; margin-bottom: 8px; color: var(--dark); font-weight: 500; font-size: 14px;">Accès restreint (optionnel)</label>
                     <select name="utilisateurs_autorises_piece" multiple size="4"
-                            style="width: 100%; padding: 10px; border: 2px solid var(--light-primary); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
+                            style="width: 100%; padding: 10px; border: 1px solid var(--grey); border-radius: 8px; background: var(--light); color: var(--dark); outline: none;">
                         {% for membre in membres_foyer %}
                         <option value="{{ membre.id }}">{{ membre.nom|default:membre.email }}</option>
                         {% endfor %}
                     </select>
-                    <small style="color: var(--dark-grey); font-size: 12px; display: block; margin-top: 8px;">💡 Maintenez Ctrl/Cmd pour sélectionner plusieurs. Laissez vide = tous les membres peuvent accéder.</small>
+                    <small style="color: var(--dark-grey); font-size: 12px;">Maintenez Ctrl (Cmd sur Mac) pour sélectionner plusieurs utilisateurs. Si aucun n'est sélectionné, tous les membres peuvent accéder.</small>
                 </div>
                 
-                <button type="submit" style="padding: 12px 20px; background: linear-gradient(135deg, var(--warning), #ffc107); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-size: 16px; transition: all 0.3s ease; width: fit-content;"
-                        onmouseover="this.style.transform='scale(1.05)'" 
-                        onmouseout="this.style.transform='scale(1)'">
-                    <i class='bx bx-plus-circle'></i>Ajouter la pièce
-                </button>
+                <div>
+                    <button type="submit" style="padding: 10px 20px; background: var(--warning); color: var(--dark); border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: all 0.3s ease;">
+                        <i class='bx bx-plus-circle'></i>Ajouter la pièce
+                    </button>
+                </div>
             </form>
         </div>
 
-        <hr style="border: none; border-top: 2px solid var(--grey); margin: 32px 0;">
+        <hr style="border: none; border-top: 1px solid var(--grey); margin: 24px 0;">
 
-        <!-- SECTION 2: Lister et modifier les pièces -->
+        <!-- Liste des pièces -->
         <div>
-            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600;">
-                <i class='bx bx-door-open' style="color: var(--warning);"></i>📍 Pièces du foyer ({{ pieces_foyer|length }})
+            <h5 style="margin: 0 0 16px 0; color: var(--dark); display: flex; align-items: center; gap: 8px;">
+                <i class='bx bx-door-open' style="color: var(--warning);"></i>Pièces du foyer ({{ pieces_foyer|length }})
             </h5>
             {% if pieces_foyer %}
             <div style="display: grid; gap: 16px;">
                 {% for piece in pieces_foyer %}
-                <div class="card-dashboard" style="padding: 16px; border-left: 4px solid var(--warning); background: var(--light-warning);">
+                <div class="card-dashboard" style="padding: 16px; border-left: 4px solid var(--warning);">
                     <form method="post" enctype="multipart/form-data" id="form-piece-{{ piece.id }}">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="modifier_piece">
@@ -452,55 +419,55 @@
                             <div style="flex: 1;">
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                                     <div>
-                                        <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Nom</label>
+                                        <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 500; font-size: 14px;">Nom</label>
                                         <input type="text" name="nom_piece" value="{{ piece.nom }}" required
                                                style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
                                     </div>
                                     
                                     <div>
-                                        <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Type</label>
+                                        <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 500; font-size: 14px;">Type</label>
                                         <select name="type_piece" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
                                             <option value="personnalise" {% if piece.type_piece == 'personnalise' %}selected{% endif %}>Personnalisé</option>
-                                            <option value="cuisine" {% if piece.type_piece == 'cuisine' %}selected{% endif %}>🍳 Cuisine</option>
-                                            <option value="chambre" {% if piece.type_piece == 'chambre' %}selected{% endif %}>🛏️ Chambre</option>
-                                            <option value="salon" {% if piece.type_piece == 'salon' %}selected{% endif %}>🛋️ Salon</option>
-                                            <option value="salle_de_bain" {% if piece.type_piece == 'salle_de_bain' %}selected{% endif %}>🚿 Salle de bain</option>
-                                            <option value="toilettes" {% if piece.type_piece == 'toilettes' %}selected{% endif %}>🚽 Toilettes</option>
-                                            <option value="bureau" {% if piece.type_piece == 'bureau' %}selected{% endif %}>💼 Bureau</option>
-                                            <option value="jardin" {% if piece.type_piece == 'jardin' %}selected{% endif %}>🌳 Jardin</option>
-                                            <option value="garage" {% if piece.type_piece == 'garage' %}selected{% endif %}>🚗 Garage</option>
-                                            <option value="salle_de_jeux" {% if piece.type_piece == 'salle_de_jeux' %}selected{% endif %}>🎮 Salle de jeux</option>
-                                            <option value="buanderie" {% if piece.type_piece == 'buanderie' %}selected{% endif %}>🧺 Buanderie</option>
-                                            <option value="salle_a_manger" {% if piece.type_piece == 'salle_a_manger' %}selected{% endif %}>🍽️ Salle à manger</option>
+                                            <option value="cuisine" {% if piece.type_piece == 'cuisine' %}selected{% endif %}>Cuisine</option>
+                                            <option value="chambre" {% if piece.type_piece == 'chambre' %}selected{% endif %}>Chambre</option>
+                                            <option value="salon" {% if piece.type_piece == 'salon' %}selected{% endif %}>Salon</option>
+                                            <option value="salle_de_bain" {% if piece.type_piece == 'salle_de_bain' %}selected{% endif %}>Salle de bain</option>
+                                            <option value="toilettes" {% if piece.type_piece == 'toilettes' %}selected{% endif %}>Toilettes</option>
+                                            <option value="bureau" {% if piece.type_piece == 'bureau' %}selected{% endif %}>Bureau</option>
+                                            <option value="jardin" {% if piece.type_piece == 'jardin' %}selected{% endif %}>Jardin</option>
+                                            <option value="garage" {% if piece.type_piece == 'garage' %}selected{% endif %}>Garage</option>
+                                            <option value="salle_de_jeux" {% if piece.type_piece == 'salle_de_jeux' %}selected{% endif %}>Salle de jeux</option>
+                                            <option value="buanderie" {% if piece.type_piece == 'buanderie' %}selected{% endif %}>Buanderie</option>
+                                            <option value="salle_a_manger" {% if piece.type_piece == 'salle_a_manger' %}selected{% endif %}>Salle à manger</option>
                                         </select>
                                     </div>
                                 </div>
                                 
                                 <div style="margin-bottom: 12px;">
-                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Description</label>
+                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 500; font-size: 14px;">Description</label>
                                     <textarea name="description_piece" rows="2" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none; resize: vertical;">{{ piece.description|default:'' }}</textarea>
                                 </div>
                                 
                                 <div style="margin-bottom: 12px;">
-                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 600; font-size: 13px;">Accès restreint</label>
+                                    <label style="display: block; margin-bottom: 4px; color: var(--dark); font-weight: 500; font-size: 14px;">Accès restreint</label>
                                     <select name="utilisateurs_autorises_piece" multiple size="3" style="width: 100%; padding: 8px; border: 1px solid var(--grey); border-radius: 6px; background: var(--light); color: var(--dark); outline: none;">
                                         {% for membre in membres_foyer %}
                                         <option value="{{ membre.id }}" {% if membre in piece.utilisateurs_autorises.all %}selected{% endif %}>{{ membre.nom|default:membre.email }}</option>
                                         {% endfor %}
                                     </select>
-                                    <small style="color: var(--dark-grey); font-size: 11px; display: block; margin-top: 4px;">💡 Maintenez Ctrl/Cmd pour sélectionner.</small>
+                                    <small style="color: var(--dark-grey); font-size: 11px;">Maintenez Ctrl (Cmd sur Mac) pour sélectionner plusieurs utilisateurs.</small>
                                 </div>
                                 
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <button type="submit" style="padding: 8px 16px; background: var(--primary); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
-                                        <i class='bx bx-save'></i>Enregistrer modifications
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="submit" style="padding: 8px 16px; background: var(--warning); color: var(--dark); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; transition: all 0.3s ease;">
+                                        <i class='bx bx-save'></i>Enregistrer
                                     </button>
                                     {% if piece.type_piece == 'cuisine' %}
-                                    <a href="{% url 'cuisine_view' piece.id %}" style="padding: 8px 16px; background: var(--success); color: var(--light); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
+                                    <a href="{% url 'cuisine_view' piece.id %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; transition: all 0.3s ease;">
                                         <i class='bx bx-food-menu'></i>Voir la cuisine
                                     </a>
                                     {% else %}
-                                    <a href="{% url 'detail_piece' piece.id %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease;">
+                                    <a href="{% url 'detail_piece' piece.id %}" style="padding: 8px 16px; background: var(--primary); color: var(--light); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; transition: all 0.3s ease;">
                                         <i class='bx bx-show'></i>Voir la pièce
                                     </a>
                                     {% endif %}
@@ -509,13 +476,13 @@
                             
                             <!-- Bouton supprimer -->
                             <div>
-                                <form method="post" style="display: block;" onsubmit="return confirm('⚠️ Êtes-vous SÛR de vouloir SUPPRIMER la pièce {{ piece.nom }} ?\n\n⚠️ Attention : Toutes les tâches et données associées seront DÉFINITIVEMENT supprimées !');"><div style="display: flex;">
+                                <form method="post" style="display: inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer la pièce {{ piece.nom }} ? Toutes les tâches et données associées seront également supprimées.');">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="supprimer_piece">
                                     <input type="hidden" name="piece_id" value="{{ piece.id }}">
-                                    <button type="submit" style="padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: all 0.3s ease; white-space: nowrap;">
+                                    <button type="submit" style="padding: 8px 16px; background: var(--danger); color: var(--light); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; transition: all 0.3s ease;">
                                         <i class='bx bx-trash'></i>Supprimer
-                                    </button></div>
+                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -526,8 +493,7 @@
             {% else %}
             <div class="card-dashboard" style="background: var(--light-primary); padding: 24px; border-radius: 8px; text-align: center; border-left: 4px solid var(--warning);">
                 <i class='bx bx-door-open' style="color: var(--warning); font-size: 2rem; margin-bottom: 8px; display: block;"></i>
-                <p style="margin: 0; color: var(--dark); font-size: 16px; font-weight: 600;">📭 Aucune pièce dans ce foyer</p>
-                <p style="margin: 8px 0 0 0; color: var(--dark-grey); font-size: 14px;">Créez votre première pièce avec le formulaire ci-dessus ⬆️</p>
+                <p style="margin: 0; color: var(--dark);">Aucune pièce dans ce foyer pour le moment.</p>
             </div>
             {% endif %}
         </div>

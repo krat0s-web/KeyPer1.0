@@ -178,9 +178,6 @@ function drawFood() {
 function moveSnake() {
     if (!gameRunning || gamePaused) return;
     
-    // Ne pas bouger si aucune direction n'a été définie
-    if (velocity.x === 0 && velocity.y === 0) return;
-    
     const head = {x: snake[0].x + velocity.x, y: snake[0].y + velocity.y};
     
     // Vérifier les collisions avec les murs
@@ -209,21 +206,16 @@ function moveSnake() {
 }
 
 function generateFood() {
-    let validPosition = false;
+    food = {
+        x: Math.floor(Math.random() * tileCount),
+        y: Math.floor(Math.random() * tileCount)
+    };
     
-    while (!validPosition) {
-        food = {
-            x: Math.floor(Math.random() * tileCount),
-            y: Math.floor(Math.random() * tileCount)
-        };
-        
-        // Vérifier que la nourriture n'est pas sur le serpent
-        validPosition = true;
-        for (let segment of snake) {
-            if (food.x === segment.x && food.y === segment.y) {
-                validPosition = false;
-                break;
-            }
+    // Vérifier que la nourriture n'est pas sur le serpent
+    for (let segment of snake) {
+        if (food.x === segment.x && food.y === segment.y) {
+            generateFood();
+            return;
         }
     }
 }
@@ -273,7 +265,6 @@ function restartGame() {
     generateFood();
     document.getElementById('game-over').style.display = 'none';
     updateScore();
-    drawGame(); // Redessiner le jeu après l'initialisation
 }
 
 // Contrôles clavier
